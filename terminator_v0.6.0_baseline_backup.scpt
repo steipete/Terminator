@@ -1,8 +1,9 @@
 #!/usr/bin/osascript
 --------------------------------------------------------------------------------
--- terminator_v0.6.0_safe_enhanced.scpt - Safe Enhanced v0.6.0 
--- Conservative enhancement of proven v0.6.0 baseline with only minimal safe improvements
--- Features: Enhanced error reporting, improved timing, better output formatting
+-- terminator.scpt - v0.6.0 "T-1000"
+-- Instruct Cursor: Run the command `osascript .cursor/scripts/terminator.scpt`
+-- Run any terminal command without blocking the loop.
+-- Call without arguments to understand syntax.
 --------------------------------------------------------------------------------
 
 --#region Configuration Properties
@@ -17,10 +18,6 @@ property projectIdentifierInTitle : "Project: "
 property taskIdentifierInTitle : " - Task: "   
 property enableFuzzyTagGrouping : true 
 property fuzzyGroupingMinPrefixLength : 4 
-
--- Safe enhanced properties (minimal additions)
-property enhancedErrorReporting : true
-property verboseLogging : false
 --#endregion Configuration Properties
 
 --#region Helper Functions
@@ -93,34 +90,12 @@ on bufferContainsMeaningfulContentAS(multiLineText, knownInfoPrefix as text, com
     -- If content doesn't start with our info prefix, likely contains command output
     return true
 end bufferContainsMeaningfulContentAS
-
--- Enhanced error reporting helper
-on formatErrorMessage(errorType, errorMsg, context)
-    if enhancedErrorReporting then
-        set formattedMsg to scriptInfoPrefix & errorType & ": " & errorMsg
-        if context is not "" then
-            set formattedMsg to formattedMsg & " (Context: " & context & ")"
-        end if
-        return formattedMsg
-    else
-        return scriptInfoPrefix & errorMsg
-    end if
-end formatErrorMessage
-
--- Enhanced logging helper
-on logVerbose(message)
-    if verboseLogging then
-        log "🔍 " & message
-    end if
-end logVerbose
 --#endregion Helper Functions
 
 --#region Main Script Logic (on run)
 on run argv
     set appSpecificErrorOccurred to false
     try
-        my logVerbose("Starting Terminator v0.6.0 Safe Enhanced")
-        
         tell application "System Events"
             if not (exists process "Terminal") then
                 launch application id "com.apple.Terminal"
@@ -137,11 +112,10 @@ on run argv
             set potentialPath to item 1 of argv
             if my isValidPath(potentialPath) then
                 set projectPathArg to potentialPath
-                my logVerbose("Detected project path: " & projectPathArg)
                 if originalArgCount > 1 then
                     set actualArgsForParsing to items 2 thru -1 of argv
                 else
-                    return my formatErrorMessage("Argument Error", "Project path \"" & projectPathArg & "\" provided, but no task tag or command specified." & linefeed & linefeed & my usageText(), "")
+                    return scriptInfoPrefix & "Error: Project path \"" & projectPathArg & "\" provided, but no task tag or command specified." & linefeed & linefeed & my usageText()
                 end if
             end if
         end if
@@ -149,13 +123,11 @@ on run argv
         if (count actualArgsForParsing) < 1 then return my usageText()
 
         set taskTagName to item 1 of actualArgsForParsing 
-        my logVerbose("Task tag: " & taskTagName)
-        
         if (length of taskTagName) > 40 or (not my tagOK(taskTagName)) then
-            set errorMsg to "Task Tag missing or invalid: \"" & taskTagName & "\"." & linefeed & linefeed & ¬
+            set errorMsg to scriptInfoPrefix & "Task Tag missing or invalid: \"" & taskTagName & "\"." & linefeed & linefeed & ¬
                 "A 'task tag' (e.g., 'build', 'tests') is a short name (1-40 letters, digits, -, _) " & ¬
                 "to identify a specific task, optionally within a project session." & linefeed & linefeed
-            return my formatErrorMessage("Validation Error", errorMsg & my usageText(), "tag validation")
+            return errorMsg & my usageText()
         end if
 
         set doWrite to false
@@ -172,7 +144,6 @@ on run argv
                 if my isInteger(lastOfCmdParts) then
                     set currentTailLines to (lastOfCmdParts as integer)
                     set explicitLinesProvided to true
-                    my logVerbose("Explicit lines requested: " & currentTailLines)
                     if (count commandParts) > 1 then
                         set commandParts to items 1 thru -2 of commandParts
                     else
@@ -182,12 +153,10 @@ on run argv
             end if
             if (count commandParts) > 0 then
                 set originalUserShellCmd to my joinList(commandParts, " ")
-                my logVerbose("Command detected: " & originalUserShellCmd)
             end if
         else if argCountAfterTagOrPath = 1 then
             -- Only taskTagName was provided after potential projectPathArg
             -- This is a read operation by default.
-            my logVerbose("Read-only operation detected")
         end if
 
         if originalUserShellCmd is not "" and (my trimWhitespace(originalUserShellCmd) is not "") then
@@ -197,7 +166,6 @@ on run argv
             -- Path provided, task tag, and empty command string "" OR no command string but lines_to_read was there
             set doWrite to true 
             set shellCmd to "" -- will become 'cd path'
-            my logVerbose("CD-only operation for path: " & projectPathArg)
         else
             set doWrite to false
             set shellCmd to ""
@@ -206,7 +174,6 @@ on run argv
         if currentTailLines < 1 then set currentTailLines to 1
         if doWrite and (shellCmd is not "" or projectPathArg is not "") and currentTailLines < minTailLinesOnWrite then
             set currentTailLines to minTailLinesOnWrite
-            my logVerbose("Increased tail lines for write operation: " & currentTailLines)
         end if
         
         if projectPathArg is not "" and doWrite then
@@ -216,14 +183,12 @@ on run argv
             else
                 set shellCmd to "cd " & quotedProjectPath
             end if
-            my logVerbose("Final command: " & shellCmd)
         end if
         
         set derivedProjectGroup to ""
         if projectPathArg is not "" then
             set derivedProjectGroup to my getPathComponent(projectPathArg, -1)
             if derivedProjectGroup is "" then set derivedProjectGroup to "DefaultProject" 
-            my logVerbose("Project group: " & derivedProjectGroup)
         end if
 
         set allowCreation to false
@@ -234,13 +199,11 @@ on run argv
         end if
 
         set effectiveTabTitleForLookup to my generateWindowTitle(taskTagName, derivedProjectGroup)
-        my logVerbose("Tab title: " & effectiveTabTitleForLookup)
-        
         set tabInfo to my ensureTabAndWindow(taskTagName, derivedProjectGroup, allowCreation, effectiveTabTitleForLookup)
 
         if tabInfo is missing value then
             if not allowCreation then 
-                set errorMsg to "Terminal session \"" & effectiveTabTitleForLookup & "\" not found." & linefeed & ¬
+                set errorMsg to scriptInfoPrefix & "Error: Terminal session \"" & effectiveTabTitleForLookup & "\" not found." & linefeed & ¬
                     "To create this session, provide a command (even an empty string \"\" if only 'cd'-ing to a project path), " & ¬
                     "or specify lines to read (e.g., ... \"" & taskTagName & "\" 1)." & linefeed
                 if projectPathArg is not "" then
@@ -248,9 +211,9 @@ on run argv
                 else
                     set errorMsg to errorMsg & "If this is for a new project, provide the absolute project path as the first argument." & linefeed
                 end if
-                return my formatErrorMessage("Session Error", errorMsg & linefeed & my usageText(), "session lookup")
+                return errorMsg & linefeed & my usageText()
             else 
-                return my formatErrorMessage("Creation Error", "Could not find or create Terminal tab for \"" & effectiveTabTitleForLookup & "\". Check permissions/Terminal state.", "tab creation")
+                return scriptInfoPrefix & "Error: Could not find or create Terminal tab for \"" & effectiveTabTitleForLookup & "\". Check permissions/Terminal state."
             end if
         end if
 
@@ -258,8 +221,6 @@ on run argv
         set parentWindow to parentWindow of tabInfo
         set wasNewlyCreated to wasNewlyCreated of tabInfo 
         set createdInExistingViaFuzzy to createdInExistingWindowViaFuzzy of tabInfo
-        
-        my logVerbose("Tab info - new: " & wasNewlyCreated & ", fuzzy: " & createdInExistingViaFuzzy)
 
         set bufferText to ""
         set commandTimedOut to false
@@ -288,7 +249,6 @@ on run argv
                 end if
 
                 if doWrite and shellCmd is not "" then 
-                    my logVerbose("Executing command: " & shellCmd)
                     set canProceedWithWrite to true 
                     if busy of targetTab then
                         if not wasNewlyCreated or createdInExistingViaFuzzy then 
@@ -312,7 +272,6 @@ on run argv
                                     end if
                                 end repeat
                             end if
-                            my logVerbose("Busy process identified: " & identifiedBusyProcessName)
                             set processToTargetForKill to identifiedBusyProcessName
                             set killedViaPID to false
                             if theTTYForInfo is not "" and processToTargetForKill is not "" then
@@ -385,7 +344,7 @@ on run argv
                     end if 
 
                     if canProceedWithWrite then 
-                        -- MAINTAINED: No automatic clear command to prevent interrupting build processes
+                        -- REMOVED: Automatic clear command to prevent interrupting build processes
                         do script shellCmd in targetTab 
                         set commandStartTime to current date
                         set commandFinished to false
@@ -398,7 +357,6 @@ on run argv
                         end repeat
                         if not commandFinished then set commandTimedOut to true
                         if commandFinished then delay 0.2 -- Increased from 0.1 for better output settling
-                        my logVerbose("Command execution completed, timeout: " & commandTimedOut)
                     end if
                 else if not doWrite then 
                     if busy of targetTab then
@@ -418,14 +376,13 @@ on run argv
                                 end if
                             end repeat
                         end if
-                        my logVerbose("Tab busy during read with: " & identifiedBusyProcessName)
                     end if
                 end if
                 
                 set bufferText to history of targetTab
             on error errMsg number errNum
                 set appSpecificErrorOccurred to true
-                return my formatErrorMessage("Terminal Error", errMsg, "error " & errNum)
+                return scriptInfoPrefix & "Terminal Interaction Error (" & errNum & "): " & errMsg
             end try
         end tell
 
@@ -483,11 +440,11 @@ on run argv
             if specificAppendedInfo is not "" then set suffixForReturn to linefeed & specificAppendedInfo
             
             if attemptMadeToStopPreviousCommand and not previousCommandActuallyStopped then
-                 return my formatErrorMessage("Process Error", "Previous command/initialization in session \"" & effectiveTabTitleForLookup & "\"" & ttyInfoStringForMessage & " may not have terminated. New command '" & effectiveOriginalCmdForMsg & "' NOT executed." & suffixForReturn, "process termination")
+                 return scriptInfoPrefix & "Previous command/initialization in session \"" & effectiveTabTitleForLookup & "\"" & ttyInfoStringForMessage & " may not have terminated. New command '" & effectiveOriginalCmdForMsg & "' NOT executed." & suffixForReturn
             else if commandTimedOut then
-                return my formatErrorMessage("Timeout Error", "Command '" & effectiveOriginalCmdForMsg & "' timed out after " & maxCommandWaitTime & "s. No other output. " & baseMsgInfo & suffixForReturn, "command timeout")
+                return scriptInfoPrefix & "Command '" & effectiveOriginalCmdForMsg & "' timed out after " & maxCommandWaitTime & "s. No other output. " & baseMsgInfo & suffixForReturn
             else if tabWasBusyOnRead then
-                return my formatErrorMessage("Busy Error", "Tab for session \"" & effectiveTabTitleForLookup & "\" was busy during read. No other output. " & baseMsgInfo & suffixForReturn, "read busy")
+                return scriptInfoPrefix & "Tab for session \"" & effectiveTabTitleForLookup & "\" was busy during read. No other output. " & baseMsgInfo & suffixForReturn
             else if doWrite and shellCmd is not "" then 
                 return scriptInfoPrefix & "Command '" & effectiveOriginalCmdForMsg & "' executed in session \"" & effectiveTabTitleForLookup & "\". No output captured."
             else 
@@ -495,17 +452,16 @@ on run argv
             end if
         end if
         
-        my logVerbose("Returning " & (length of finalResult) & " characters of output")
         return finalResult
 
     on error generalErrorMsg number generalErrorNum
         if appSpecificErrorOccurred then error generalErrorMsg number generalErrorNum 
-        return my formatErrorMessage("Execution Error", generalErrorMsg, "error " & generalErrorNum)
+        return scriptInfoPrefix & "AppleScript Execution Error (" & generalErrorNum & "): " & generalErrorMsg
     end try
 end run
 --#endregion Main Script Logic (on run)
 
---#region Helper Functions (Unchanged from baseline for maximum compatibility)
+--#region Helper Functions
 on ensureTabAndWindow(taskTagName as text, projectGroupName as text, allowCreate as boolean, desiredFullTitle as text)
     set wasActuallyCreated to false
     set createdInExistingViaFuzzy to false 
@@ -529,32 +485,10 @@ on ensureTabAndWindow(taskTagName as text, projectGroupName as text, allowCreate
             try
                 repeat with w in windows
                     try
-                        -- Look for any window that contains our project name
-                        if name of w contains projectGroupSearchPatternForWindowName or name of w contains (projectIdentifierInTitle & projectGroupName) then
+                        if name of w starts with projectGroupSearchPatternForWindowName then
                             if not frontmost then activate
                             delay 0.2
-                            set newTabInGroup to do script "" in w
-                            delay 0.3
-                            set custom title of newTabInGroup to desiredFullTitle 
-                            delay 0.2
-                            set selected tab of w to newTabInGroup
-                            return {targetTab:newTabInGroup, parentWindow:w, wasNewlyCreated:true, createdInExistingWindowViaFuzzy:true}
-                        end if
-                    end try
-                end repeat
-            end try
-        end if
-        
-        -- Enhanced fallback: if no project-specific window found, try to use any existing Terminator window
-        if allowCreate and enableFuzzyTagGrouping then
-            try
-                repeat with w in windows
-                    try
-                        if name of w contains tabTitlePrefix then
-                            -- Found an existing Terminator window, use it for grouping
-                            if not frontmost then activate
-                            delay 0.2
-                            set newTabInGroup to do script "" in w
+                            set newTabInGroup to do script "" in w  -- CHANGED: Removed "clear" command
                             delay 0.3
                             set custom title of newTabInGroup to desiredFullTitle 
                             delay 0.2
@@ -570,7 +504,7 @@ on ensureTabAndWindow(taskTagName as text, projectGroupName as text, allowCreate
             try
                 if not frontmost then activate 
                 delay 0.3
-                set newTabInNewWindow to do script ""  -- MAINTAINED: No clear command
+                set newTabInNewWindow to do script ""  -- CHANGED: Removed "clear" command
                 set wasActuallyCreated to true
                 delay 0.4 
                 set custom title of newTabInNewWindow to desiredFullTitle 
@@ -715,8 +649,7 @@ on usageText()
     
     set generatedExampleTitle to my generateWindowTitle(exampleTaskTag, exampleProjectNameForTitle)
     
-    set outText to scriptName & " - v0.6.0 Enhanced \"T-1000\" – AppleScript Terminal helper" & LF & LF
-    set outText to outText & "Enhancements: Smart session reuse, enhanced error reporting, verbose logging (optional)" & LF & LF
+    set outText to scriptName & " - v0.6.0 \"T-1000\" – AppleScript Terminal helper" & LF & LF
     set outText to outText & "Manages dedicated, tagged Terminal sessions, grouped by project path." & LF & LF
     
     set outText to outText & "Core Concept:" & LF
@@ -733,12 +666,7 @@ on usageText()
     set outText to outText & "Title Format: \"" & tabTitlePrefix & projectIdentifierInTitle & "<ProjectName>" & taskIdentifierInTitle & "<TaskTag>\"" & LF
     set outText to outText & "Or if no project path provided: \"" & tabTitlePrefix & "<TaskTag>\"" & LF & LF
     
-    set outText to outText & "Safe Enhanced Features:" & LF
-    set outText to outText & "  • Enhanced error reporting with context information" & LF
-    set outText to outText & "  • Optional verbose logging for debugging" & LF
-    set outText to outText & "  • Improved timing and reliability (same as v0.6.0)" & LF
-    set outText to outText & "  • No automatic clearing to prevent interrupting builds" & LF
-    set outText to outText & "  • 100-line default output for better build log visibility" & LF
+    set outText to outText & "Features:" & LF
     set outText to outText & "  • Automatically 'cd's into project path if provided with a command." & LF
     set outText to outText & "  • Groups new task tabs into existing project windows if fuzzy grouping enabled." & LF
     set outText to outText & "  • Interrupts busy processes in reused tabs." & LF & LF
@@ -761,10 +689,9 @@ on usageText()
     set outText to outText & "  [[lines_to_read]]: (Optional Last Arg) Number of history lines. Default: " & defaultTailLines & "." & LF & LF
         
     set outText to outText & "Notes:" & LF
-    set outText to outText & "  • Safe enhanced version with improved error reporting and logging." & LF
     set outText to outText & "  • Provide project path on first use for a project for best window grouping and auto 'cd'." & LF
     set outText to outText & "  • Ensure Automation permissions for Terminal.app & System Events.app." & LF
-    set outText to outText & "  • v0.6.0 Safe Enhanced: Better errors, optional verbose logging, 100% baseline compatibility." & LF
+    set outText to outText & "  • v0.6.0 Enhancements: No automatic clearing, 100-line default output, improved timing." & LF
     
     return outText
 end usageText

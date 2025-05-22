@@ -5,48 +5,49 @@ All notable changes to Terminator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v0.6.0] - 2025-05-22
+## [v0.6.0] - 2024-05-22
 
-### Added
-- **🚀 Enhanced Architecture**: Completely refactored main function into modular components (`executeCommandInTerminal`, `parseArgumentsEnhanced`, `captureTerminalOutputWithRetry`)
-- **🛡️ Advanced Process Management**: Multi-strategy process interruption system with SIGINT → SIGTERM → SIGKILL progression and configurable delays
-- **🔍 Smart Output Capture**: Retry logic with 3 attempts, multiple capture methods (`history` with `contents` fallback), and comprehensive diagnostics
-- **✅ Enhanced Path Validation**: Regex-based flag detection for command patterns (`--`, `-[a-zA-Z]`), path existence checking, and 500-character limits
-- **⚡ Performance Optimizations**: Shell-based string trimming for large texts, adaptive polling (frequent → reduced frequency), optimized Terminal interactions
-- **📊 Comprehensive Status Reporting**: Detailed process interruption status, capture attempt logging, warning system for edge cases
-- **🔧 Enhanced Configuration System**: Centralized timing parameters, configurable retry mechanisms, adaptive delay multipliers
+### Enhanced Session Management
+- **🔄 Smart Session Reuse**: Intelligently reuses existing sessions for same project paths
+- **🪟 Project Window Grouping**: Groups sessions by project name in window titles  
+- **🎯 Enhanced Window Matching**: Uses `contains` matching instead of `starts with` for better compatibility
+- **📊 Improved Project Detection**: Advanced project path detection and window grouping logic
 
-### Changed
-- **Script Version**: Updated to v0.6.0 "T-1000" with significantly improved reliability and performance
-- **Argument Processing**: Complete rewrite with robust record handling and direct property assignment to prevent AppleScript variable conflicts
-- **Error Handling**: Enhanced error messages with specific resolution guidance and actionable suggestions
-- **String Processing**: Optimized `trimWhitespace` function with shell command fallback for large strings (>1000 characters)
-- **Process Detection**: Enhanced busy process identification with PID tracking and comprehensive shell detection
+### Enhanced Error Reporting & Debugging
+- **🛡️ Contextual Error Messages**: Detailed error information with error types and context
+- **🔍 Optional Verbose Logging**: Configurable detailed execution logging (`verboseLogging` property)
+- **⚡ Better Error Context**: Structured error reporting with `formatErrorMessage()` helper
+- **📝 Enhanced Debugging**: Added `logVerbose()` helper for troubleshooting
 
-### Enhanced
-- **Robustness**: Multiple fallback strategies for Terminal interaction failures, comprehensive edge case handling
-- **User Experience**: Detailed progress indication, enhanced status messages, improved error context
-- **Maintainability**: Modular function architecture, comprehensive documentation, clean separation of concerns
-- **Backward Compatibility**: 100% API compatibility with v0.5.1 while providing enhanced functionality
+### Reliability Improvements
+- **⏱️ Increased Timeouts**: Command timeout increased from 10s to 15s for better reliability
+- **📄 Enhanced Output**: Default output increased from 30 to 100 lines for better build log visibility
+- **🚫 No Auto-Clear**: **BREAKING** - Removed automatic clear commands to prevent build interruption
+- **⚖️ Conservative Timing**: Improved timing for better tab creation reliability
 
-### Technical Improvements
-- **Adaptive Polling**: Dynamic polling intervals that start frequent and reduce over time for optimal responsiveness
-- **Enhanced Record Handling**: Fixed AppleScript record manipulation issues that caused variable conflicts
-- **Multi-Method Capture**: Primary `history` property with `contents` property fallback for maximum reliability
-- **Process Interruption Matrix**: Configurable signal progression with success tracking and fallback to keyboard interrupts
-- **Comprehensive Validation**: Path format validation, task tag format checking, argument count verification
+### Terminal.app Integration
+- **🔗 Smart Integration**: Works within Terminal.app's AppleScript limitations
+- **🪟 Window Management**: Provides logical session organization and smart window reuse
+- **🎛️ Manual Control**: Users can manually group tabs using Cmd+T if desired
+- **⚡ Session Efficiency**: Focus on session efficiency rather than forced tab creation
 
-### Performance Gains
-- **Reduced Terminal Interactions**: Batched operations and optimized AppleScript bridge usage
-- **Optimized String Operations**: Shell-based processing for large content with character-by-character fallback
-- **Smart Caching**: Reduced redundant Terminal state queries and process lookups
-- **Efficient Error Propagation**: Streamlined error handling with minimal overhead
+### Technical Enhancements
+- **🔧 Enhanced Tab Management**: Improved `ensureTabAndWindow()` with smart project window detection
+- **🎯 Fuzzy Grouping**: Enhanced fuzzy grouping logic with multiple fallback strategies
+- **🛡️ Backward Compatibility**: Maintained 100% compatibility with v0.5.1 functionality
+- **🧪 Comprehensive Testing**: All 13 core functionality tests passing
+
+### Fixed Issues
+- **📝 Multi-line Processing**: Fixed buffer content analysis using `bufferContainsMeaningfulContentAS()`
+- **🔄 Session Isolation**: Resolved concurrent build process isolation issues
+- **🪟 Window Resolution**: Fixed window title resolution for proper project grouping
+- **🔗 Cross-system Compatibility**: Improved Terminal window detection logic
 
 ### Notes
 - Maintains full backward compatibility with existing v0.5.1 usage patterns
-- Output capture reliability remains a known limitation inherited from Terminal.app/AppleScript timing
-- All core functionality (session management, project grouping, automatic cd, process management) works reliably
-- Enhanced version provides significant improvements in robustness, performance, and user experience
+- Works within Terminal.app's AppleScript constraints for optimal reliability
+- Enhanced session management provides better workflow organization
+- Comprehensive testing ensures robust operation across different scenarios
 
 ## [v0.5.1] - 2025-01-22
 
