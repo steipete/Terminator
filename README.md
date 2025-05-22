@@ -2,13 +2,15 @@
 
 ![Terminator Logo](assets/logo.png)
 
+*Keep Cursor, Windsurf, and other AI coding assistants working without disruption.*
+
 *"I'll be back... to manage your Terminal sessions."*
 
 ---
 
 ## Mission Briefing
 
-**Terminator v0.4.7 "T-800"** is an advanced AppleScript-powered Terminal session manager designed to hunt down inefficient workflows and terminate them with extreme prejudice. This cybernetic organism solves a critical problem in AI coding assistants: **the dreaded hanging command loop break**.
+**Terminator** is an advanced AppleScript-powered Terminal session manager designed to hunt down inefficient workflows and terminate them with extreme prejudice. This cybernetic organism solves a critical problem in AI coding assistants: **the dreaded hanging command loop break**.
 
 ### The Problem: Loop Termination
 
