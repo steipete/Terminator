@@ -34,7 +34,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Technical Enhancements
 - **🔧 Enhanced Tab Management**: Improved `ensureTabAndWindow()` with smart project window detection
 - **🎯 Fuzzy Grouping**: Enhanced fuzzy grouping logic with multiple fallback strategies
-- **🛡️ Backward Compatibility**: Maintained 100% compatibility with v0.5.1 functionality
 - **🧪 Comprehensive Testing**: All 13 core functionality tests passing
 
 ### Fixed Issues
@@ -44,7 +43,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **🔗 Cross-system Compatibility**: Improved Terminal window detection logic
 
 ### Notes
-- Maintains full backward compatibility with existing v0.5.1 usage patterns
 - Works within Terminal.app's AppleScript constraints for optimal reliability
 - Enhanced session management provides better workflow organization
 - Comprehensive testing ensures robust operation across different scenarios
@@ -69,7 +67,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Session Title Generation**: Enhanced title generation with proper project name extraction
 
 ### Technical Notes
-- Maintains full backward compatibility with existing usage patterns
 - Output capture reliability remains a known limitation inherited from previous versions
 - All core functionality (session management, project grouping, automatic cd) works reliably
 - 9/10 tests pass with comprehensive validation of major features

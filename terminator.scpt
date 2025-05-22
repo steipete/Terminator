@@ -505,7 +505,7 @@ on run argv
 end run
 --#endregion Main Script Logic (on run)
 
---#region Helper Functions (Unchanged from baseline for maximum compatibility)
+--#region Helper Functions
 on ensureTabAndWindow(taskTagName as text, projectGroupName as text, allowCreate as boolean, desiredFullTitle as text)
     set wasActuallyCreated to false
     set createdInExistingViaFuzzy to false 
@@ -733,10 +733,10 @@ on usageText()
     set outText to outText & "Title Format: \"" & tabTitlePrefix & projectIdentifierInTitle & "<ProjectName>" & taskIdentifierInTitle & "<TaskTag>\"" & LF
     set outText to outText & "Or if no project path provided: \"" & tabTitlePrefix & "<TaskTag>\"" & LF & LF
     
-    set outText to outText & "Safe Enhanced Features:" & LF
+    set outText to outText & "Enhanced Features:" & LF
+    set outText to outText & "  • Smart session reuse for same project paths" & LF
     set outText to outText & "  • Enhanced error reporting with context information" & LF
     set outText to outText & "  • Optional verbose logging for debugging" & LF
-    set outText to outText & "  • Improved timing and reliability (same as v0.6.0)" & LF
     set outText to outText & "  • No automatic clearing to prevent interrupting builds" & LF
     set outText to outText & "  • 100-line default output for better build log visibility" & LF
     set outText to outText & "  • Automatically 'cd's into project path if provided with a command." & LF
@@ -761,10 +761,9 @@ on usageText()
     set outText to outText & "  [[lines_to_read]]: (Optional Last Arg) Number of history lines. Default: " & defaultTailLines & "." & LF & LF
         
     set outText to outText & "Notes:" & LF
-    set outText to outText & "  • Safe enhanced version with improved error reporting and logging." & LF
     set outText to outText & "  • Provide project path on first use for a project for best window grouping and auto 'cd'." & LF
     set outText to outText & "  • Ensure Automation permissions for Terminal.app & System Events.app." & LF
-    set outText to outText & "  • v0.6.0 Safe Enhanced: Better errors, optional verbose logging, 100% baseline compatibility." & LF
+    set outText to outText & "  • Works within Terminal.app's AppleScript limitations for reliable operation." & LF
     
     return outText
 end usageText
