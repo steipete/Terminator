@@ -5,6 +5,61 @@ All notable changes to Terminator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.6.1] - 2024-05-22
+
+### User Interface Improvements
+- **🎨 Emoji-Only Tab Titles**: Tab/window titles now use emoji-only format (🤖💥) instead of "Terminator 🤖💥"
+- **📝 Clear Script Messages**: Script info messages still show "Terminator 🤖💥:" for clarity
+- **🧹 Smart Clear Command**: Clear terminal before write operations only for reused tabs, not fresh ones
+- **📊 Better Output Visibility**: Prevents output truncation while avoiding unnecessary clearing
+
+### Technical Enhancements
+- **🔄 Conditional Terminal Clearing**: Only clears when reusing existing tabs to prevent output truncation
+- **⚡ Optimized Fresh Tab Handling**: New tabs execute commands directly without unnecessary clear operations
+- **🎯 Improved User Experience**: Cleaner tab titles while maintaining informative script messages
+
+## [v0.6.0] - 2024-05-22
+
+### Enhanced Session Management
+- **🔄 Smart Session Reuse**: Intelligently reuses existing sessions for same project paths
+- **🪟 Project Window Grouping**: Groups sessions by project name in window titles  
+- **🎯 Enhanced Window Matching**: Uses `contains` matching instead of `starts with` for better compatibility
+- **📊 Improved Project Detection**: Advanced project path detection and window grouping logic
+
+### Enhanced Error Reporting & Debugging
+- **🛡️ Contextual Error Messages**: Detailed error information with error types and context
+- **🔍 Optional Verbose Logging**: Configurable detailed execution logging (`verboseLogging` property)
+- **⚡ Better Error Context**: Structured error reporting with `formatErrorMessage()` helper
+- **📝 Enhanced Debugging**: Added `logVerbose()` helper for troubleshooting
+
+### Reliability Improvements
+- **⏱️ Increased Timeouts**: Command timeout increased from 10s to 15s for better reliability
+- **📄 Enhanced Output**: Default output increased from 30 to 100 lines for better build log visibility
+- **🚫 No Auto-Clear**: **BREAKING** - Removed automatic clear commands to prevent build interruption
+- **⚖️ Conservative Timing**: Improved timing for better tab creation reliability
+
+### Terminal.app Integration
+- **🔗 Smart Integration**: Works within Terminal.app's AppleScript limitations
+- **🪟 Window Management**: Provides logical session organization and smart window reuse
+- **🎛️ Manual Control**: Users can manually group tabs using Cmd+T if desired
+- **⚡ Session Efficiency**: Focus on session efficiency rather than forced tab creation
+
+### Technical Enhancements
+- **🔧 Enhanced Tab Management**: Improved `ensureTabAndWindow()` with smart project window detection
+- **🎯 Fuzzy Grouping**: Enhanced fuzzy grouping logic with multiple fallback strategies
+- **🧪 Comprehensive Testing**: All 13 core functionality tests passing
+
+### Fixed Issues
+- **📝 Multi-line Processing**: Fixed buffer content analysis using `bufferContainsMeaningfulContentAS()`
+- **🔄 Session Isolation**: Resolved concurrent build process isolation issues
+- **🪟 Window Resolution**: Fixed window title resolution for proper project grouping
+- **🔗 Cross-system Compatibility**: Improved Terminal window detection logic
+
+### Notes
+- Works within Terminal.app's AppleScript constraints for optimal reliability
+- Enhanced session management provides better workflow organization
+- Comprehensive testing ensures robust operation across different scenarios
+
 ## [v0.5.1] - 2025-01-22
 
 ### Added
@@ -25,7 +80,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Session Title Generation**: Enhanced title generation with proper project name extraction
 
 ### Technical Notes
-- Maintains full backward compatibility with existing usage patterns
 - Output capture reliability remains a known limitation inherited from previous versions
 - All core functionality (session management, project grouping, automatic cd) works reliably
 - 9/10 tests pass with comprehensive validation of major features

@@ -6,14 +6,23 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
+Icon?
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
 
 # Temporary files
 *.tmp
 *.temp
 *~
+.#*
+#*#
+*.bak
+*.backup
+*.old
 
 # Log files  
 *.log
+logs/
 
 # IDE/Editor files
 .vscode/
@@ -30,6 +39,36 @@ Thumbs.db
 # AppleScript compiled files
 *.scpt.dSYM/
 *.scptd/
+
+# Environment variables
+.env
+.env.test
+.env.production
+.env.local
+
+# Build outputs
+build/
+dist/
+out/
+
+# Cache directories
+.cache/
+.parcel-cache/
+
+# Dependency directories
+node_modules/
+
+# Test artifacts
+test-results/
+screenshots/
+videos/
+
+# Security files
+*.key
+*.pem
+*.p12
+*.crt
+*.cert
 
 # Xcode (legacy - keeping for compatibility)
 xcuserdata/
