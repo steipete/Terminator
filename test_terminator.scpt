@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
--- test_terminator.scpt - Test Suite for Terminator
--- Tests common functionality to ensure the script works correctly
+-- test_terminator.scpt - Test Suite for Terminator v0.5.0
+-- Tests common functionality including new project path detection and auto-cd
 -- Usage: osascript test_terminator.scpt
 --------------------------------------------------------------------------------
 
@@ -161,11 +161,12 @@ on run
         testFailed(testName, errorMsg)
     end try
     
-    -- Test 3: Project Path Support
+    -- Test 3: Project Path Support (v0.5.0 - automatic cd)
     set testName to runTest("Project Path Support")
     try
-        set result to do shell script "osascript terminator.scpt " & quoted form of testProjectPath & " \"test_project\" \"cd " & testProjectPath & " && pwd && echo 'In project dir'\" 5"
-        assertContains(result, "In project dir", "Project path navigation")
+        -- v0.5.0 automatically prepends 'cd' when project path is provided
+        set result to do shell script "osascript terminator.scpt " & quoted form of testProjectPath & " \"test_project\" \"pwd && echo 'In project dir'\" 5"
+        assertContains(result, "In project dir", "Project path navigation with auto-cd")
         testPassed(testName)
     on error errorMsg
         testFailed(testName, errorMsg)
@@ -220,14 +221,27 @@ on run
         testFailed(testName, errorMsg)
     end try
     
-    -- Test 8: Directory Persistence
+    -- Test 8: v0.5.0 Project Path Auto-Detection  
+    set testName to runTest("v0.5.0 Project Path Detection")
+    try
+        -- Test that project paths are properly detected as first argument
+        set result to do shell script "osascript terminator.scpt " & quoted form of testProjectPath & " \"test_path_detect\" \"echo 'Path detected correctly'\" 3"
+        assertContains(result, "Path detected correctly", "Project path auto-detection")
+        testPassed(testName)
+    on error errorMsg
+        testFailed(testName, errorMsg)
+    end try
+    
+    -- Test 9: Directory Persistence (v0.5.0 - automatic cd)
     set testName to runTest("Directory Change")
     try
-        set result1 to do shell script "osascript terminator.scpt " & quoted form of testProjectPath & " \"test_cd\" \"cd " & testProjectPath & " && pwd && echo 'Changed to project dir'\" 5"
-        assertContains(result1, "Changed to project dir", "Directory change")
+        -- v0.5.0 automatically handles 'cd' when project path is provided
+        set result1 to do shell script "osascript terminator.scpt " & quoted form of testProjectPath & " \"test_cd\" \"pwd && echo 'Changed to project dir'\" 5"
+        assertContains(result1, "Changed to project dir", "Directory change with auto-cd")
         
         delay 2
-        set result2 to do shell script "osascript terminator.scpt \"test_cd\" \"pwd && echo 'Still in project dir'\" 5"
+        -- Re-use existing session without project path (should maintain directory)
+        set result2 to do shell script "osascript terminator.scpt " & quoted form of testProjectPath & " \"test_cd\" \"pwd && echo 'Still in project dir'\" 5"
         assertContains(result2, "Still in project dir", "Directory persistence")
         testPassed(testName)
     on error errorMsg

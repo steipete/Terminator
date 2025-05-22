@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
--- terminator.scpt - v0.4.7 "T-800"
--- AppleScript: Fixed tabTitlePrefix ReferenceError in usageText.
+-- terminator.scpt - v0.5.0 "T-800"
+-- AppleScript: Reliable project path detection, automatic 'cd', and window grouping.
 --------------------------------------------------------------------------------
 
 --#region Configuration Properties
@@ -9,28 +9,26 @@ property pollIntervalForBusyCheck : 0.1
 property startupDelayForTerminal : 0.7 
 property minTailLinesOnWrite : 15 
 property defaultTailLines : 30 
-property tabTitlePrefix : "Terminator 🤖💥 " -- string: Prefix for the Terminal window/tab title.
-property scriptInfoPrefix : "Terminator 🤖💥: " -- string: Prefix for all informational messages.
+property tabTitlePrefix : "Terminator 🤖💥 " 
+property scriptInfoPrefix : "Terminator 🤖💥: " 
 property projectIdentifierInTitle : "Project: " 
-property taskIdentifierInTitle : " - Task: "  
-
+property taskIdentifierInTitle : " - Task: "   
 property enableFuzzyTagGrouping : true 
 property fuzzyGroupingMinPrefixLength : 4 
 --#endregion Configuration Properties
 
-
---#region Helper Functions (isValidPath, getPathComponent first)
+--#region Helper Functions
 on isValidPath(thePath)
     if thePath is not "" and (thePath starts with "/") then
-        set tempDelims to AppleScript's text item delimiters
-        set AppleScript's text item delimiters to "/"
-        set lastBit to last text item of thePath
-        set AppleScript's text item delimiters to tempDelims
-        if lastBit contains " " or lastBit contains "." or lastBit is "" then
-            if not (lastBit contains " ") and not (lastBit contains ".") then return true 
-            return false
+        -- A simple check: if it doesn't look like a command with flags.
+        -- This is a heuristic. A path can technically contain hyphens.
+        if not (thePath contains " -") then
+            -- Consider it a path if it starts with / and doesn't immediately look like a command with options.
+            -- This is to differentiate from a command like "/usr/bin/grep -r" being the first arg.
+            -- A more robust solution would be to check if it's a valid accessible directory via 'do shell script "test -d ..." '
+            -- but that's slow for initial parsing.
+            return true
         end if
-        return true
     end if
     return false
 end isValidPath
@@ -56,6 +54,16 @@ on getPathComponent(thePath, componentIndex)
     end try
     return ""
 end getPathComponent
+
+on generateWindowTitle(taskTag as text, projectGroup as text)
+    if projectGroup is not "" then
+        return tabTitlePrefix & projectIdentifierInTitle & projectGroup & taskIdentifierInTitle & taskTag
+    else
+        return tabTitlePrefix & taskTag 
+    end if
+end generateWindowTitle
+
+-- (Other helpers: ensureTabAndWindow, tailBufferAS, etc. will be included below)
 --#endregion Helper Functions
 
 
@@ -70,68 +78,100 @@ on run argv
             end if
         end tell
 
+        set originalArgCount to count argv
+        if originalArgCount < 1 then return my usageText()
+
+        --#region Argument Parsing v0.5.0
         set projectPathArg to ""
-        set actualArgsForParsing to argv
-        set initialArgCount to count argv
-
-        if initialArgCount > 0 then
-            set potentialPath to item 1 of argv
-            if my isValidPath(potentialPath) then
-                set projectPathArg to potentialPath
-                if initialArgCount > 1 then
-                    set actualArgsForParsing to items 2 thru -1 of argv
-                else
-                    return scriptInfoPrefix & "Error: Project path “" & projectPathArg & "” provided, but no task tag or command specified." & linefeed & linefeed & my usageText()
-                end if
-            end if
-        end if
-
-        if (count actualArgsForParsing) < 1 then return my usageText()
-
-        set taskTagName to item 1 of actualArgsForParsing 
-        if (length of taskTagName) > 40 or (not my tagOK(taskTagName)) then
-            set errorMsg to scriptInfoPrefix & "Task Tag missing or invalid: “" & taskTagName & "”." & linefeed & linefeed & ¬
-                "A 'task tag' (e.g., 'build', 'tests') is a short name (1-40 letters, digits, -, _) " & ¬
-                "to identify a specific task, optionally within a project session." & linefeed & linefeed
-            return errorMsg & my usageText()
-        end if
-
+        set taskTagName to ""
         set doWrite to false
         set shellCmd to ""
+        set originalUserShellCmd to "" -- To store command before 'cd' is prepended
         set currentTailLines to defaultTailLines
         set explicitLinesProvided to false
-        set commandParts to {} 
         
-        if (count actualArgsForParsing) > 1 then 
-            set commandParts to items 2 thru -1 of actualArgsForParsing
+        set argOffset to 1 -- Current argument index to parse from argv
+
+        -- 1. Check for Optional Project Path as the very first argument
+        if originalArgCount >= argOffset then
+            set potentialPath to item argOffset of argv
+            if my isValidPath(potentialPath) then
+                set projectPathArg to potentialPath
+                set argOffset to argOffset + 1 -- Move to next argument for taskTagName
+            end if
         end if
 
-        if (count commandParts) > 0 then
-            set lastArg to item -1 of commandParts
-            if my isInteger(lastArg) then
-                set currentTailLines to (lastArg as integer)
+        -- 2. Get Task Tag Name
+        if originalArgCount >= argOffset then
+            set taskTagName to item argOffset of argv
+            if (length of taskTagName) > 40 or (not my tagOK(taskTagName)) then
+                set errorMsg to scriptInfoPrefix & "Task Tag missing or invalid: \"" & taskTagName & "\"." & linefeed & linefeed & ¬
+                    "A 'task tag' (e.g., 'build', 'tests') is a short name (1-40 letters, digits, -, _) " & ¬
+                    "to identify a specific task, optionally within a project session." & linefeed & linefeed
+                return errorMsg & my usageText()
+            end if
+            set argOffset to argOffset + 1 -- Move to next argument for command/lines
+        else
+            -- Not enough arguments for even a tag after potentially consuming a path
+            if projectPathArg is not "" then
+                return scriptInfoPrefix & "Error: Project path \"" & projectPathArg & "\" provided, but no task tag specified." & linefeed & linefeed & my usageText()
+            else
+                return my usageText() -- Just 'osascript terminator.scpt'
+            end if
+        end if
+
+        -- 3. Parse remaining arguments for Shell Command and Tail Lines
+        set remainingArgsForCmdAndLines to {}
+        if originalArgCount >= argOffset then
+            set remainingArgsForCmdAndLines to items argOffset thru -1 of argv
+        end if
+
+        if (count remainingArgsForCmdAndLines) > 0 then
+            set lastOfRemaining to item -1 of remainingArgsForCmdAndLines
+            if my isInteger(lastOfRemaining) then
+                set currentTailLines to (lastOfRemaining as integer)
                 set explicitLinesProvided to true
-                if (count commandParts) > 1 then
-                    set commandParts to items 1 thru -2 of commandParts 
+                if (count remainingArgsForCmdAndLines) > 1 then
+                    set remainingArgsForCmdAndLines to items 1 thru -2 of remainingArgsForCmdAndLines
                 else
-                    set commandParts to {}
+                    set remainingArgsForCmdAndLines to {}
                 end if
             end if
         end if
 
-        if (count commandParts) > 0 then
-            set shellCmd to my joinList(commandParts, " ")
-            if shellCmd is not "" and (my trimWhitespace(shellCmd) is not "") then
+        if (count remainingArgsForCmdAndLines) > 0 then
+            set originalUserShellCmd to my joinList(remainingArgsForCmdAndLines, " ")
+            if originalUserShellCmd is not "" and (my trimWhitespace(originalUserShellCmd) is not "") then
                 set doWrite to true
+                set shellCmd to originalUserShellCmd 
             else
+                -- User provided "" or "   " as command
                 set shellCmd to "" 
-                set doWrite to false 
+                if projectPathArg is not "" then 
+                    set doWrite to true -- Will become 'cd path' command
+                else
+                    set doWrite to false
+                end if
             end if
+        else if projectPathArg is not "" then -- No command parts, but project path was given
+            set doWrite to true -- Will become 'cd path' command
+            set shellCmd to ""   -- User command is empty
+        end if
+        --#endregion Argument Parsing
+
+        if currentTailLines < 1 then set currentTailLines to 1
+        if doWrite and (shellCmd is not "" or projectPathArg is not "") and currentTailLines < minTailLinesOnWrite then
+            set currentTailLines to minTailLinesOnWrite
         end if
         
-        if currentTailLines < 1 then set currentTailLines to 1
-        if doWrite and shellCmd is not "" and currentTailLines < minTailLinesOnWrite then
-            set currentTailLines to minTailLinesOnWrite
+        -- Prepend 'cd' if projectPathArg is set and we are doing a write operation
+        if projectPathArg is not "" and doWrite then
+            set quotedProjectPath to quoted form of projectPathArg
+            if shellCmd is not "" then
+                set shellCmd to "cd " & quotedProjectPath & " && " & shellCmd
+            else
+                set shellCmd to "cd " & quotedProjectPath -- Just cd if no other command
+            end if
         end if
         
         set derivedProjectGroup to ""
@@ -141,30 +181,30 @@ on run argv
         end if
 
         set allowCreation to false
-        if doWrite and shellCmd is not "" then
+        if doWrite then -- If there's any command to execute (even just 'cd projectPath'), creation is allowed.
             set allowCreation to true
-        else if explicitLinesProvided then 
+        else if explicitLinesProvided then -- If user specifies lines, implies intent to use/create session.
             set allowCreation to true
-        else if projectPathArg is not "" and (count actualArgsForParsing) = 1 then 
-            set allowCreation to true
-        else if (count actualArgsForParsing) = 2 and (item 2 of actualArgsForParsing is "") then  
-             set allowCreation to true
-             set doWrite to false 
-             set shellCmd to ""
         end if
+        -- Note: A call with just "/path/to/project" "task_tag" (no command, no lines) will be a read-only attempt.
+        -- If the tag doesn't exist, it will error as per logic below, not create.
 
         set effectiveTabTitleForLookup to my generateWindowTitle(taskTagName, derivedProjectGroup)
         set tabInfo to my ensureTabAndWindow(taskTagName, derivedProjectGroup, allowCreation, effectiveTabTitleForLookup)
 
-
         if tabInfo is missing value then
-            if not allowCreation and not doWrite then 
-                set errorMsg to scriptInfoPrefix & "Error: Terminal session “" & effectiveTabTitleForLookup & "” not found." & linefeed & ¬
-                    "To create it, provide a command, or an empty command \"\" with lines (e.g., ... \"" & taskTagName & "\" \"\" 1)." & linefeed & ¬
-                    "If this is for a new project, provide the project path first: osascript " & (name of me) & " \"/path/to/project\" \"" & taskTagName & "\" \"your_command\"" & linefeed & linefeed
-                return errorMsg & my usageText()
+            if not allowCreation then -- This implies it was a read-only call for a non-existent session
+                set errorMsg to scriptInfoPrefix & "Error: Terminal session \"" & effectiveTabTitleForLookup & "\" not found." & linefeed & ¬
+                    "To create this session, provide a command to run (even an empty string \"\" if you only want to 'cd' to a project path), " & ¬
+                    "or specify a number of lines to read (e.g., ... \"" & taskTagName & "\" 1)." & linefeed
+                if projectPathArg is not "" then
+                    set errorMsg to errorMsg & "Project path was specified as: \"" & projectPathArg & "\"." & linefeed
+                else
+                    set errorMsg to errorMsg & "If this is for a new project, provide the absolute project path as the first argument." & linefeed
+                end if
+                return errorMsg & linefeed & my usageText()
             else 
-                return scriptInfoPrefix & "Error: Could not find or create Terminal tab for “" & effectiveTabTitleForLookup & "”. Check permissions/Terminal state."
+                return scriptInfoPrefix & "Error: Could not find or create Terminal tab for \"" & effectiveTabTitleForLookup & "\". Check permissions/Terminal state."
             end if
         end if
 
@@ -183,9 +223,9 @@ on run argv
 
         if not doWrite and wasNewlyCreated then
             if createdInExistingViaFuzzy then
-                return scriptInfoPrefix & "New tab “" & effectiveTabTitleForLookup & "” created in existing project window and ready."
+                return scriptInfoPrefix & "New tab \"" & effectiveTabTitleForLookup & "\" created in existing project window and ready."
             else
-                return scriptInfoPrefix & "New tab “" & effectiveTabTitleForLookup & "” (in new window) created and ready."
+                return scriptInfoPrefix & "New tab \"" & effectiveTabTitleForLookup & "\" (in new window) created and ready."
             end if
         end if
 
@@ -199,7 +239,8 @@ on run argv
                     delay 0.1 
                 end if
 
-                if doWrite and shellCmd is not "" then
+                --#region Write Operation Logic
+                if doWrite and shellCmd is not "" then -- shellCmd now includes 'cd' if projectPathArg was given
                     set canProceedWithWrite to true 
                     if busy of targetTab then
                         if not wasNewlyCreated or createdInExistingViaFuzzy then 
@@ -295,11 +336,16 @@ on run argv
                     end if 
 
                     if canProceedWithWrite then 
+                        -- If it's a reused tab that was busy (and we stopped it) or wasn't busy, clear it.
+                        -- If it's a new tab in an existing fuzzy group window, clear it.
+                        -- If it's a brand new window, ensureTabAndWindow already ran 'clear'.
                         if not wasNewlyCreated or createdInExistingViaFuzzy then
                             do script "clear" in targetTab
                             delay 0.1
                         end if
-                        do script shellCmd in targetTab
+                        
+                        do script shellCmd in targetTab -- shellCmd now includes 'cd projectPath &&' if path was given
+                        
                         set commandStartTime to current date
                         set commandFinished to false
                         repeat while ((current date) - commandStartTime) < maxCommandWaitTime
@@ -310,8 +356,10 @@ on run argv
                             delay pollIntervalForBusyCheck 
                         end repeat
                         if not commandFinished then set commandTimedOut to true
-                        if commandFinished then delay 0.1
+                        if commandFinished then delay 0.2 -- Increased delay for output to settle
                     end if
+                --#endregion Write Operation Logic
+                --#region Read Operation Logic
                 else if not doWrite then 
                     if busy of targetTab then
                         set tabWasBusyOnRead to true
@@ -332,13 +380,30 @@ on run argv
                         end if
                     end if
                 end if
-                set bufferText to history of targetTab
+                --#endregion Read Operation Logic
+                
+                -- Enhanced output capture with improved timing
+                set bufferText to ""
+                try
+                    -- Add delay to ensure terminal buffer is updated
+                    delay 0.3
+                    set bufferText to history of targetTab
+                on error
+                    -- Fallback with longer delay if first attempt fails
+                    delay 0.5
+                    try
+                        set bufferText to history of targetTab  
+                    on error
+                        set bufferText to ""
+                    end try
+                end try
             on error errMsg number errNum
                 set appSpecificErrorOccurred to true
                 return scriptInfoPrefix & "Terminal Interaction Error (" & errNum & "): " & errMsg
             end try
         end tell
 
+        --#region Message Construction & Output Processing
         set appendedMessage to ""
         set ttyInfoStringForMessage to "" 
         if theTTYForInfo is not "" then set ttyInfoStringForMessage to " (TTY " & theTTYForInfo & ")"
@@ -356,7 +421,9 @@ on run argv
             end if
         end if
         if commandTimedOut then 
-            set appendedMessage to appendedMessage & linefeed & scriptInfoPrefix & "Command '" & shellCmd & "' may still be running. Returned after " & maxCommandWaitTime & "s timeout. ---"
+            set cmdForMsg to originalUserShellCmd
+            if projectPathArg is not "" then set cmdForMsg to originalUserShellCmd & " (in " & projectPathArg & ")"
+            set appendedMessage to appendedMessage & linefeed & scriptInfoPrefix & "Command '" & cmdForMsg & "' may still be running. Returned after " & maxCommandWaitTime & "s timeout. ---"
         else if tabWasBusyOnRead then 
             set processNameToReportOnRead to "process"
             if identifiedBusyProcessName is not "" then set processNameToReportOnRead to "'" & identifiedBusyProcessName & "'"
@@ -385,18 +452,22 @@ on run argv
         end if
         
         if bufferText is "" or my lineIsEffectivelyEmptyAS(bufferText) or (scriptInfoPresent and contentBeforeInfoIsEmpty) then
-            set baseMsg to "Session “" & effectiveTabTitleForLookup & "”, requested " & currentTailLines & " lines."
+            set baseMsg to "Session \"" & effectiveTabTitleForLookup & "\", requested " & currentTailLines & " lines."
             set anAppendedMessageForReturn to my trimWhitespace(appendedMessage)
             set messageSuffix to ""
             if anAppendedMessageForReturn is not "" then set messageSuffix to linefeed & anAppendedMessageForReturn
+            set cmdForMsgContext to originalUserShellCmd
+            if projectPathArg is not "" and originalUserShellCmd is not "" then set cmdForMsgContext to originalUserShellCmd & " (in " & projectPathArg & ")"
+            if projectPathArg is not "" and originalUserShellCmd is "" then set cmdForMsgContext to "(cd " & projectPathArg & ")"
+
             if attemptMadeToStopPreviousCommand and not previousCommandActuallyStopped then
-                 return scriptInfoPrefix & "Previous command/initialization in session “" & effectiveTabTitleForLookup & "”" & ttyInfoStringForMessage & " may not have terminated. New command '" & shellCmd & "' NOT executed." & messageSuffix
+                 return scriptInfoPrefix & "Previous command/initialization in session \"" & effectiveTabTitleForLookup & "\"" & ttyInfoStringForMessage & " may not have terminated. New command '" & cmdForMsgContext & "' NOT executed." & messageSuffix
             else if commandTimedOut then
-                return scriptInfoPrefix & "Command '" & shellCmd & "' timed out after " & maxCommandWaitTime & "s. No other output. " & baseMsg & messageSuffix
+                return scriptInfoPrefix & "Command '" & cmdForMsgContext & "' timed out after " & maxCommandWaitTime & "s. No other output. " & baseMsg & messageSuffix
             else if tabWasBusyOnRead then
                 return scriptInfoPrefix & "Tab was busy during read. No other output. " & baseMsg & messageSuffix
-            else if doWrite and shellCmd is not "" then
-                return scriptInfoPrefix & "Command '" & shellCmd & "' executed. No output captured. " & baseMsg
+            else if doWrite and shellCmd is not "" then -- shellCmd includes cd here
+                return scriptInfoPrefix & "Command '" & cmdForMsgContext & "' executed. No output captured. " & baseMsg
             else
                 return scriptInfoPrefix & "No text content (history) found. " & baseMsg
             end if
@@ -420,23 +491,26 @@ on run argv
         end if
         
         if finalResult is "" and bufferText is not "" and not my lineIsEffectivelyEmptyAS(bufferText) then
-            set baseMsgDetailPart to "Session “" & effectiveTabTitleForLookup & "”, command '" & shellCmd & "'. Original history had content."
+            set cmdForMsgContextFinal to originalUserShellCmd
+            if projectPathArg is not "" and originalUserShellCmd is not "" then set cmdForMsgContextFinal to originalUserShellCmd & " (in " & projectPathArg & ")"
+            if projectPathArg is not "" and originalUserShellCmd is "" then set cmdForMsgContextFinal to "(cd " & projectPathArg & ")"
+            set baseMsgDetailPart to "Session \"" & effectiveTabTitleForLookup & "\", cmd: '" & cmdForMsgContextFinal & "'. History present."
             set trimmedAppendedMessageForDetail to my trimWhitespace(appendedMessage)
             set messageSuffixForDetail to ""
             if trimmedAppendedMessageForDetail is not "" then set messageSuffixForDetail to linefeed & trimmedAppendedMessageForDetail
             set descriptiveMessage to scriptInfoPrefix 
             if attemptMadeToStopPreviousCommand and not previousCommandActuallyStopped then
-                 set descriptiveMessage to descriptiveMessage & baseMsgDetailPart & " Previous command/initialization not terminated, new command not run." & messageSuffixForDetail
+                 set descriptiveMessage to descriptiveMessage & baseMsgDetailPart & " Prev cmd not stopped, new cmd not run." & messageSuffixForDetail
             else if commandTimedOut then
-                set descriptiveMessage to descriptiveMessage & baseMsgDetailPart & " Final output empty after processing due to timeout." & messageSuffixForDetail
+                set descriptiveMessage to descriptiveMessage & baseMsgDetailPart & " Output empty after timeout." & messageSuffixForDetail
             else if tabWasBusyOnRead then
-                set descriptiveMessage to descriptiveMessage & baseMsgDetailPart & " Final output empty after processing while tab was busy." & messageSuffixForDetail
+                set descriptiveMessage to descriptiveMessage & baseMsgDetailPart & " Output empty after busy read." & messageSuffixForDetail
             else if doWrite and shellCmd is not "" then
-                set descriptiveMessage to descriptiveMessage & baseMsgDetailPart & " Output empty after processing last " & currentTailLines & " lines."
+                set descriptiveMessage to descriptiveMessage & baseMsgDetailPart & " Output empty post-exec of last " & currentTailLines & " lines."
             else if not doWrite and (appendedMessage is not "" and (bufferText contains appendedMessage)) then
                 return my trimWhitespace(appendedMessage)
             else
-                set descriptiveMessage to scriptInfoPrefix & baseMsgDetailPart & " Content present but became empty after processing."
+                set descriptiveMessage to scriptInfoPrefix & baseMsgDetailPart & " Content became empty post-processing."
             end if
             if descriptiveMessage is not "" and descriptiveMessage is not scriptInfoPrefix then return descriptiveMessage
         end if
@@ -452,19 +526,11 @@ end run
 
 
 --#region Helper Functions
-on generateWindowTitle(taskTag as text, projectGroup as text)
-    -- Uses global properties: tabTitlePrefix, projectIdentifierInTitle, taskIdentifierInTitle
-    if projectGroup is not "" then
-        return tabTitlePrefix & projectIdentifierInTitle & projectGroup & taskIdentifierInTitle & taskTag
-    else
-        return tabTitlePrefix & taskTag 
-    end if
-end generateWindowTitle
-
+-- (ensureTabAndWindow and other helpers from v0.4.6 are largely the same,
+-- ensureTabAndWindow takes 'desiredFullTitle' now)
 on ensureTabAndWindow(taskTagName as text, projectGroupName as text, allowCreate as boolean, desiredFullTitle as text)
-    -- desiredFullTitle is pre-generated by generateWindowTitle in the main run handler
     set wasActuallyCreated to false
-    set createdInExistingWin to false
+    set createdInExistingWin to false -- Renamed for clarity from createdInExistingWindowViaFuzzy
 
     tell application id "com.apple.Terminal"
         -- 1. Exact Match Search for the full task title
@@ -481,8 +547,6 @@ on ensureTabAndWindow(taskTagName as text, projectGroupName as text, allowCreate
             end repeat
         end try
 
-        -- If we are here, no exact match was found for the full task title.
-
         -- 2. Fuzzy Grouping Search (if enabled and creation is allowed and we have a project group)
         if allowCreate and enableFuzzyTagGrouping and projectGroupName is not "" then
             set projectGroupSearchPatternForWindowName to tabTitlePrefix & projectIdentifierInTitle & projectGroupName
@@ -494,7 +558,7 @@ on ensureTabAndWindow(taskTagName as text, projectGroupName as text, allowCreate
                             delay 0.2
                             set newTabInGroup to do script "clear" in w 
                             delay 0.3
-                            set custom title of newTabInGroup to desiredFullTitle -- Use the full specific task title
+                            set custom title of newTabInGroup to desiredFullTitle 
                             delay 0.2
                             set selected tab of w to newTabInGroup
                             return {targetTab:newTabInGroup, parentWindow:w, wasNewlyCreated:true, createdInExistingWindowViaFuzzy:true}
@@ -512,7 +576,7 @@ on ensureTabAndWindow(taskTagName as text, projectGroupName as text, allowCreate
                 set newTabInNewWindow to do script "clear" 
                 set wasActuallyCreated to true
                 delay 0.4 
-                set custom title of newTabInNewWindow to desiredFullTitle -- Use the full title
+                set custom title of newTabInNewWindow to desiredFullTitle 
                 delay 0.2
                 set parentWinOfNew to missing value
                 try
@@ -520,14 +584,12 @@ on ensureTabAndWindow(taskTagName as text, projectGroupName as text, allowCreate
                 on error
                     if (count of windows) > 0 then set parentWinOfNew to front window
                 end try
-
                 if parentWinOfNew is not missing value then
                     if custom title of newTabInNewWindow is desiredFullTitle then 
                         set selected tab of parentWinOfNew to newTabInNewWindow
                         return {targetTab:newTabInNewWindow, parentWindow:parentWinOfNew, wasNewlyCreated:wasActuallyCreated, createdInExistingWindowViaFuzzy:false}
                     end if
                 end if
-                -- Fallback global scan
                 repeat with w_final_scan in windows
                     repeat with tb_final_scan in tabs of w_final_scan
                         try
@@ -548,7 +610,6 @@ on ensureTabAndWindow(taskTagName as text, projectGroupName as text, allowCreate
     end tell
 end ensureTabAndWindow
 
--- (Other helpers: tailBufferAS, lineIsEffectivelyEmptyAS, trimBlankLinesAS, trimWhitespace, isInteger, tagOK, joinList are unchanged)
 on tailBufferAS(txt, n)
     set AppleScript's text item delimiters to linefeed
     set lst to text items of txt
@@ -650,52 +711,56 @@ on usageText()
     set LF to linefeed
     set scriptName to "terminator.scpt"
     set exampleProject to "/Users/name/Projects/FancyApp"
-    set exampleProjectName to "FancyApp" -- Derived from path for title
+    set exampleProjectNameForTitle to my getPathComponent(exampleProject, -1)
+    if exampleProjectNameForTitle is "" then set exampleProjectNameForTitle to "UnknownProject"
     set exampleTaskTag to "build_frontend"
-    set exampleFullCommand to "cd " & exampleProject & " && npm run build"
+    set exampleFullCommand to "npm run build" -- Command without cd, as script handles cd
     
-    set generatedExampleTitle to my generateWindowTitle(exampleTaskTag, exampleProjectName)
+    set generatedExampleTitle to my generateWindowTitle(exampleTaskTag, exampleProjectNameForTitle)
     
-    set outText to scriptName & " - v0.4.6 \"T-800\" – AppleScript Terminal helper" & LF & LF
-    set outText to outText & "Manages dedicated, tagged Terminal sessions, optionally grouped by project." & LF & LF
+    set outText to scriptName & " - v0.5.0 \"T-800\" – AppleScript Terminal helper" & LF & LF
+    set outText to outText & "Manages dedicated, tagged Terminal sessions, grouped by project path." & LF & LF
     
     set outText to outText & "Core Concept:" & LF
-    set outText to outText & "  1. For a NEW project context, provide the absolute project path first:" & LF
+    set outText to outText & "  1. For a NEW project, provide the absolute project path FIRST, then task tag, then command:" & LF
     set outText to outText & "     osascript " & scriptName & " \"" & exampleProject & "\" \"" & exampleTaskTag & "\" \"" & exampleFullCommand & "\"" & LF
-    set outText to outText & "     This helps group future tabs/windows for project “" & exampleProjectName & "”." & LF
-    set outText to outText & "     The tab will be titled similar to: “" & generatedExampleTitle & "”" & LF
-    set outText to outText & "  2. For SUBSEQUENT commands for THE SAME PROJECT, use a task-specific tag (project path optional but helps grouping):" & LF
-    set outText to outText & "     osascript " & scriptName & " [\"" & exampleProject & "\"] \"" & exampleTaskTag & "\" \"next_command\"" & LF
-    set outText to outText & "  3. To simply READ from an existing session (tag must exist if no project path/command given to create it):" & LF
-    set outText to outText & "     osascript " & scriptName & " [\"" & exampleProject & "\"] \"" & exampleTaskTag & "\"" & LF & LF
+    set outText to outText & "     The script will 'cd' into the project path and run the command." & LF
+    set outText to outText & "     The tab will be titled like: \"" & generatedExampleTitle & "\"" & LF
+    set outText to outText & "  2. For SUBSEQUENT commands in THE SAME PROJECT, use the project path and task tag:" & LF
+    set outText to outText & "     osascript " & scriptName & " \"" & exampleProject & "\" \"" & exampleTaskTag & "\" \"another_command\"" & LF
+    set outText to outText & "  3. To simply READ from an existing session (path & tag must identify an existing session):" & LF
+    set outText to outText & "     osascript " & scriptName & " \"" & exampleProject & "\" \"" & exampleTaskTag & "\"" & LF & LF
+    
+    set outText to outText & "Title Format: \"" & tabTitlePrefix & projectIdentifierInTitle & "<ProjectName>" & taskIdentifierInTitle & "<TaskTag>\"" & LF
+    set outText to outText & "Or if no project path provided: \"" & tabTitlePrefix & "<TaskTag>\"" & LF & LF
     
     set outText to outText & "Features:" & LF
-    set outText to outText & "  • Creates/reuses Terminal contexts. Titles include Project & Task if path provided." & LF
-    set outText to outText & "    New task tags can create new tabs in existing project windows (fuzzy grouping) or new windows." & LF
-    set outText to outText & "  • Read-only for a non-existent task (if no means to create) will result in an error." & LF
-    set outText to outText & "  • Interrupts busy processes in reused tabs before new commands." & LF & LF
+    set outText to outText & "  • Automatically 'cd's into project path if provided with a command." & LF
+    set outText to outText & "  • Groups new task tabs into existing project windows if fuzzy grouping enabled." & LF
+    set outText to outText & "  • Read-only for a non-existent session will error." & LF
+    set outText to outText & "  • Interrupts busy processes in reused tabs." & LF & LF
     
     set outText to outText & "Usage Examples:" & LF
-    set outText to outText & "  # Start new project session, run command, get 50 lines:" & LF
-    set outText to outText & "  osascript " & scriptName & " \"" & exampleProject & "\" \"frontend_build\" \"cd " & exampleProject & "/frontend && npm run build\" 50" & LF
+    set outText to outText & "  # Start new project session, cd, run command, get 50 lines:" & LF
+    set outText to outText & "  osascript " & scriptName & " \"" & exampleProject & "\" \"frontend_build\" \"npm run build\" 50" & LF
     set outText to outText & "  # Run another command in the same frontend_build session:" & LF
     set outText to outText & "  osascript " & scriptName & " \"" & exampleProject & "\" \"frontend_build\" \"npm run test\"" & LF
-    set outText to outText & "  # Create a new task tab in the same project window (if fuzzy grouping active):" & LF
-    set outText to outText & "  osascript " & scriptName & " \"" & exampleProject & "\" \"backend_api_tests\" \"cd " & exampleProject & "/backend && pytest\"" & LF
-    set outText to outText & "  # Just prepare/create a new session (if it doesn't exist) without running a command:" & LF
-    set outText to outText & "  osascript " & scriptName & " \"" & exampleProject & "\" \"new_empty_task\" \"\" 1" & LF
-    set outText to outText & "  # Read from an existing session (task tag only, if project context known or fuzzy grouping off):" & LF
-    set outText to outText & "  osascript " & scriptName & " \"some_task_tag\" 10" & LF & LF
+    set outText to outText & "  # Create/use a 'backend_tests' task tab in the same 'FancyApp' project window:" & LF
+    set outText to outText & "  osascript " & scriptName & " \"" & exampleProject & "\" \"backend_tests\" \"pytest\"" & LF
+    set outText to outText & "  # Prepare/create a new session by just cd'ing into project path (empty command):" & LF
+    set outText to outText & "  osascript " & scriptName & " \"" & exampleProject & "\" \"dev_shell\" \"\" 1" & LF
+    set outText to outText & "  # Read from an existing session:" & LF
+    set outText to outText & "  osascript " & scriptName & " \"" & exampleProject & "\" \"frontend_build\" 10" & LF & LF
     
     set outText to outText & "Parameters:" & LF
-    set outText to outText & "  [\"/absolute/project/path\"]: (Optional First Arg) Base path for the project. Helps group windows." & LF
-    set outText to outText & "                               If omitted, fuzzy grouping relies on existing window titles." & LF
+    set outText to outText & "  [\"/absolute/project/path\"]: (Optional First Arg) Base path for project. Enables 'cd' and grouping." & LF
     set outText to outText & "  \"<task_tag_name>\": Required. Specific task name for the tab (e.g., 'build', 'tests')." & LF
-    set outText to outText & "  [\"<shell_command_parts...>\"]: (Optional) Command. Use \"\" for no command if creating/preparing a session." & LF
+    set outText to outText & "  [\"<shell_command_parts...>\"]: (Optional) Command. If path provided, 'cd path &&' is prepended." & LF
+    set outText to outText & "                                Use \"\" for no command (will just 'cd' if path given)." & LF
     set outText to outText & "  [[lines_to_read]]: (Optional Last Arg) Number of history lines. Default: " & defaultTailLines & "." & LF & LF
         
     set outText to outText & "Notes:" & LF
-    set outText to outText & "  • Provide project path on first use for most reliable window grouping." & LF
+    set outText to outText & "  • Provide project path on first use for a project for best window grouping and auto 'cd'." & LF
     set outText to outText & "  • Ensure Automation permissions for Terminal.app & System Events.app." & LF
     
     return outText
