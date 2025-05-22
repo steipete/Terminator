@@ -1,6 +1,6 @@
 #!/usr/bin/osascript
 --------------------------------------------------------------------------------
--- terminator.scpt - v0.6.0 Enhanced "T-1000"
+-- terminator.scpt - v0.6.1 Enhanced "T-1000"
 -- Enhanced Terminal session management with smart session reuse and better error reporting
 -- Features: Smart session reuse, enhanced error reporting, improved timing, better output formatting
 --------------------------------------------------------------------------------

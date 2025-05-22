@@ -5,6 +5,19 @@ All notable changes to Terminator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.6.1] - 2024-05-22
+
+### User Interface Improvements
+- **🎨 Emoji-Only Tab Titles**: Tab/window titles now use emoji-only format (🤖💥) instead of "Terminator 🤖💥"
+- **📝 Clear Script Messages**: Script info messages still show "Terminator 🤖💥:" for clarity
+- **🧹 Smart Clear Command**: Clear terminal before write operations only for reused tabs, not fresh ones
+- **📊 Better Output Visibility**: Prevents output truncation while avoiding unnecessary clearing
+
+### Technical Enhancements
+- **🔄 Conditional Terminal Clearing**: Only clears when reusing existing tabs to prevent output truncation
+- **⚡ Optimized Fresh Tab Handling**: New tabs execute commands directly without unnecessary clear operations
+- **🎯 Improved User Experience**: Cleaner tab titles while maintaining informative script messages
+
 ## [v0.6.0] - 2024-05-22
 
 ### Enhanced Session Management
