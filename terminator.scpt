@@ -649,10 +649,6 @@ on run argv
         if writeMode and shellCmd is not "" then
             tell application id "com.apple.Terminal"
                 try
-                    if not wasNewlyCreated or (createdInExistingWindowViaFuzzy of sessionInfo) then
-                        do script "clear" in targetTab
-                        delay 0.1
-                    end if
                     do script shellCmd in targetTab
                     set commandStartTime to current date
                     set commandFinished to false
