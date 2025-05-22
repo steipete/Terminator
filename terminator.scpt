@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
--- terminator_v0.6.0_enhanced.scpt - v0.6.0 "T-1000"
+-- terminator.scpt - v0.6.0 "T-1000"
 -- AppleScript: Enhanced Terminal automation with improved robustness, performance,
 --              and user experience. Modular architecture with comprehensive error handling.
 --------------------------------------------------------------------------------
@@ -799,7 +799,7 @@ end joinList
 
 on usageTextEnhanced()
     set LF to linefeed
-    set scriptName to "terminator_v0.6.0_enhanced.scpt"
+    set scriptName to "terminator.scpt"
     set exampleProject to "/Users/name/Projects/FancyApp"
     set exampleTaskTag to "build_frontend"
     set exampleCommand to "npm run build"
