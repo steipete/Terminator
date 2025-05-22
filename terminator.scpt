@@ -1,8 +1,8 @@
 #!/usr/bin/osascript
 --------------------------------------------------------------------------------
--- terminator_v0.6.0_safe_enhanced.scpt - Safe Enhanced v0.6.0 
--- Conservative enhancement of proven v0.6.0 baseline with only minimal safe improvements
--- Features: Enhanced error reporting, improved timing, better output formatting
+-- terminator.scpt - v0.6.0 Enhanced "T-1000"
+-- Enhanced Terminal session management with smart session reuse and better error reporting
+-- Features: Smart session reuse, enhanced error reporting, improved timing, better output formatting
 --------------------------------------------------------------------------------
 
 --#region Configuration Properties
@@ -385,7 +385,7 @@ on run argv
                     end if 
 
                     if canProceedWithWrite then 
-                        -- MAINTAINED: No automatic clear command to prevent interrupting build processes
+                        -- No automatic clear command to prevent interrupting build processes
                         do script shellCmd in targetTab 
                         set commandStartTime to current date
                         set commandFinished to false
@@ -570,7 +570,7 @@ on ensureTabAndWindow(taskTagName as text, projectGroupName as text, allowCreate
             try
                 if not frontmost then activate 
                 delay 0.3
-                set newTabInNewWindow to do script ""  -- MAINTAINED: No clear command
+                set newTabInNewWindow to do script ""
                 set wasActuallyCreated to true
                 delay 0.4 
                 set custom title of newTabInNewWindow to desiredFullTitle 
