@@ -60,21 +60,66 @@ on cleanupTestEnvironment()
         do shell script "rm -rf " & quoted form of testProjectPath
     end try
     
-    -- Clean up test terminal tabs (be careful not to close user tabs)
+    -- Clean up test terminal tabs and windows
     tell application id "com.apple.Terminal"
         try
+            set windowsToClose to {}
+            set tabsToClose to {}
+            
+            -- First pass: identify all test tabs and empty windows
             repeat with w in windows
+                set windowHasNonTestTabs to false
+                set windowTestTabs to {}
+                
                 repeat with t in tabs of w
                     try
                         set tabTitle to custom title of t
                         if tabTitle starts with "Terminator 🤖💥 " then
-                            if tabTitle contains "test_" then
-                                close t
+                            if tabTitle contains "test_" or tabTitle contains "debug" or tabTitle contains "empty" then
+                                set end of windowTestTabs to t
+                            else
+                                set windowHasNonTestTabs to true
                             end if
+                        else
+                            set windowHasNonTestTabs to true
                         end if
+                    on error
+                        -- Tab might not have custom title, assume it's a user tab
+                        set windowHasNonTestTabs to true
                     end try
                 end repeat
+                
+                -- If window only has test tabs, mark entire window for closure
+                if not windowHasNonTestTabs and (count of tabs of w) > 0 then
+                    set end of windowsToClose to w
+                else
+                    -- Otherwise, just mark test tabs for closure
+                    repeat with testTab in windowTestTabs
+                        set end of tabsToClose to testTab
+                    end repeat
+                end if
             end repeat
+            
+            -- Close individual test tabs first
+            repeat with tabToClose in tabsToClose
+                try
+                    close tabToClose
+                    delay 0.1
+                end try
+            end repeat
+            
+            -- Close windows that contained only test tabs
+            repeat with windowToClose in windowsToClose
+                try
+                    close windowToClose
+                    delay 0.1
+                end try
+            end repeat
+            
+            log "🗑️  Closed " & (count of tabsToClose) & " test tabs and " & (count of windowsToClose) & " test windows"
+            
+        on error cleanupError
+            log "⚠️  Cleanup warning: " & cleanupError
         end try
     end tell
 end cleanupTestEnvironment

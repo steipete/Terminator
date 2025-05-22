@@ -10,6 +10,16 @@ To run the complete test suite:
 osascript test_terminator.scpt
 ```
 
+## Manual Cleanup
+
+If test sessions are left behind or you want to clean up manually:
+
+```bash
+osascript cleanup_terminator_tests.scpt
+```
+
+This will remove all Terminator test tabs and windows, plus temporary test files.
+
 ## Test Coverage
 
 The test suite validates:
