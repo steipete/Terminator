@@ -1,0 +1,93 @@
+name: AppleScript CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-applescript:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check AppleScript syntax
+      run: |
+        echo "🍎 Checking AppleScript syntax with osacompile..."
+        
+        # Check main terminator script
+        echo "📋 Checking terminator.scpt..."
+        osacompile -c terminator.scpt
+        if [ $? -eq 0 ]; then
+          echo "✅ terminator.scpt syntax OK"
+        else
+          echo "❌ terminator.scpt syntax error"
+          exit 1
+        fi
+        
+        # Check test script
+        echo "📋 Checking test_terminator.scpt..."
+        osacompile -c test_terminator.scpt
+        if [ $? -eq 0 ]; then
+          echo "✅ test_terminator.scpt syntax OK"
+        else
+          echo "❌ test_terminator.scpt syntax error"
+          exit 1
+        fi
+        
+        # Check cleanup script
+        echo "📋 Checking cleanup_terminator_tests.scpt..."
+        osacompile -c cleanup_terminator_tests.scpt
+        if [ $? -eq 0 ]; then
+          echo "✅ cleanup_terminator_tests.scpt syntax OK"
+        else
+          echo "❌ cleanup_terminator_tests.scpt syntax error"
+          exit 1
+        fi
+        
+        echo "🎉 All AppleScript files passed syntax check!"
+        
+    - name: Verify script execution (dry run)
+      run: |
+        echo "🧪 Testing script execution (usage display)..."
+        
+        # Test that the main script can display usage without errors
+        echo "📋 Testing terminator.scpt usage display..."
+        output=$(osascript terminator.scpt 2>&1)
+        if echo "$output" | grep -q "terminator.scpt"; then
+          echo "✅ terminator.scpt usage display works"
+        else
+          echo "❌ terminator.scpt usage display failed"
+          echo "Output: $output"
+          exit 1
+        fi
+        
+        echo "🎉 Script execution test passed!"
+
+    - name: Check for common AppleScript issues
+      run: |
+        echo "🔍 Checking for common AppleScript issues..."
+        
+        # Check for proper error handling
+        if grep -q "on error" *.scpt; then
+          echo "✅ Error handling found in scripts"
+        else
+          echo "⚠️  No error handling found - consider adding try/catch blocks"
+        fi
+        
+        # Check for proper quoting
+        if grep -q "quoted form" *.scpt; then
+          echo "✅ Proper shell quoting found"
+        else
+          echo "⚠️  No shell quoting found - ensure shell commands are properly quoted"
+        fi
+        
+        # Check for hardcoded paths (should use variables)
+        if grep -q "/tmp/" *.scpt; then
+          echo "ℹ️  Temporary paths found - ensure they're appropriate"
+        fi
+        
+        echo "🎉 AppleScript quality check completed!"

@@ -1,5 +1,7 @@
 # 🤖💥 Terminator - Terminal Session Manager
 
+[![AppleScript CI](https://github.com/steipete/Terminator/actions/workflows/ci.yml/badge.svg)](https://github.com/steipete/Terminator/actions/workflows/ci.yml)
+
 ![Terminator Logo](assets/logo.png)
 
 *Keep Cursor, Windsurf, and other AI coding assistants working without disruption.*
@@ -169,6 +171,28 @@ Ensure these applications have **Automation** permissions:
 **"Permission denied"**
 - Verify Automation permissions for Terminal.app and System Events.app
 - Restart Terminal.app after granting permissions
+
+---
+
+## Development & Testing
+
+### Continuous Integration
+All AppleScript files are automatically validated on every push using GitHub Actions:
+- **Syntax Check**: `osacompile` validation on macOS runners
+- **Execution Test**: Usage display functionality verification  
+- **Quality Check**: Common AppleScript best practices validation
+
+### Running Tests Locally
+```bash
+# Run comprehensive test suite
+osascript test_terminator.scpt
+
+# Manual cleanup if needed
+osascript cleanup_terminator_tests.scpt
+
+# Syntax check
+osacompile -c terminator.scpt
+```
 
 ---
 
