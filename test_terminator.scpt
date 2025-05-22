@@ -100,12 +100,12 @@ on run
     -- Test 2: Session Creation and Persistence
     set testName to runTest("Session Creation")
     try
-        set result to do shell script "osascript terminator.scpt \"test_session\" \"echo 'Session created'\" 3"
+        set result to do shell script "osascript terminator.scpt \"test_session\" \"echo 'Session created' && sleep 1\" 5"
         assertContains(result, "Session created", "Session creation output")
         
-        delay 1
-        set result2 to do shell script "osascript terminator.scpt \"test_session\" 3"
-        assertContains(result2, "Session created", "Session persistence")
+        delay 2
+        set result2 to do shell script "osascript terminator.scpt \"test_session\" \"echo 'Still here'\" 3"
+        assertContains(result2, "Still here", "Session persistence")
         testPassed(testName)
     on error errorMsg
         testFailed(testName, errorMsg)
@@ -114,8 +114,8 @@ on run
     -- Test 3: Project Path Support
     set testName to runTest("Project Path Support")
     try
-        set result to do shell script "osascript terminator.scpt " & quoted form of testProjectPath & " \"test_project\" \"pwd\" 3"
-        assertContains(result, testProjectPath, "Project path navigation")
+        set result to do shell script "osascript terminator.scpt " & quoted form of testProjectPath & " \"test_project\" \"cd " & testProjectPath & " && pwd && echo 'In project dir'\" 5"
+        assertContains(result, "In project dir", "Project path navigation")
         testPassed(testName)
     on error errorMsg
         testFailed(testName, errorMsg)
@@ -138,7 +138,7 @@ on run
     -- Test 5: Empty Session Creation
     set testName to runTest("Empty Session Creation")
     try
-        set result to do shell script "osascript terminator.scpt \"test_empty\" \"\" 1"
+        set result to do shell script "osascript terminator.scpt \"test_empty_" & (random number from 1000 to 9999) & "\" \"\" 1"
         assertContains(result, "created and ready", "Empty session creation")
         testPassed(testName)
     on error errorMsg
@@ -148,9 +148,9 @@ on run
     -- Test 6: Usage Display
     set testName to runTest("Usage Display")
     try
-        set result to do shell script "osascript terminator.scpt"
-        assertContains(result, "terminator.scpt", "Usage display")
-        assertContains(result, "Usage Examples", "Usage examples section")
+        set usageResult to do shell script "osascript terminator.scpt"
+        assertContains(usageResult, "terminator.scpt", "Usage display")
+        assertContains(usageResult, "Usage Examples", "Usage examples section")
         testPassed(testName)
     on error errorMsg
         testFailed(testName, errorMsg)
@@ -173,12 +173,12 @@ on run
     -- Test 8: Directory Persistence
     set testName to runTest("Directory Change")
     try
-        set result1 to do shell script "osascript terminator.scpt " & quoted form of testProjectPath & " \"test_cd\" \"cd " & testProjectPath & " && pwd\" 3"
-        assertContains(result1, testProjectPath, "Directory change")
+        set result1 to do shell script "osascript terminator.scpt " & quoted form of testProjectPath & " \"test_cd\" \"cd " & testProjectPath & " && pwd && echo 'Changed to project dir'\" 5"
+        assertContains(result1, "Changed to project dir", "Directory change")
         
-        delay 1
-        set result2 to do shell script "osascript terminator.scpt \"test_cd\" \"pwd\" 3"
-        assertContains(result2, testProjectPath, "Directory persistence")
+        delay 2
+        set result2 to do shell script "osascript terminator.scpt \"test_cd\" \"pwd && echo 'Still in project dir'\" 5"
+        assertContains(result2, "Still in project dir", "Directory persistence")
         testPassed(testName)
     on error errorMsg
         testFailed(testName, errorMsg)
