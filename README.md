@@ -150,11 +150,6 @@ Ensure these applications have **Automation** permissions:
 
 *Access via: System Preferences → Security & Privacy → Privacy → Automation*
 
-### Compatible Shells
-Terminator recognizes and works with:
-- bash, zsh, sh, fish, tcsh, ksh
-- Login shells and interactive sessions
-
 ---
 
 ## Troubleshooting
@@ -172,15 +167,6 @@ Terminator recognizes and works with:
 **"Permission denied"**
 - Verify Automation permissions for Terminal.app and System Events.app
 - Restart Terminal.app after granting permissions
-
----
-
-## Version History
-
-**v0.4.7 "T-800"** - Current deployment
-- Fixed tabTitlePrefix ReferenceError in usage text
-- Enhanced process termination protocols
-- Improved session state management
 
 ---
 
