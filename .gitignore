@@ -29,6 +29,7 @@ Thumbs.db
 
 # AppleScript compiled files
 *.scpt.dSYM/
+*.scptd/
 
 # Xcode (legacy - keeping for compatibility)
 xcuserdata/

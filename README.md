@@ -178,9 +178,11 @@ Ensure these applications have **Automation** permissions:
 
 ### Continuous Integration
 All AppleScript files are automatically validated on every push using GitHub Actions:
-- **Syntax Check**: `osacompile` validation on macOS runners
-- **Execution Test**: Usage display functionality verification  
+- **Syntax Check**: `osacompile -c` validation on macOS runners
+- **Compilation Test**: Full compilation to `.scptd` bundles
 - **Quality Check**: Common AppleScript best practices validation
+
+*Note: CI cannot run actual script execution due to macOS automation permission requirements. Full testing must be done locally.*
 
 ### Running Tests Locally
 ```bash

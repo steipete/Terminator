@@ -50,22 +50,41 @@ jobs:
         
         echo "🎉 All AppleScript files passed syntax check!"
         
-    - name: Verify script execution (dry run)
+    - name: Compile AppleScript files
       run: |
-        echo "🧪 Testing script execution (usage display)..."
+        echo "🔨 Compiling AppleScript files to .scptd bundles..."
         
-        # Test that the main script can display usage without errors
-        echo "📋 Testing terminator.scpt usage display..."
-        output=$(osascript terminator.scpt 2>&1)
-        if echo "$output" | grep -q "terminator.scpt"; then
-          echo "✅ terminator.scpt usage display works"
+        # Compile main script to verify it's complete and valid
+        echo "📋 Compiling terminator.scpt..."
+        osacompile -o terminator.scptd terminator.scpt
+        if [ $? -eq 0 ]; then
+          echo "✅ terminator.scpt compiled successfully"
         else
-          echo "❌ terminator.scpt usage display failed"
-          echo "Output: $output"
+          echo "❌ terminator.scpt compilation failed"
           exit 1
         fi
         
-        echo "🎉 Script execution test passed!"
+        # Compile test script
+        echo "📋 Compiling test_terminator.scpt..."
+        osacompile -o test_terminator.scptd test_terminator.scpt
+        if [ $? -eq 0 ]; then
+          echo "✅ test_terminator.scpt compiled successfully"
+        else
+          echo "❌ test_terminator.scpt compilation failed"
+          exit 1
+        fi
+        
+        # Compile cleanup script
+        echo "📋 Compiling cleanup_terminator_tests.scpt..."
+        osacompile -o cleanup_terminator_tests.scptd cleanup_terminator_tests.scpt
+        if [ $? -eq 0 ]; then
+          echo "✅ cleanup_terminator_tests.scpt compiled successfully"
+        else
+          echo "❌ cleanup_terminator_tests.scpt compilation failed"
+          exit 1
+        fi
+        
+        echo "🎉 All AppleScript files compiled successfully!"
 
     - name: Check for common AppleScript issues
       run: |
