@@ -571,6 +571,11 @@ on run argv
             end if
         end tell
         
+        -- Handle no arguments case (show usage)
+        if (count argv) < 1 then
+            return my usageTextEnhanced()
+        end if
+        
         -- Parse and validate arguments
         set argData to my parseArgumentsEnhanced(argv)
         if not (isValid of argData) then
