@@ -174,14 +174,14 @@ Ensure these applications have **Automation** permissions:
 
 ## Enhanced Automation Arsenal
 
-### 🔗 Compatible MCP Servers
+### 🔗 Useful MCP Servers to Increase the Loop
 
-Supercharge your Terminal automation with these Model Context Protocol servers:
+Supercharge your development loop with these Model Context Protocol servers:
 
 - **[macOS Automator MCP](https://github.com/steipete/macos-automator-mcp)** - Execute AppleScript and shell commands directly from Claude Code
 - **[Claude Code MCP](https://github.com/steipete/claude-code-mcp)** - Enhanced Claude Code integration with file system operations
 
-These MCPs work seamlessly with Terminator to create a complete automation ecosystem.
+These MCPs work seamlessly with Terminator to maximize your development loop efficiency and keep your AI assistant running smoothly.
 
 ---
 
