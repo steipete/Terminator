@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
--- test_terminator.scpt - Test Suite for Terminator v0.5.0
--- Tests common functionality including new project path detection and auto-cd
+-- test_terminator.scpt - Test Suite for Terminator v0.5.1
+-- Tests core functionality and improved output capture with bufferContainsMeaningfulContentAS
 -- Usage: osascript test_terminator.scpt
 --------------------------------------------------------------------------------
 
@@ -243,6 +243,25 @@ on run
         -- Re-use existing session without project path (should maintain directory)
         set result2 to do shell script "osascript terminator.scpt " & quoted form of testProjectPath & " \"test_cd\" \"pwd && echo 'Still in project dir'\" 5"
         assertContains(result2, "Still in project dir", "Directory persistence")
+        testPassed(testName)
+    on error errorMsg
+        testFailed(testName, errorMsg)
+    end try
+    
+    -- Test 10: v0.5.1 Output Capture Fix
+    set testName to runTest("v0.5.1 Output Capture Fix")
+    try
+        -- Test that commands with simple output are properly captured
+        -- We need to ensure we're not getting false positives from error messages
+        set result1 to do shell script "osascript terminator.scpt \"test_output_fix\" \"echo 'UniqueOutput12345'\" 5"
+        
+        -- Check that we got the actual output, not an error message containing the text
+        if (result1 contains "UniqueOutput12345") and not (result1 contains "No output captured") and not (result1 contains "executed in session") then
+            -- True positive - actual output captured
+        else
+            error "Output capture not working. Got: " & result1
+        end if
+        
         testPassed(testName)
     on error errorMsg
         testFailed(testName, errorMsg)
