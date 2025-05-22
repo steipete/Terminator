@@ -385,9 +385,11 @@ on run argv
                     end if 
 
                     if canProceedWithWrite then 
-                        -- Clear before write to prevent output truncation
-                        do script "clear" in targetTab
-                        delay 0.1
+                        -- Clear before write to prevent output truncation (only for reused tabs)
+                        if not wasNewlyCreated then
+                            do script "clear" in targetTab
+                            delay 0.1
+                        end if
                         do script shellCmd in targetTab 
                         set commandStartTime to current date
                         set commandFinished to false
