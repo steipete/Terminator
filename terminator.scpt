@@ -385,7 +385,9 @@ on run argv
                     end if 
 
                     if canProceedWithWrite then 
-                        -- No automatic clear command to prevent interrupting build processes
+                        -- Clear before write to prevent output truncation
+                        do script "clear" in targetTab
+                        delay 0.1
                         do script shellCmd in targetTab 
                         set commandStartTime to current date
                         set commandFinished to false
