@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
 -- terminator.scpt - v0.6.0 "T-1000"
--- AppleScript: Enhanced Terminal automation with improved robustness, performance,
---              and user experience. Modular architecture with comprehensive error handling.
+-- Instruct Cursor: Run the command `osascript .cursor/scripts/terminator.scpt`
+-- Run any terminal command without blocking the loop.
+-- Call without arguments to understand syntax.
 --------------------------------------------------------------------------------
 
 --#region Enhanced Configuration System
