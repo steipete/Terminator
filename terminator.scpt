@@ -18,8 +18,8 @@ property startupDelayForTerminal : 0.7
 property adaptiveDelayMultiplier : 1.0 -- Can be adjusted based on system performance
 
 -- Output Configuration
-property minTailLinesOnWrite : 15
-property defaultTailLines : 30
+property minTailLinesOnWrite : 100
+property defaultTailLines : 100
 property maxOutputCaptureRetries : 3
 property outputCaptureRetryDelay : 0.5 -- Increased for better output settling
 
