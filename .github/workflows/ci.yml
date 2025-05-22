@@ -20,9 +20,10 @@ jobs:
         
         # Check main terminator script
         echo "📋 Checking terminator.scpt..."
-        osacompile -c terminator.scpt
+        osacompile -o /tmp/terminator_syntax_check.scpt terminator.scpt
         if [ $? -eq 0 ]; then
           echo "✅ terminator.scpt syntax OK"
+          rm -f /tmp/terminator_syntax_check.scpt
         else
           echo "❌ terminator.scpt syntax error"
           exit 1
@@ -30,9 +31,10 @@ jobs:
         
         # Check test script
         echo "📋 Checking test_terminator.scpt..."
-        osacompile -c test_terminator.scpt
+        osacompile -o /tmp/test_syntax_check.scpt test_terminator.scpt
         if [ $? -eq 0 ]; then
           echo "✅ test_terminator.scpt syntax OK"
+          rm -f /tmp/test_syntax_check.scpt
         else
           echo "❌ test_terminator.scpt syntax error"
           exit 1
@@ -40,9 +42,10 @@ jobs:
         
         # Check cleanup script
         echo "📋 Checking cleanup_terminator_tests.scpt..."
-        osacompile -c cleanup_terminator_tests.scpt
+        osacompile -o /tmp/cleanup_syntax_check.scpt cleanup_terminator_tests.scpt
         if [ $? -eq 0 ]; then
           echo "✅ cleanup_terminator_tests.scpt syntax OK"
+          rm -f /tmp/cleanup_syntax_check.scpt
         else
           echo "❌ cleanup_terminator_tests.scpt syntax error"
           exit 1
