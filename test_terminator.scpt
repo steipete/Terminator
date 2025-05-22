@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
--- test_terminator.scpt - Test Suite for Terminator v0.5.1
--- Tests core functionality and improved output capture with bufferContainsMeaningfulContentAS
+-- test_terminator.scpt - Test Suite for Terminator v0.6.0
+-- Tests core functionality including long-running process handling
 -- Usage: osascript test_terminator.scpt
 --------------------------------------------------------------------------------
 
@@ -260,6 +260,91 @@ on run
             -- True positive - actual output captured
         else
             error "Output capture not working. Got: " & result1
+        end if
+        
+        testPassed(testName)
+    on error errorMsg
+        testFailed(testName, errorMsg)
+    end try
+    
+    -- Test 11: Long-Running Build Process (v0.6.0 - timing improvements)
+    set testName to runTest("Long-Running Build Process Handling")
+    try
+        -- Test that long-running commands complete and capture full output
+        set buildScriptPath to (do shell script "pwd") & "/simulate_build.sh"
+        set result1 to do shell script "osascript terminator.scpt \"long_build_test\" \"" & buildScriptPath & " 5 1\" 50"
+        
+        -- Check that we got build completion message and multiple build steps
+        if (result1 contains "Build completed successfully") and (result1 contains "Analyzing dependencies") and (result1 contains "Compiling SourceFile") then
+            -- Verify we captured a reasonable amount of build output
+            set lineCount to (count of paragraphs of result1)
+            if lineCount > 5 then
+                -- Success - captured multiple lines of build output
+            else
+                error "Insufficient build output captured. Lines: " & lineCount
+            end if
+        else
+            error "Long-running build test failed. Output: " & result1
+        end if
+        
+        testPassed(testName)
+    on error errorMsg
+        testFailed(testName, errorMsg)
+    end try
+    
+    -- Test 12: Concurrent Build Processes (v0.6.0 - session isolation)
+    set testName to runTest("Concurrent Build Process Isolation")
+    try
+        -- Start two different build processes in separate sessions
+        set buildScriptPath to (do shell script "pwd") & "/simulate_build.sh"
+        
+        -- Start first build
+        do shell script "osascript terminator.scpt \"concurrent_build_1\" \"" & buildScriptPath & " 3 2\" &"
+        delay 0.5
+        
+        -- Start second build in different session
+        do shell script "osascript terminator.scpt \"concurrent_build_2\" \"" & buildScriptPath & " 3 2\" &"
+        delay 4 -- Wait for both to complete
+        
+        -- Check both sessions exist and have output
+        set result1 to do shell script "osascript terminator.scpt \"concurrent_build_1\" 20"
+        set result2 to do shell script "osascript terminator.scpt \"concurrent_build_2\" 20"
+        
+        if (result1 contains "Build completed") and (result2 contains "Build completed") then
+            -- Both builds completed successfully in separate sessions
+        else
+            error "Concurrent builds failed. Result1 has completion: " & (result1 contains "Build completed") & ", Result2 has completion: " & (result2 contains "Build completed")
+        end if
+        
+        testPassed(testName)
+    on error errorMsg
+        testFailed(testName, errorMsg)
+    end try
+    
+    -- Test 13: Build Process Interruption and Recovery (v0.6.0 - no clear interference) 
+    set testName to runTest("Build Process No-Clear Verification")
+    try
+        -- Start a build process and verify no clear commands interfere
+        set buildScriptPath to (do shell script "pwd") & "/simulate_build.sh"
+        set result1 to do shell script "osascript terminator.scpt \"no_clear_build\" \"" & buildScriptPath & " 4 1\" 30"
+        
+        -- Check that output doesn't contain 'clear' commands and has continuous build log
+        if (result1 contains "clear") then
+            error "Found 'clear' command in build output - this should not happen: " & result1
+        end if
+        
+        -- Verify we have sequential build output without interruption
+        if (result1 contains "Analyzing dependencies") and (result1 contains "Build completed successfully") then
+            -- Add another command to same session to verify no clearing
+            set result2 to do shell script "osascript terminator.scpt \"no_clear_build\" \"echo 'Additional command after build'\" 35"
+            
+            if (result2 contains "Build completed successfully") and (result2 contains "Additional command after build") then
+                -- Success - previous build output preserved and new command added
+            else
+                error "Build output not preserved when adding new command: " & result2
+            end if
+        else
+            error "Build process output incomplete: " & result1
         end if
         
         testPassed(testName)
