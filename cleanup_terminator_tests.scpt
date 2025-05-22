@@ -14,69 +14,76 @@ on run
             set totalTabsClosed to 0
             set totalWindowsClosed to 0
             
-            -- Simplified approach: close all windows that contain only test tabs
-            set windowList to windows
-            repeat with w in windowList
-                try
-                    set windowHasNonTestTabs to false
-                    set windowTestTabs to {}
-                    set tabList to tabs of w
-                    
-                    repeat with t in tabList
-                        try
-                            set tabTitle to custom title of t
-                            if tabTitle starts with "Terminator 🤖💥 " then
-                                -- Check for test patterns
-                                if tabTitle contains "test_" or tabTitle contains "debug" or tabTitle contains "empty" or tabTitle contains "Test" then
-                                    set end of windowTestTabs to t
-                                    log "📋 Found test tab: " & tabTitle
+            -- Simple direct approach: iterate and close immediately
+            set continueCleanup to true
+            repeat while continueCleanup
+                set continueCleanup to false
+                set windowList to windows
+                
+                repeat with i from 1 to count of windowList
+                    try
+                        set w to item i of windowList
+                        set windowHasNonTestTabs to false
+                        set windowTestTabs to 0
+                        set tabList to tabs of w
+                        
+                        repeat with j from 1 to count of tabList
+                            try
+                                set t to item j of tabList
+                                set tabTitle to custom title of t
+                                if tabTitle starts with "Terminator 🤖💥 " then
+                                    -- Check for test patterns
+                                    if tabTitle contains "test_" or tabTitle contains "debug" or tabTitle contains "empty" or tabTitle contains "Test" then
+                                        set windowTestTabs to windowTestTabs + 1
+                                        log "📋 Found test tab: " & tabTitle
+                                    else
+                                        set windowHasNonTestTabs to true
+                                    end if
                                 else
                                     set windowHasNonTestTabs to true
                                 end if
-                            else
+                            on error
+                                -- Tab might not have custom title, assume it's a user tab
                                 set windowHasNonTestTabs to true
-                            end if
-                        on error
-                            -- Tab might not have custom title, assume it's a user tab
-                            set windowHasNonTestTabs to true
-                        end try
-                    end repeat
-                    
-                    -- If window only has test tabs, mark entire window for closure
-                    if not windowHasNonTestTabs and (count of windowTestTabs) > 0 then
-                        set end of windowsToClose to w
-                        log "🪟 Marking window for closure (contains only test tabs)"
-                    else if (count of windowTestTabs) > 0 then
-                        -- Otherwise, just mark test tabs for closure
-                        repeat with testTab in windowTestTabs
-                            set end of tabsToClose to testTab
+                            end try
                         end repeat
-                    end if
-                on error windowError
-                    log "⚠️  Error accessing window: " & windowError
-                end try
-            end repeat
-            
-            -- Close individual test tabs first
-            repeat with tabToClose in tabsToClose
-                try
-                    close tabToClose
-                    set totalTabsClosed to totalTabsClosed + 1
-                    delay 0.1
-                on error tabError
-                    log "⚠️  Could not close tab: " & tabError
-                end try
-            end repeat
-            
-            -- Close windows that contained only test tabs
-            repeat with windowToClose in windowsToClose
-                try
-                    close windowToClose
-                    set totalWindowsClosed to totalWindowsClosed + 1
-                    delay 0.2
-                on error windowError
-                    log "⚠️  Could not close window: " & windowError
-                end try
+                        
+                        -- If window only has test tabs, close entire window
+                        if not windowHasNonTestTabs and windowTestTabs > 0 then
+                            try
+                                close w
+                                set totalWindowsClosed to totalWindowsClosed + 1
+                                set continueCleanup to true
+                                log "🪟 Closed window with " & windowTestTabs & " test tabs"
+                                delay 0.3
+                                exit repeat -- Start over since window list changed
+                            on error windowError
+                                log "⚠️  Could not close window: " & windowError
+                            end try
+                        else if windowTestTabs > 0 then
+                            -- Close individual test tabs in mixed windows
+                            repeat with j from (count of tabList) to 1 by -1
+                                try
+                                    set t to item j of tabList
+                                    set tabTitle to custom title of t
+                                    if tabTitle starts with "Terminator 🤖💥 " then
+                                        if tabTitle contains "test_" or tabTitle contains "debug" or tabTitle contains "empty" or tabTitle contains "Test" then
+                                            close t
+                                            set totalTabsClosed to totalTabsClosed + 1
+                                            set continueCleanup to true
+                                            log "🗑️  Closed test tab: " & tabTitle
+                                            delay 0.1
+                                        end if
+                                    end if
+                                on error tabError
+                                    log "⚠️  Could not close tab: " & tabError
+                                end try
+                            end repeat
+                        end if
+                    on error windowError
+                        log "⚠️  Error accessing window: " & windowError
+                    end try
+                end repeat
             end repeat
             
             -- Clean up temporary test files
