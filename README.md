@@ -8,12 +8,31 @@
 
 ## Mission Briefing
 
-**Terminator v0.4.7 "T-800"** is an advanced AppleScript-powered Terminal session manager designed to hunt down inefficient workflows and terminate them with extreme prejudice. This cybernetic organism manages dedicated, tagged Terminal sessions with project-based grouping capabilities.
+**Terminator v0.4.7 "T-800"** is an advanced AppleScript-powered Terminal session manager designed to hunt down inefficient workflows and terminate them with extreme prejudice. This cybernetic organism solves a critical problem in AI coding assistants: **the dreaded hanging command loop break**.
+
+### The Problem: Loop Termination
+
+When AI coding assistants like Cursor execute commands that hang or run indefinitely, they break their execution loop and become unresponsive. This forces developers to:
+- Manually intervene and kill processes
+- Restart the AI assistant
+- Lose context and momentum
+- Experience frustrating workflow interruptions
+
+**The result?** Productivity crashes harder than Skynet's network.
+
+### The Solution: Process Isolation
+
+Terminator implements **process isolation** by running commands in separate Terminal sessions. This means:
+- ✅ **Loop Continuity**: AI assistant stays responsive even with hanging commands
+- ✅ **Faster Execution**: Commands run asynchronously in dedicated processes
+- ✅ **Better Control**: Intelligent process termination when needed
+- ✅ **Context Preservation**: Session state persists across operations
 
 ### Core Directive
 
-Just like the T-800's mission to protect, Terminator's primary objective is to **protect your productivity** by:
+Just like the T-800's mission to protect, Terminator's primary objective is to **protect your development loop** by:
 - Creating and managing persistent Terminal sessions
+- Isolating command execution from AI assistant processes
 - Grouping related tasks by project 
 - Intelligently interrupting busy processes when needed
 - Providing reliable session state management
@@ -21,6 +40,22 @@ Just like the T-800's mission to protect, Terminator's primary objective is to *
 ---
 
 ## Deployment Instructions
+
+### Training Your AI Assistant
+
+To maximize loop performance, train your AI coding assistant (Cursor, Claude Code, etc.) to use Terminator instead of direct shell execution:
+
+**❌ Instead of this (loop-breaking):**
+```bash
+# Direct execution - can hang and break the loop
+npm run build
+```
+
+**✅ Use this (loop-preserving):**
+```bash
+# Terminator execution - keeps the loop alive
+osascript terminator.scpt "/path/to/project" "build" "npm run build"
+```
 
 ### Basic Command Structure
 ```bash
