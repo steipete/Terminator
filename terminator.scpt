@@ -331,66 +331,6 @@ on captureTerminalOutputWithRetry(targetTab, tailLines)
 end captureTerminalOutputWithRetry
 --#endregion Smart Output Capture
 
---#region Modular Command Execution
-on executeCommandInTerminal(shellCmd, targetTab, projectPathArg, originalUserShellCmd)
-    set executionResult to {success:false, timedOut:false, processInterrupted:false, errorMsg:""}
-    
-    tell application id "com.apple.Terminal"
-        try
-            -- Check if tab is busy and handle appropriately
-            if busy of targetTab then
-                set processInfo to my identifyBusyProcessEnhanced(targetTab)
-                set interruptResult to my interruptProcessEnhanced(processInfo, targetTab)
-                
-                set executionResult to executionResult & {processInterrupted:true}
-                
-                if not (success of interruptResult) then
-                    set executionResult to executionResult & {success:false, errorMsg:"Could not interrupt busy process: " & (processName of processInfo)}
-                    return executionResult
-                end if
-            end if
-            
-            -- Clear terminal for clean execution
-            do script "clear" in targetTab
-            delay 0.1
-            
-            -- Execute the command
-            do script shellCmd in targetTab
-            set commandStartTime to current date
-            set commandFinished to false
-            
-            -- Enhanced command monitoring with adaptive polling
-            set pollCount to 0
-            repeat while ((current date) - commandStartTime) < maxCommandWaitTime
-                if not (busy of targetTab) then
-                    set commandFinished to true
-                    exit repeat
-                end if
-                
-                -- Adaptive polling: start frequent, then reduce frequency
-                set currentInterval to pollIntervalForBusyCheck
-                if pollCount > 20 then set currentInterval to pollIntervalForBusyCheck * 2
-                if pollCount > 50 then set currentInterval to pollIntervalForBusyCheck * 4
-                
-                delay currentInterval
-                set pollCount to pollCount + 1
-            end repeat
-            
-            if commandFinished then
-                delay 0.5 -- Allow time for output to settle in terminal buffer
-                set executionResult to executionResult & {success:true}
-            else
-                set executionResult to executionResult & {success:false, timedOut:true}
-            end if
-            
-        on error errMsg
-            set executionResult to executionResult & {success:false, errorMsg:errMsg}
-        end try
-    end tell
-    
-    return executionResult
-end executeCommandInTerminal
---#endregion Modular Command Execution
 
 --#region Window Management (Using Original Reliable Implementation)
 on ensureTabAndWindow(taskTagName as text, projectGroupName as text, allowCreate as boolean, desiredFullTitle as text)
@@ -419,7 +359,7 @@ on ensureTabAndWindow(taskTagName as text, projectGroupName as text, allowCreate
                         if name of w starts with projectGroupSearchPatternForWindowName then
                             if not frontmost then activate
                             delay 0.2
-                            set newTabInGroup to do script "clear" in w 
+                            set newTabInGroup to do script "" in w 
                             delay 0.3
                             set custom title of newTabInGroup to desiredFullTitle 
                             delay 0.2
@@ -435,7 +375,7 @@ on ensureTabAndWindow(taskTagName as text, projectGroupName as text, allowCreate
             try
                 if not frontmost then activate 
                 delay 0.3
-                set newTabInNewWindow to do script "clear" 
+                set newTabInNewWindow to do script "" 
                 set wasActuallyCreated to true
                 delay 0.4 
                 set custom title of newTabInNewWindow to desiredFullTitle 
