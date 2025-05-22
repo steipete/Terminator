@@ -5,6 +5,49 @@ All notable changes to Terminator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.6.0] - 2025-05-22
+
+### Added
+- **🚀 Enhanced Architecture**: Completely refactored main function into modular components (`executeCommandInTerminal`, `parseArgumentsEnhanced`, `captureTerminalOutputWithRetry`)
+- **🛡️ Advanced Process Management**: Multi-strategy process interruption system with SIGINT → SIGTERM → SIGKILL progression and configurable delays
+- **🔍 Smart Output Capture**: Retry logic with 3 attempts, multiple capture methods (`history` with `contents` fallback), and comprehensive diagnostics
+- **✅ Enhanced Path Validation**: Regex-based flag detection for command patterns (`--`, `-[a-zA-Z]`), path existence checking, and 500-character limits
+- **⚡ Performance Optimizations**: Shell-based string trimming for large texts, adaptive polling (frequent → reduced frequency), optimized Terminal interactions
+- **📊 Comprehensive Status Reporting**: Detailed process interruption status, capture attempt logging, warning system for edge cases
+- **🔧 Enhanced Configuration System**: Centralized timing parameters, configurable retry mechanisms, adaptive delay multipliers
+
+### Changed
+- **Script Version**: Updated to v0.6.0 "T-1000" with significantly improved reliability and performance
+- **Argument Processing**: Complete rewrite with robust record handling and direct property assignment to prevent AppleScript variable conflicts
+- **Error Handling**: Enhanced error messages with specific resolution guidance and actionable suggestions
+- **String Processing**: Optimized `trimWhitespace` function with shell command fallback for large strings (>1000 characters)
+- **Process Detection**: Enhanced busy process identification with PID tracking and comprehensive shell detection
+
+### Enhanced
+- **Robustness**: Multiple fallback strategies for Terminal interaction failures, comprehensive edge case handling
+- **User Experience**: Detailed progress indication, enhanced status messages, improved error context
+- **Maintainability**: Modular function architecture, comprehensive documentation, clean separation of concerns
+- **Backward Compatibility**: 100% API compatibility with v0.5.1 while providing enhanced functionality
+
+### Technical Improvements
+- **Adaptive Polling**: Dynamic polling intervals that start frequent and reduce over time for optimal responsiveness
+- **Enhanced Record Handling**: Fixed AppleScript record manipulation issues that caused variable conflicts
+- **Multi-Method Capture**: Primary `history` property with `contents` property fallback for maximum reliability
+- **Process Interruption Matrix**: Configurable signal progression with success tracking and fallback to keyboard interrupts
+- **Comprehensive Validation**: Path format validation, task tag format checking, argument count verification
+
+### Performance Gains
+- **Reduced Terminal Interactions**: Batched operations and optimized AppleScript bridge usage
+- **Optimized String Operations**: Shell-based processing for large content with character-by-character fallback
+- **Smart Caching**: Reduced redundant Terminal state queries and process lookups
+- **Efficient Error Propagation**: Streamlined error handling with minimal overhead
+
+### Notes
+- Maintains full backward compatibility with existing v0.5.1 usage patterns
+- Output capture reliability remains a known limitation inherited from Terminal.app/AppleScript timing
+- All core functionality (session management, project grouping, automatic cd, process management) works reliably
+- Enhanced version provides significant improvements in robustness, performance, and user experience
+
 ## [v0.5.1] - 2025-01-22
 
 ### Added
