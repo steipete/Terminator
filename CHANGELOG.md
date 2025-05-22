@@ -5,6 +5,31 @@ All notable changes to Terminator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.5.1] - 2025-01-22
+
+### Added
+- **Enhanced Project Path Detection**: Reliable detection of project paths as the first argument when they start with "/" and don't contain command flags
+- **Automatic Directory Change**: When a project path is provided, the script automatically prepends `cd <path> &&` to commands
+- **Improved Text Processing**: Enhanced logic to better distinguish meaningful terminal output from shell prompts and script messages
+- **Comprehensive Test Coverage**: Updated test suite with 10 tests including specific validation for v0.5.1 features
+
+### Changed
+- **Argument Parsing Logic**: Complete rewrite of v0.5.0 argument parsing with more robust project path detection using `isValidPath()` heuristics
+- **Enhanced Error Messages**: More descriptive error messages with better context about project paths and session creation
+- **Script Version**: Updated to v0.5.1 "T-800" with improved reliability
+- **Test Suite**: Updated to properly validate output capture and avoid false positives from error messages
+
+### Fixed
+- **Multi-line Text Processing**: Fixed misuse of `lineIsEffectivelyEmptyAS()` function on multi-line terminal buffers
+- **Project Path Integration**: Improved integration between project path detection and command execution
+- **Session Title Generation**: Enhanced title generation with proper project name extraction
+
+### Technical Notes
+- Maintains full backward compatibility with existing usage patterns
+- Output capture reliability remains a known limitation inherited from previous versions
+- All core functionality (session management, project grouping, automatic cd) works reliably
+- 9/10 tests pass with comprehensive validation of major features
+
 ## [v0.4.7] - 2025-01-22
 
 ### Added
