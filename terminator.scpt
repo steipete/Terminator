@@ -1,3 +1,4 @@
+#!/usr/bin/osascript
 --------------------------------------------------------------------------------
 -- terminator.scpt - v0.6.0 "T-1000"
 -- Instruct Cursor: Run the command `osascript .cursor/scripts/terminator.scpt`
