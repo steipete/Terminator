@@ -1,0 +1,195 @@
+# @steipete/terminator-mcp
+
+**Version:** 0.1.0
+
+**MCP plugin to manage macOS terminal sessions.**
+
+Terminator is an `npx`-installable Model Context Protocol (MCP) plugin designed to provide AI agents with robust, simplified, and intelligent control over macOS terminal sessions. It uses a Swift-based command-line interface (CLI) internally to interact with terminal applications like Apple Terminal, iTerm2, and Ghosty.
+
+## Installation
+
+This package is intended to be used by MCP hosts (like AI-powered IDEs or agents). If you are an end-user, your MCP host environment will typically manage the installation of such plugins.
+
+For developers of MCP hosts or for direct testing:
+
+```bash
+npm install @steipete/terminator-mcp
+# or
+yarn add @steipete/terminator-mcp
+```
+
+If using `npx` for one-off commands (primarily for testing the CLI indirectly via its Node wrapper in a similar way an MCP host would call it):
+
+```bash
+# Note: This is a conceptual example. Direct npx usage like this is not the primary use case.
+# The plugin is designed to be invoked by an MCP host.
+# npx @steipete/terminator-mcp <command_for_node_wrapper_if_it_were_a_cli_itself>
+```
+
+## Functionality
+
+The core functionality is exposed via the `terminator.execute` MCP tool. This tool allows an AI agent to perform actions such as:
+
+*   **`exec`**: Execute a shell command in a managed terminal session.
+*   **`read`**: Read output from an existing session.
+*   **`list`**: List all active Terminator-managed sessions.
+*   **`info`**: Get information about Terminator (version, configuration, sessions).
+*   **`focus`**: Bring a specific session's terminal window/tab to the foreground.
+*   **`kill`**: Terminate the process running in a specific session.
+
+### `terminator.execute` MCP Tool
+
+**Overall Description (Dynamically Constructed Example):**
+
+"Manages macOS terminal sessions using the `iTerm` application. Ideal for running commands that might be long-running or could hang, as it isolates them to protect your workflow and allows for faster interaction. The session screen is automatically cleared before executing a new command or after a process is killed. Use this to execute shell commands, retrieve output, and manage terminal processes."
+
+**(Note: The actual terminal application mentioned in the description will depend on your `TERMINATOR_APP` environment variable.)**
+
+**Parameters:**
+
+*   `action: string` (Required): The operation to perform. Enum: `"exec"`, `"read"`, `"list"`, `"info"`, `"focus"`, `"kill"`.
+*   `options?: object` (All keys are `camelCase`):
+    *   `projectPath?: string`: Absolute path to the project directory. If not provided, an attempt is made to use the active project context from your IDE.
+    *   `tag?: string`: A unique identifier for the session. If `projectPath` is provided and `tag` is omitted, the last component of `projectPath` (sanitized) will be used. Required for `exec`, `read`,
+        `kill`, `focus`. Optional for `list` (filters by tag) and `info`.
+    *   `command?: string`: (For `action: "exec"`) The shell command to execute.
+    *   `background?: boolean`: (For `action: "exec"`, default: `false`) If `true`, command is long-running. If `false`, command is expected to complete.
+    *   `lines?: number`: (For `action: "exec"`, `"read"`, default: `100`) Maximum number of recent output lines to return.
+    *   `timeout?: number`: (For `action: "exec"`, in seconds) Overrides the default timeout. Applies to background startup or foreground completion based on the `background` flag.
+    *   `focus?: boolean`: (For `action: "exec"`, `"read"`, `"kill"`, `"focus"`, default: `true`) If true, `terminator` will attempt to bring the terminal application to the foreground and focus the relevant session.
+
+**Returns:** `Promise<{ success: boolean, message: string }>`
+
+## Configuration (Environment Variables)
+
+The `terminator` Swift CLI (and by extension, this NPM package) can be configured using the following environment variables. CLI flags passed to the Swift CLI directly take precedence over these.
+
+*   **`TERMINATOR_APP`**: The terminal application to use.
+    *   Examples: `"Terminal"`, `"iTerm"`, `"Ghosty"`
+    *   Default: `"Terminal"`
+    *   Note: The specified application must be installed and scriptable.
+
+*   **`TERMINATOR_LOG_LEVEL`**: Logging verbosity for the Swift CLI.
+    *   Values: `"debug"`, `"info"`, `"warn"`, `"error"`, `"fatal"` (case-insensitive)
+    *   Default: `"info"`
+
+*   **`TERMINATOR_LOG_DIR`**: Directory where the Swift CLI will write its log files.
+    *   Default: `~/Library/Logs/terminator-mcp/`
+    *   Fallback: A `terminator-mcp` subdirectory within the system's temporary directory (e.g., `/var/folders/.../terminator-mcp/`).
+
+*   **`TERMINATOR_WINDOW_GROUPING`**: Strategy for how new sessions group into windows/tabs.
+    *   `"off"`: Always aim for a new window unless an exact session (project+tag) already exists.
+    *   `"project"`: Group tabs into an existing window associated with the same `projectPath`. If no such window, creates a new one.
+    *   `"smart"`: (Default) Tries to find an existing window for the `projectPath`. If none, tries to find *any* Terminator-managed window. Otherwise, creates a new window. (See SDD for full logic).
+    *   Default: `"smart"`
+
+*   **`TERMINATOR_DEFAULT_LINES`**: Default maximum number of output lines to return for `exec` and `read` actions if not specified in the call.
+    *   Default: `100`
+
+*   **`TERMINATOR_BACKGROUND_STARTUP_SECONDS`**: Default timeout (in seconds) for commands run with `background: true` to produce initial output before the `exec` action returns.
+    *   Default: `5`
+
+*   **`TERMINATOR_FOREGROUND_COMPLETION_SECONDS`**: Default timeout (in seconds) for commands run with `background: false` to complete.
+    *   Default: `60`
+
+*   **`TERMINATOR_DEFAULT_FOCUS_ON_ACTION`**: Default behavior for whether to focus the terminal on actions like `exec`, `read`, `kill`, `focus`.
+    *   Values: `"true"`, `"false"` (case-insensitive, also accepts `"1"`, `"0"`, `"yes"`, `"no"`, etc.)
+    *   Default: `"true"`
+
+*   **`TERMINATOR_SIGINT_WAIT_SECONDS`**: Time (in seconds) the `kill` subcommand waits after sending SIGINT before escalating (during process termination or when `exec` stops a busy process).
+    *   Default: `2`
+
+*   **`TERMINATOR_SIGTERM_WAIT_SECONDS`**: Time (in seconds) the `kill` subcommand waits after sending SIGTERM before escalating to SIGKILL.
+    *   Default: `2`
+
+## Permissions Setup (macOS Automation)
+
+For `terminator` to control terminal applications like Apple Terminal or iTerm2, you need to grant it Automation permissions in macOS.
+
+1.  The first time `terminator` attempts to control an application (e.g., Terminal.app), macOS will prompt you to allow this. You **must click "OK"**. 
+    *   *(Screenshot of typical permission dialog would go here)*
+2.  If you accidentally click "Don't Allow" or want to manage these permissions:
+    *   Open **System Settings**. 
+    *   Go to **Privacy & Security** -> **Automation**.
+    *   Find the application that *ran* `terminator` (this might be your IDE, e.g., "Cursor", or "Terminal" itself if you ran a test script from there).
+    *   Ensure it has a checkbox enabled for the target terminal application (e.g., "Terminal", "iTerm").
+    *   *(Screenshot of Automation settings panel would go here)*
+
+To reset permissions for testing or troubleshooting (this will cause macOS to prompt again):
+
+```bash
+# Reset AppleEvents permissions for Terminal
+tccutil reset AppleEvents com.apple.Terminal
+
+# Reset AppleEvents permissions for iTerm2 (bundle ID might vary slightly)
+tccutil reset AppleEvents com.googlecode.iterm2
+
+# If terminator is run via an IDE like Cursor, you might also need to reset for that IDE:
+# tccutil reset AppleEvents com.example.cursor # Replace with actual bundle ID
+```
+
+**It is strongly recommended to grant permissions when prompted.**
+
+## Verification
+
+Once installed and permissions are set up (if needed for your chosen `TERMINATOR_APP`), you can verify the setup. The exact method depends on how you're integrating/testing the MCP plugin.
+
+If your MCP host allows sending raw commands, try:
+
+```json
+{
+  "tool_name": "terminator.execute",
+  "inputs": {
+    "action": "info"
+  }
+}
+```
+
+This should return information about `terminator`, including its version, the configured terminal app, and any active sessions.
+
+To test command execution (ensure `TERMINATOR_APP` is set, e.g., to `Terminal`):
+
+```json
+{
+  "tool_name": "terminator.execute",
+  "inputs": {
+    "action": "exec",
+    "options": {
+      "tag": "test-echo",
+      "command": "echo \"Hello from Terminator MCP!\" && sleep 2",
+      "background": false,
+      "focus": true
+    }
+  }
+}
+```
+
+You should see your configured terminal application open/focus, execute the echo, and the MCP call should return a success message with the output.
+
+## Troubleshooting
+
+*   **Permissions Issues:** The most common issue. Double-check **System Settings -> Privacy & Security -> Automation**. Ensure the calling application has permission to control the `TERMINATOR_APP`.
+*   **`TERMINATOR_APP` not found/supported:** Ensure the application specified in `TERMINATOR_APP` is installed and is one of the supported terminals (Apple Terminal, iTerm2, Ghosty). The CLI will error if it cannot interact with the specified app.
+*   **Log Files:** The Swift CLI component logs to files located by default in `~/Library/Logs/terminator-mcp/`. Check these logs for detailed error messages or debug information (set `TERMINATOR_LOG_LEVEL="debug"` for more verbosity).
+*   **Swift CLI not executable:** The `postinstall` script for this NPM package attempts to `chmod +x swift-bin/terminator`. If this failed, you might need to do it manually.
+
+## Privacy and Security
+
+*   Commands executed by `terminator` run with the same privileges as the user running the MCP host application.
+*   Be aware that shell commands and file paths (which could be considered Personally Identifiable Information - PII) might be logged by the Swift CLI if the `TERMINATOR_LOG_LEVEL` is set to `debug`. Consult the Swift CLI's `README.md` (once available) for more details on its logging behavior.
+
+## AI Tool Overview: `terminator.execute`
+
+| `action` | Applicable `options` keys                                                                 |
+| :------- | :---------------------------------------------------------------------------------------- |
+| `exec`   | `projectPath?`, `tag`, `command`, `background?`, `lines?`, `timeout?`, `focus?`           |
+| `read`   | `projectPath?`, `tag`, `lines?`, `focus?`                                                 |
+| `list`   | `tag?`                                                                                    |
+| `info`   | (No specific options, `tag?` currently not used)                                          |
+| `focus`  | `projectPath?`, `tag`, `focus?` (focus is implicitly true for this action)                |
+| `kill`   | `projectPath?`, `tag`, `focus?`                                                           |
+
+* `?` denotes optional.
+* All option keys are `camelCase`.
+* `tag` becomes required if `projectPath` is not provided for actions that need to identify a session.
+* Defaults for `lines`, `timeout`, `focus`, and `background` are taken from environment variables if not specified in the call. 

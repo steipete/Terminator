@@ -1,0 +1,38 @@
+{
+  "name": "@steipete/terminator-mcp",
+  "version": "0.1.0",
+  "description": "MCP plugin to manage macOS terminal sessions.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build:swift": "echo \"Placeholder: Build Swift CLI and copy to swift-bin. Example: (cd ../swift-cli && swift build -c release --arch arm64 --arch x86_64 --product terminator -Xswiftc -static-stdlib && mkdir -p ../npm-package/swift-bin && cp .build/apple/Products/Release/terminator ../npm-package/swift-bin/terminator)\"",
+    "build:ts": "tsc",
+    "build": "npm run build:swift && npm run build:ts",
+    "prepublishOnly": "npm run build",
+    "postinstall": "chmod +x swift-bin/terminator",
+    "start": "node dist/index.js",
+    "dev": "tsc-watch --onSuccess \"npm start\""
+  },
+  "author": "@steipete",
+  "license": "MIT",
+  "dependencies": {
+    "modelcontextprotocol": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsc-watch": "^6.0.0",
+    "typescript": "^5.0.0"
+  },
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "files": [
+    "dist",
+    "swift-bin",
+    "README.md"
+  ]
+} 

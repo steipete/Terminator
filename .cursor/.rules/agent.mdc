@@ -1,0 +1,9 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Minimize asking the user, work and continue until everything is done.
+If you are stuck somewhere, work on other parts.
+If you need a second opinion or do batch file operations, use claude code.
+the file mcp tool needs absolute paths.
