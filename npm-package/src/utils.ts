@@ -1,10 +1,11 @@
 // Provides utility functions for the Terminator MCP tool, including tag sanitization,
 // project path resolution, default tag generation, and formatting Swift CLI output for the AI.
-import { McpContext } from 'modelcontextprotocol'; // For McpContext
-import { SwiftCLIResult } from './swift-cli'; // For SwiftCLIResult
-import { debugLog, DEFAULT_BACKGROUND_STARTUP_SECONDS, DEFAULT_FOREGROUND_COMPLETION_SECONDS } from './config'; // For logging and defaults
-import * as path from 'path'; // For path.basename, path.sep, path.isAbsolute
-import * as fs from 'fs'; // For fs.statSync
+import * as fs from 'node:fs';
+// import { McpContext } from '@modelcontextprotocol/sdk/types.js'; 
+import { SwiftCLIResult } from './swift-cli.js'; // For SwiftCLIResult
+import { debugLog, DEFAULT_BACKGROUND_STARTUP_SECONDS, DEFAULT_FOREGROUND_COMPLETION_SECONDS } from './config.js'; // For logging and defaults
+import * as path from 'node:path'; // For path.basename, path.sep, path.isAbsolute
+import { RequestContextMeta } from './types.js';
 
 export function sanitizeTag(rawTag: string): string {
     if (!rawTag) return '';
@@ -12,11 +13,11 @@ export function sanitizeTag(rawTag: string): string {
     return rawTag.replace(/[^a-zA-Z0-9_\-]/g, '_').substring(0, 64);
 }
 
-export function resolveEffectiveProjectPath(currentPath: string | undefined, context: McpContext): string | undefined {
+export function resolveEffectiveProjectPath(currentPath: string | undefined, requestMeta: RequestContextMeta | undefined): string | undefined {
     let effectivePath = currentPath;
-    if (!effectivePath && context?.requestContext?.roots?.length > 0) {
-        const firstFileRoot = context.requestContext.roots.find((r: any) => r.uri?.scheme === 'file' && r.uri?.path && r.uri.path.length > 0);
-        if (firstFileRoot) {
+    if (!effectivePath && requestMeta?.roots && requestMeta.roots.length > 0) {
+        const firstFileRoot = requestMeta.roots.find((r) => r?.uri?.scheme === 'file' && r.uri.path && r.uri.path.length > 0);
+        if (firstFileRoot?.uri?.path) {
             effectivePath = firstFileRoot.uri.path;
             debugLog(`[Utils] Resolved effectiveProjectPath from MCP context: ${effectivePath}`);
         }

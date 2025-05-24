@@ -1,6 +1,6 @@
 // Manages configuration loading, environment variables, default values,
 // and a.tsliOption parsing for the Terminator MCP tool.
-import { TerminatorOptions } from './types';
+import { TerminatorOptions } from './types.js';
 
 // --- Utility Functions ---
 export function debugLog(message: string, ...args: any[]) {
@@ -80,15 +80,16 @@ export function getCanonicalOptions(rawOptions: { [key: string]: any } | undefin
 
     const rawKeys = Object.keys(rawOptions);
 
-    for (const canonicalKey in ALIAS_PRIORITY_MAP) {
-        const preferredAliases = ALIAS_PRIORITY_MAP[canonicalKey as keyof TerminatorOptions];
+    for (const key of Object.keys(ALIAS_PRIORITY_MAP)) {
+        const canonicalKey = key as keyof TerminatorOptions;
+        const preferredAliases = ALIAS_PRIORITY_MAP[canonicalKey];
         if (!preferredAliases) continue;
 
         for (const alias of preferredAliases) {
             const matchingRawKey = rawKeys.find(rk => rk.toLowerCase() === alias.toLowerCase());
             if (matchingRawKey) {
-                if (canonical[canonicalKey as keyof TerminatorOptions] === undefined) { // Only take the first matched alias based on priority
-                    canonical[canonicalKey as keyof TerminatorOptions] = rawOptions[matchingRawKey];
+                if (canonical[canonicalKey] === undefined) { // Only take the first matched alias based on priority
+                    canonical[canonicalKey] = rawOptions[matchingRawKey];
                     debugLog(`Lenient mapping: used raw key '${matchingRawKey}' for canonical '${canonicalKey}' with value:`, rawOptions[matchingRawKey]);
                 } else {
                     debugLog(`Lenient mapping: ignored additional raw key '${matchingRawKey}' for canonical '${canonicalKey}' as it was already set.`);
@@ -100,8 +101,9 @@ export function getCanonicalOptions(rawOptions: { [key: string]: any } | undefin
     // Log any unrecognized parameters
     for (const rawKey of rawKeys) {
         let recognized = false;
-        for (const canonicalKey in ALIAS_PRIORITY_MAP) {
-            const preferredAliases = ALIAS_PRIORITY_MAP[canonicalKey as keyof TerminatorOptions];
+        for (const key of Object.keys(ALIAS_PRIORITY_MAP)) {
+            const canonicalKey = key as keyof TerminatorOptions;
+            const preferredAliases = ALIAS_PRIORITY_MAP[canonicalKey];
             if (preferredAliases && preferredAliases.some(alias => alias.toLowerCase() === rawKey.toLowerCase())) {
                 recognized = true;
                 break;

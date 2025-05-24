@@ -1,0 +1,57 @@
+disabled_rules:
+  - todo # Or other rules you want to disable globally
+
+opt_in_rules:
+  - empty_count
+  - empty_enum_arguments
+  # Add other opt_in_rules if desired
+
+analyzer_rules: # Rules that require SourceKit
+  - explicit_self
+
+# General Configuration
+line_length:
+  warning: 160
+  error: 250 # Increased from 200 to allow some very long script lines as errors for now
+  ignores_comments: true
+  ignores_interpolated_strings: true
+  ignores_urls: true
+
+file_length:
+  warning: 500
+  error: 750
+
+type_body_length:
+  warning: 400
+  error: 600
+
+function_body_length:
+  warning: 75
+  error: 150 # Increased from 100 for errors
+
+function_parameter_count:
+  warning: 7
+  error: 10
+
+large_tuple:
+  warning: 3
+  error: 4
+  
+cyclomatic_complexity:
+  warning: 15
+  error: 25
+
+identifier_name:
+  min_length: # only min_length
+    warning: 2
+    error: 1
+  max_length: # only max_length
+    warning: 60
+    error: 80
+  excluded: # excluded via string array
+    - id
+    - URL
+    - GlobalAPIKey
+    - os # allow 'os' for ProcessInfo.processInfo.operatingSystemVersionString
+
+reporter: "xcode" # reporter type (xcode, json, csv, checkstyle, codeclimate, junit, html, emoji, sonarqube, markdown, github-actions-logging) 

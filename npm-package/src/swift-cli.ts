@@ -1,12 +1,17 @@
 // Handles the direct invocation and process management of the Swift CLI 'terminator' binary.
 // Includes logic for spawning the process, handling stdout/stderr, cancellation, and timeouts.
-import { spawn, ChildProcess } from 'child_process';
-import * as path from 'path';
-import { McpContext } from 'modelcontextprotocol'; // For context.signal
-import { debugLog } from './config'; // For logging
+import { spawn, ChildProcess } from 'node:child_process';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { debugLog } from './config.js'; // For logging
+// import * as pty from 'node-pty'; // node-pty might have issues with ESM, let's see if it's used
+import { SdkCallContext } from './types.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const SWIFT_CLI_NAME = 'terminator';
-export const SWIFT_CLI_PATH = path.resolve(__dirname, '..', 'swift-bin', SWIFT_CLI_NAME);
+export const SWIFT_CLI_PATH = path.resolve(__dirname, '..', 'bin', SWIFT_CLI_NAME);
 
 export interface SwiftCLIResult {
     stdout: string;
@@ -19,7 +24,7 @@ export interface SwiftCLIResult {
 export function invokeSwiftCLI(
     cliArgs: string[], 
     terminatorEnv: Record<string, string>, 
-    mcpContext: McpContext, // For cancellation signal
+    mcpContext: SdkCallContext, 
     wrapperTimeoutMs: number
 ): Promise<SwiftCLIResult> {
     debugLog(`Invoking Swift CLI: ${SWIFT_CLI_PATH} ${cliArgs.join(' ')} with env:`, terminatorEnv);

@@ -1,6 +1,7 @@
 # Node.js
 node_modules/
 dist/
+bin/
 
 # Logs
 *.log
@@ -9,5 +10,4 @@ yarn-debug.log*
 yarn-error.log*
 
 # Misc
-.DS_Store
-swift-bin/terminator 
+.DS_Store 

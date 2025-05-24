@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "es2020", 
-    "module": "commonjs", 
-    "lib": ["es2020"],
+    "target": "es2022", 
+    "module": "nodenext", 
+    "lib": ["es2022"],
     "declaration": true,
     "outDir": "./dist", 
     "rootDir": "./src", 
@@ -10,7 +10,6 @@
     "esModuleInterop": true,
     "skipLibCheck": true, 
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "sourceMap": true

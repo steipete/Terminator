@@ -1,7 +1,7 @@
 // Defines the main MCP tool, 'terminator.execute', including its schema,
 // description, and the central handler function that orchestrates calls to other modules.
-import { McpTool, McpContext } from 'modelcontextprotocol';
-import { TerminatorOptions, TerminatorExecuteParams, TerminatorResult } from './types'; 
+// import { McpTool, McpContext } from '@modelcontextprotocol/sdk/types.js';
+import { TerminatorOptions, TerminatorExecuteParams, TerminatorResult, SdkCallContext } from './types.js'; 
 import {
     CURRENT_TERMINAL_APP, 
     DEFAULT_BACKGROUND_STARTUP_SECONDS, 
@@ -11,15 +11,15 @@ import {
     DEFAULT_BACKGROUND_EXECUTION, 
     getCanonicalOptions,
     debugLog
-} from './config';
-import { invokeSwiftCLI, SwiftCLIResult } from './swift-cli'; 
+} from './config.js';
+import { invokeSwiftCLI, SwiftCLIResult } from './swift-cli.js'; 
 import {
     resolveEffectiveProjectPath,
     resolveDefaultTag,
     formatCliOutputForAI
-} from './utils';
+} from './utils.js';
 
-export const terminatorTool: McpTool<TerminatorExecuteParams, TerminatorResult> = {
+export const terminatorTool /*: McpTool<TerminatorExecuteParams, TerminatorResult>*/ = {
     name: 'terminator.execute',
     description: `Manages macOS terminal sessions using the ${CURRENT_TERMINAL_APP} application. Ideal for running commands that might be long-running or could hang, as it isolates them to protect your workflow and allows for faster interaction. The session screen is automatically cleared before executing a new command or after a process is killed. Use this to execute shell commands, retrieve output, and manage terminal processes.`,
     inputSchema: {
@@ -50,7 +50,7 @@ export const terminatorTool: McpTool<TerminatorExecuteParams, TerminatorResult> 
         },
         required: ['success', 'message'],
     },
-    async handler(params: TerminatorExecuteParams, context: McpContext): Promise<TerminatorResult> {
+    async handler(params: TerminatorExecuteParams, context: SdkCallContext): Promise<TerminatorResult> {
         debugLog(`Received action: ${params.action} with raw options:`, params.options);
 
         const action = params.action;
@@ -68,16 +68,26 @@ export const terminatorTool: McpTool<TerminatorExecuteParams, TerminatorResult> 
         let lines = typeof options.lines === 'number' ? options.lines : DEFAULT_LINES;
         if (typeof options.lines === 'string') lines = parseInt(options.lines, 10) || DEFAULT_LINES;
 
-        let background = typeof options.background === 'boolean' ? options.background : DEFAULT_BACKGROUND_EXECUTION;
-        if (typeof options.background === 'string') background = ['true', '1', 't', 'yes', 'on'].includes(options.background.toLowerCase());
+        let backgroundVal = options.background;
+        let background = DEFAULT_BACKGROUND_EXECUTION; // Default value
+        if (typeof backgroundVal === 'boolean') {
+            background = backgroundVal;
+        } else if (typeof backgroundVal === 'string') {
+            background = ['true', '1', 't', 'yes', 'on'].includes(backgroundVal.toLowerCase());
+        }
 
-        let focus = typeof options.focus === 'boolean' ? options.focus : DEFAULT_FOCUS_ON_ACTION;
-        if (typeof options.focus === 'string') focus = ['true', '1', 't', 'yes', 'on'].includes(options.focus.toLowerCase());
+        let focusVal = options.focus;
+        let focus = DEFAULT_FOCUS_ON_ACTION; // Default value
+        if (typeof focusVal === 'boolean') {
+            focus = focusVal;
+        } else if (typeof focusVal === 'string') {
+            focus = ['true', '1', 't', 'yes', 'on'].includes(focusVal.toLowerCase());
+        }
 
         let timeoutOverride = typeof options.timeout === 'number' ? options.timeout : undefined;
         if (typeof options.timeout === 'string') timeoutOverride = parseInt(options.timeout, 10) || undefined;
 
-        const effectiveProjectPath = resolveEffectiveProjectPath(projectPathOpt, context);
+        const effectiveProjectPath = resolveEffectiveProjectPath(projectPathOpt, undefined /* TODO: pass requestContext if available */);
         let tag = resolveDefaultTag(options.tag, effectiveProjectPath);
 
         if (!tag && ['exec', 'read', 'kill', 'focus'].includes(action)) {
