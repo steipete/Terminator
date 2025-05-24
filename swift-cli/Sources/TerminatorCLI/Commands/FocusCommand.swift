@@ -18,8 +18,15 @@ struct Focus: ParsableCommand {
             logLevelOption: globals.logLevel ?? (globals.verbose ? "debug" : nil),
             logDirOption: globals.logDir,
             groupingOption: globals.grouping,
-            defaultLinesOption: nil, backgroundStartupOption: nil, foregroundCompletionOption: nil,
-            defaultFocusOption: nil, sigintWaitOption: nil, sigtermWaitOption: nil
+            defaultLinesOption: nil,
+            backgroundStartupOption: nil,
+            foregroundCompletionOption: nil,
+            defaultFocusOption: nil,
+            sigintWaitOption: globals.sigintWaitSeconds,
+            sigtermWaitOption: globals.sigtermWaitSeconds,
+            defaultFocusOnKillOption: nil,
+            preKillScriptPathOption: nil,
+            reuseBusySessionsOption: nil
         )
         let config = TerminatorCLI.currentConfig!
         Logger.log(level: .info, "Executing 'focus' command for tag: \(tag)" + (projectPath != nil ? " in project: \(projectPath!)" : ""))
@@ -46,35 +53,31 @@ struct Focus: ParsableCommand {
                 Logger.log(level: .debug, "Attempting to instantiate GhostyControl for focus operation.")
                 // GhostyControl is not yet implemented
                 Logger.log(level: .error, "GhostyControl is not yet implemented.")
-                throw ExitCode(rawValue: ErrorCodes.configurationError)!
+                throw ExitCode(rawValue: ErrorCodes.configurationError)
                 
             case .unknown:
                 Logger.log(level: .error, "Unknown terminal application: \(config.terminalApp)")
-                throw ExitCode(rawValue: ErrorCodes.configurationError)!
+                throw ExitCode(rawValue: ErrorCodes.configurationError)
             }
             
             print("Terminator: Session '\(result.focusedSessionInfo.sessionIdentifier)' is now focused.")
-            throw ExitCode(rawValue: ErrorCodes.success)!
+            throw ExitCode(rawValue: ErrorCodes.success)
         } catch let error as TerminalControllerError {
-            var exitCode: Int32 = ErrorCodes.generalError
-            switch error {
-            case .sessionNotFound:
-                exitCode = ErrorCodes.sessionNotFound
-                fputs("Error: Session for tag '\(tag)' in project '\(projectPath ?? "N/A")' not found for focus.\n", stderr)
-            case .appleScriptError(let msg, _, _):
-                exitCode = ErrorCodes.appleScriptError
-                fputs("Error: AppleScript failed during focus operation. Details: \(msg)\n", stderr)
-            case .unsupportedTerminalApp:
-                exitCode = ErrorCodes.configurationError
-                fputs("Error: The configured terminal application ('\(config.terminalApp)') is not supported for focus operations.\n", stderr)
-            default:
-                exitCode = ErrorCodes.generalError
-                fputs("Error: Failed to focus session. Details: \(error.localizedDescription)\n", stderr)
+            let baseErrorMessage = "Error focusing session with tag \"\(tag)\""
+            let projectContext = projectPath != nil ? " for project \"\(projectPath!)\"" : ""
+            let detailedErrorMessage = "\(baseErrorMessage)\(projectContext). Details: \(error.localizedDescription)"
+            
+            fputs("\(detailedErrorMessage)\n", stderr)
+            if let scriptContent = error.scriptContent, !scriptContent.isEmpty {
+                fputs("Underlying script (if applicable):\n\(scriptContent)\n", stderr)
             }
-            throw ExitCode(rawValue: exitCode)!
+            throw ExitCode(rawValue: error.suggestedErrorCode)
         } catch {
-            fputs("Error: An unexpected error occurred during the focus operation: \(error.localizedDescription)\n", stderr)
-            throw ExitCode(rawValue: ErrorCodes.generalError)!
+            let baseErrorMessage = "An unexpected error occurred while trying to focus session with tag \"\(tag)\""
+            let projectContext = projectPath != nil ? " for project \"\(projectPath!)\"" : ""
+            let detailedErrorMessage = "\(baseErrorMessage)\(projectContext). Details: \(error.localizedDescription)"
+            fputs("\(detailedErrorMessage)\n", stderr)
+            throw ExitCode(rawValue: ErrorCodes.generalError)
         }
     }
 } 

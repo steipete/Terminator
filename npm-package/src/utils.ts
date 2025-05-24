@@ -1,3 +1,5 @@
+// Provides utility functions for the Terminator MCP tool, including tag sanitization,
+// project path resolution, default tag generation, and formatting Swift CLI output for the AI.
 import { McpContext } from 'modelcontextprotocol'; // For McpContext
 import { SwiftCLIResult } from './swift-cli'; // For SwiftCLIResult
 import { debugLog, DEFAULT_BACKGROUND_STARTUP_SECONDS, DEFAULT_FOREGROUND_COMPLETION_SECONDS } from './config'; // For logging and defaults

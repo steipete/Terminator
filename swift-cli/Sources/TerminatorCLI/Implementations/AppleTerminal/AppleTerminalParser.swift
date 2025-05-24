@@ -27,10 +27,12 @@ struct AppleTerminalParser {
                 continue
             }
             
-            let (projectHash, parsedTag) = SessionUtilities.parseSessionTitle(title: title)
+            let parsedInfo = SessionUtilities.parseSessionTitle(title: title)
+            let projectHash = parsedInfo?.projectHash
+            let parsedTag = parsedInfo?.tag
             
             guard let tag = parsedTag else {
-                Logger.log(level: .debug, "Skipping tab, not a Terminator session or failed to parse tag: \\(title)")
+                Logger.log(level: .warn, "[AppleTerminalParser] Could not parse tag from session title: \\(title)")
                 continue
             }
             
@@ -79,10 +81,12 @@ struct AppleTerminalParser {
 
         Logger.log(level: .info, "[AppleTerminalParser] Successfully parsed new tab. WindowID: \\(windowID), TabID: \\(tabID), TTY: \\(tty), Title: \\(actualTitleSet)")
         
-        let (parsedProjectHash, parsedTag) = SessionUtilities.parseSessionTitle(title: actualTitleSet)
+        let parsedInfoAfterCreation = SessionUtilities.parseSessionTitle(title: actualTitleSet)
+        let parsedProjectHash = parsedInfoAfterCreation?.projectHash
+        let parsedTag = parsedInfoAfterCreation?.tag
 
         guard let finalTag = parsedTag, finalTag == tag else {
-             let errorMsg = "Tag parsed from newly created tab ('\\(parsedTag ?? "nil")') does not match requested tag ('\\(tag)'). Full title set: '\\(actualTitleSet)'"
+             let errorMsg = "Tag parsed from newly created tab ('\(parsedTag ?? "unknown_parsed_tag")') does not match requested tag ('\(tag)'). Full title set: '\(actualTitleSet)'"
              Logger.log(level: .error, errorMsg)
              throw TerminalControllerError.internalError(details: errorMsg)
         }

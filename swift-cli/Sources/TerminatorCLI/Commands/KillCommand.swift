@@ -15,17 +15,24 @@ struct Kill: ParsableCommand {
     @Option(name: [.long, .customShort("f")], help: "Focus mode (force-focus, no-focus, auto-behavior) for any screen clearing/focusing done after kill.")
     var focusMode: String?
 
+    @Option(name: .long, help: "Focus on kill (true/false) for any screen clearing/focusing done after kill.")
+    var focusOnKill: Bool
+
     mutating func run() throws {
         TerminatorCLI.currentConfig = AppConfig(
             terminalAppOption: globals.terminalApp,
             logLevelOption: globals.logLevel ?? (globals.verbose ? "debug" : nil),
             logDirOption: globals.logDir,
             groupingOption: globals.grouping,
-            defaultLinesOption: nil, backgroundStartupOption: nil, foregroundCompletionOption: nil,
-            defaultFocusOption: nil, // Focus preference for ancillary actions like screen clearing
-            sigintWaitOption: nil, // Will use AppConfig defaults
-            sigtermWaitOption: nil, // Will use AppConfig defaults
-            defaultFocusOnKillOption: nil // Will use AppConfig defaults
+            defaultLinesOption: nil, // Not relevant for Kill
+            backgroundStartupOption: nil, // Not relevant for Kill
+            foregroundCompletionOption: nil, // Not relevant for Kill
+            defaultFocusOption: focusMode != nil ? (AppConfig.FocusCLIArgument(rawValue: focusMode!) != .noFocus) : nil, // Convert string to bool? based on focusMode
+            sigintWaitOption: globals.sigintWaitSeconds,
+            sigtermWaitOption: globals.sigtermWaitSeconds,
+            defaultFocusOnKillOption: focusOnKill, // Pass from Kill command option
+            preKillScriptPathOption: nil, // No direct CLI option for pre-kill script here
+            reuseBusySessionsOption: nil  // No direct CLI option for reuse here
         )
         let config = TerminatorCLI.currentConfig!
         Logger.log(level: .info, "Executing 'kill' command for tag: \(tag)" + (projectPath != nil ? " in project: \(projectPath!)" : ""))
@@ -50,7 +57,7 @@ struct Kill: ParsableCommand {
             case .appleTerminal:
                 let appleTerminalController = AppleTerminalControl(config: config, appName: config.terminalApp)
                 result = try appleTerminalController.killProcessInSession(params: killParams)
-            case .iTerm:
+            case .iterm:
                 let iTermController = ITermControl(config: config, appName: config.terminalApp)
                 result = try iTermController.killProcessInSession(params: killParams)
             case .ghosty:

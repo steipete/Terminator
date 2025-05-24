@@ -6,7 +6,7 @@ struct Read: ParsableCommand {
 
     @OptionGroup var globals: TerminatorCLI.GlobalOptions
 
-    @Argument(help: "Unique identifier for the session.")
+    @Option(name: .long, help: "Tag identifying the session.")
     var tag: String
 
     @Option(name: .long, help: "Absolute path to the project directory. Env: TERMINATOR_PROJECT_PATH")
@@ -27,17 +27,28 @@ struct Read: ParsableCommand {
             defaultLinesOption: lines,
             backgroundStartupOption: nil,
             foregroundCompletionOption: nil,
-            defaultFocusOption: nil,
-            sigintWaitOption: nil,
-            sigtermWaitOption: nil
+            defaultFocusOption: focusMode != nil ? (AppConfig.FocusCLIArgument(rawValue: focusMode!) != .noFocus) : nil,
+            sigintWaitOption: globals.sigintWaitSeconds,
+            sigtermWaitOption: globals.sigtermWaitSeconds,
+            defaultFocusOnKillOption: nil,
+            preKillScriptPathOption: nil,
+            reuseBusySessionsOption: nil
         )
         let config = TerminatorCLI.currentConfig!
         
         Logger.log(level: .info, "Reading output... Tag: \(tag), Project: \(projectPath ?? "N/A")")
         let resolvedLines = lines ?? config.defaultLines
-        let resolvedFocusPreference = AppConfig.FocusCLIArgument(rawValue: focusMode ?? config.defaultFocusOnAction ? "auto-behavior" : "no-focus") ?? .autoBehavior
+        
+        let focusPreferenceString: String
+        if let fm = focusMode, !fm.isEmpty {
+            focusPreferenceString = fm
+        } else {
+            focusPreferenceString = config.defaultFocusOnAction ? "auto-behavior" : "no-focus"
+        }
+        let resolvedFocusPreference = AppConfig.FocusCLIArgument(rawValue: focusPreferenceString) ?? .autoBehavior
+        
         Logger.log(level: .debug, "  Lines to read: \(resolvedLines)")
-        Logger.log(level: .debug, "  Focus Mode CLI: \(focusMode ?? "not set, using default logic") -> \(resolvedFocusPreference.rawValue)")
+        Logger.log(level: .debug, "  Focus Mode CLI: \(focusMode ?? "nil") -> \(resolvedFocusPreference.rawValue)")
 
         let readParams = ReadSessionParams(
             projectPath: projectPath,
@@ -71,10 +82,21 @@ struct Read: ParsableCommand {
             print(result.output)
             throw ExitCode(ErrorCodes.success)
         } catch let error as TerminalControllerError {
-            fputs("Error reading session output: \(error.localizedDescription)\nScript (if applicable):\n\(error.scriptContent ?? "N/A")\n", stderr)
+            let baseErrorMessage = "Error reading session output for tag \"\(tag)\""
+            let projectContext = projectPath != nil ? " in project \"\(projectPath!)\"" : ""
+            let detailedErrorMessage = "\(baseErrorMessage)\(projectContext). Details: \(error.localizedDescription)"
+            
+            fputs("\(detailedErrorMessage)\n", stderr)
+            if let scriptContent = error.scriptContent, !scriptContent.isEmpty {
+                fputs("Underlying script (if applicable):\n\(scriptContent)\n", stderr)
+            }
             throw ExitCode(error.suggestedErrorCode)
         } catch {
-            fputs("An unexpected error occurred while reading session: \(error.localizedDescription)\n", stderr)
+            let baseErrorMessage = "An unexpected error occurred while reading session output for tag \"\(tag)\""
+            let projectContext = projectPath != nil ? " in project \"\(projectPath!)\"" : ""
+            let detailedErrorMessage = "\(baseErrorMessage)\(projectContext). Details: \(error.localizedDescription)"
+
+            fputs("\(detailedErrorMessage)\n", stderr)
             throw ExitCode(ErrorCodes.generalError)
         }
     }

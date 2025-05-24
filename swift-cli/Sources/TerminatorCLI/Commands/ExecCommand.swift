@@ -27,18 +27,24 @@ struct Exec: ParsableCommand { // Changed from TerminatorSubcommand to ParsableC
     @Option(name: .long, help: "Focus behavior (force-focus, no-focus, auto-behavior). Env: TERMINATOR_DEFAULT_FOCUS_ON_ACTION") 
     var focusMode: String?
 
+    @Flag(name: .long, help: "Reuse busy sessions. Default: false.")
+    var reuseBusySession: Bool = false
+
     mutating func run() throws {
         TerminatorCLI.currentConfig = AppConfig(
             terminalAppOption: globals.terminalApp,
             logLevelOption: globals.logLevel ?? (globals.verbose ? "debug" : nil),
             logDirOption: globals.logDir,
             groupingOption: globals.grouping,
-            defaultLinesOption: lines, // Pass directly from option
-            backgroundStartupOption: background ? timeout : nil, // Pass timeout if background
-            foregroundCompletionOption: !background ? timeout : nil, // Pass timeout if foreground
-            defaultFocusOption: nil, // Focus is handled by focusMode string
-            sigintWaitOption: nil, // These are global, not per-command usually
-            sigtermWaitOption: nil
+            defaultLinesOption: lines,
+            backgroundStartupOption: background ? timeout : nil,
+            foregroundCompletionOption: !background ? timeout : nil,
+            defaultFocusOption: focusMode != nil ? (AppConfig.FocusCLIArgument(rawValue: focusMode!) != .noFocus) : nil,
+            sigintWaitOption: globals.sigintWaitSeconds,
+            sigtermWaitOption: globals.sigtermWaitSeconds,
+            defaultFocusOnKillOption: nil,
+            preKillScriptPathOption: nil,
+            reuseBusySessionsOption: reuseBusySession
         )
         let config = TerminatorCLI.currentConfig!
 
@@ -52,11 +58,18 @@ struct Exec: ParsableCommand { // Changed from TerminatorSubcommand to ParsableC
         
         let resolvedLines = lines ?? config.defaultLines
         let resolvedTimeout = timeout ?? (background ? config.backgroundStartupSeconds : config.foregroundCompletionSeconds)
-        let resolvedFocusPreference = AppConfig.FocusCLIArgument(rawValue: focusMode ?? config.defaultFocusOnAction ? "auto-behavior" : "no-focus") ?? .autoBehavior
+        
+        let focusPreferenceString: String
+        if let fm = focusMode, !fm.isEmpty {
+            focusPreferenceString = fm
+        } else {
+            focusPreferenceString = config.defaultFocusOnAction ? "auto-behavior" : "no-focus"
+        }
+        let resolvedFocusPreference = AppConfig.FocusCLIArgument(rawValue: focusPreferenceString) ?? .autoBehavior
 
         Logger.log(level: .debug, "  Lines to capture: \(resolvedLines)")
         Logger.log(level: .debug, "  Timeout: \(resolvedTimeout)s")
-        Logger.log(level: .debug, "  Focus Mode CLI: \(focusMode ?? "not set, using default logic") -> \(resolvedFocusPreference.rawValue)")
+        Logger.log(level: .debug, "  Focus Mode CLI: \(focusMode ?? "nil") -> \(resolvedFocusPreference.rawValue)")
 
         let execParams = ExecuteCommandParams(
             projectPath: projectPath,
@@ -75,7 +88,7 @@ struct Exec: ParsableCommand { // Changed from TerminatorSubcommand to ParsableC
             case .appleTerminal:
                 let appleTerminalController = AppleTerminalControl(config: config, appName: config.terminalApp)
                 result = try appleTerminalController.executeCommand(params: execParams)
-            case .iTerm:
+            case .iterm:
                 let iTermController = ITermControl(config: config, appName: config.terminalApp)
                 result = try iTermController.executeCommand(params: execParams)
             case .ghosty:

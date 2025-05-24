@@ -42,13 +42,13 @@ struct InfoOutput: Codable {
         var asDictionary: [String: Any?] { // Changed to Any? to handle nil projectPath more directly
              return [
                 "session_identifier": sessionIdentifier,
-                "project_path": projectPath, // projectPath is already String?
+                "project_path": projectPath as Any,
                 "tag": tag,
-                "full_tab_title": fullTabTitle,
-                "tty": tty,
+                "full_tab_title": fullTabTitle as Any,
+                "tty": tty as Any,
                 "is_busy": isBusy,
-                "window_identifier": windowIdentifier,
-                "tab_identifier": tabIdentifier
+                "window_identifier": windowIdentifier as Any,
+                "tab_identifier": tabIdentifier as Any
              ].compactMapValues { $0 } // Removes keys with nil values if that's desired, or handle NSNull in AnyCodable
         }
     }

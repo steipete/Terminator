@@ -148,8 +148,8 @@ struct ProcessUtilities {
         // 1. SIGINT
         if killProcessGroup(pgid: pgid, signal: SIGINT) {
             message += " Sent SIGINT to PGID \(pgid)."
-            Logger.log(level: .debug, "Sent SIGINT to PGID \(pgid). Waiting for \(config.sigintWait)s...")
-            Thread.sleep(forTimeInterval: config.sigintWait)
+            Logger.log(level: .debug, "Sent SIGINT to PGID \(pgid). Waiting for \(config.sigintWaitSeconds)s...")
+            Thread.sleep(forTimeInterval: TimeInterval(config.sigintWaitSeconds))
             if !isProcessGroupRunning(pgid: pgid) { 
                 killSuccess = true
                 message += " Process group terminated after SIGINT."
@@ -163,8 +163,8 @@ struct ProcessUtilities {
         if !killSuccess {
             if killProcessGroup(pgid: pgid, signal: SIGTERM) {
                 message += " Sent SIGTERM to PGID \(pgid)."
-                Logger.log(level: .debug, "Sent SIGTERM to PGID \(pgid). Waiting for \(config.sigtermWait)s...")
-                Thread.sleep(forTimeInterval: config.sigtermWait)
+                Logger.log(level: .debug, "Sent SIGTERM to PGID \(pgid). Waiting for \(config.sigtermWaitSeconds)s...")
+                Thread.sleep(forTimeInterval: TimeInterval(config.sigtermWaitSeconds))
                 if !isProcessGroupRunning(pgid: pgid) {
                     killSuccess = true
                     message += " Process group terminated after SIGTERM."
@@ -200,7 +200,6 @@ struct ProcessUtilities {
     static func tailLogFileForMarker(logFilePath: String, marker: String, timeoutSeconds: Int, linesToCapture: Int, controlIdentifier: String = "LogTailing") -> (output: String, timedOut: Bool) {
         Logger.log(level: .debug, "[\\(controlIdentifier)] Tailing \\\\(logFilePath) for marker '\\\\(marker)' with timeout \\\\(timeoutSeconds)s")
         let startTime = Date()
-        var timedOut = false
         var capturedOutput = ""
 
         while Date().timeIntervalSince(startTime) < Double(timeoutSeconds) {
@@ -230,7 +229,6 @@ struct ProcessUtilities {
             }
         }
 
-        timedOut = true
         Logger.log(level: .warn, "[\\(controlIdentifier)] Timeout waiting for marker '\\\\(marker)' in \\\\(logFilePath).")
         if FileManager.default.fileExists(atPath: logFilePath) {
             do {
@@ -257,7 +255,7 @@ extension ProcessUtilities {
     /// Attempts to kill a process group with SIGTERM, then SIGKILL if it persists, specifically for command timeouts.
     /// - Parameters:
     ///   - pgid: The process group ID to kill.
-    ///   - config: AppConfig containing timeout values (uses `sigtermWait`).
+    ///   - config: AppConfig containing timeout values (uses `sigtermWaitSeconds`).
     ///   - message: An inout string to append messages about the kill process.
     /// - Returns: `true` if the process group was confirmed to be terminated, `false` otherwise.
     static func attemptExecuteTimeoutKill(pgid: pid_t, config: AppConfig, message: inout String) -> Bool {
@@ -267,8 +265,8 @@ extension ProcessUtilities {
         // 1. SIGTERM
         if killProcessGroup(pgid: pgid, signal: SIGTERM) {
             message += " Sent SIGTERM to PGID \(pgid) due to command timeout."
-            Logger.log(level: .debug, "Sent SIGTERM to PGID \(pgid). Waiting for \(config.sigtermWait)s...")
-            Thread.sleep(forTimeInterval: config.sigtermWait) // Use sigtermWait from config
+            Logger.log(level: .debug, "Sent SIGTERM to PGID \(pgid). Waiting for \(config.sigtermWaitSeconds)s...")
+            Thread.sleep(forTimeInterval: TimeInterval(config.sigtermWaitSeconds)) // Use sigtermWaitSeconds from config
             if !isProcessGroupRunning(pgid: pgid) {
                 killSuccess = true
                 message += " Process group terminated after SIGTERM."

@@ -55,7 +55,7 @@ struct TerminalAppController {
     // MARK: - Public API Methods (Forwarded to specificController)
 
     func listSessions(filterByTag: String? = nil) throws -> [TerminalSessionInfo] {
-        Logger.log(level: .info, "[Controller Facade] Listing sessions for \(appName) with filter: \(filterByTag ?? "N/A")")
+        Logger.log(level: .info, "[Controller Facade] Listing sessions for \(appName) with filter: \(filterByTag ?? "none")")
         return try specificController.listSessions(filterByTag: filterByTag)
     }
 

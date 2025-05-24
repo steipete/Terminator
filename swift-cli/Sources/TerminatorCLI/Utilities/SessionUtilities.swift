@@ -62,7 +62,7 @@ struct SessionUtilities {
             return nil
         }
 
-        Logger.log(level: .debug, "Parsed title - Project Hash: \(projectHash ?? "N/A"), Tag: \(tag ?? "N/A"), TTY: \(ttyPath ?? "N/A"), PID: \(pid != nil ? String(pid!) : "N/A")")
+        Logger.log(level: .debug, "Parsed title - Project Hash: \(projectHash ?? "nil"), Tag: \(tag ?? "nil"), TTY: \(ttyPath ?? "nil"), PID: \(pid != nil ? String(pid!) : "nil")")
         return ParsedTitleInfo(projectHash: projectHash, tag: tag, ttyPath: ttyPath, pid: pid)
     }
     
@@ -107,9 +107,11 @@ struct SessionUtilities {
     static func generateUserFriendlySessionIdentifier(projectPath: String?, tag: String) -> String {
         let projectName: String
         if let projPath = projectPath, !projPath.isEmpty {
-            projectName = (projPath as NSString).lastPathComponent
-            if projectName.isEmpty { // Should not happen if projPath is not empty, but as a safeguard
+            let baseName = (projPath as NSString).lastPathComponent
+            if baseName.isEmpty { // Should not happen if projPath is not empty, but as a safeguard
                 projectName = "UnnamedProject"
+            } else {
+                projectName = baseName
             }
         } else {
             projectName = "Global"

@@ -1,8 +1,10 @@
+// Manages configuration loading, environment variables, default values,
+// and a.tsliOption parsing for the Terminator MCP tool.
 import { TerminatorOptions } from './types';
 
-// --- Utility Functions (originally in index.ts) ---
+// --- Utility Functions ---
 export function debugLog(message: string, ...args: any[]) {
-    // In a real scenario, this would use a proper logger controlled by an env var
+    // Basic debug logging, active if TERMINATOR_WRAPPER_DEBUG is true.
     if (process.env.TERMINATOR_WRAPPER_DEBUG === 'true') {
         console.debug(`[TerminatorMCP Wrapper DEBUG] ${message}`, ...args);
     }
@@ -33,7 +35,7 @@ export const DEFAULT_LINES = getEnvVarInt('TERMINATOR_DEFAULT_LINES', 100);
 export const DEFAULT_FOCUS_ON_ACTION = getEnvVarBool('TERMINATOR_DEFAULT_FOCUS_ON_ACTION', true);
 export const DEFAULT_BACKGROUND_EXECUTION = getEnvVarBool('TERMINATOR_DEFAULT_BACKGROUND_EXECUTION', false); // Added from SDD 3.2.3
 
-// For lenient key matching (SDD 3.1.2)
+// Defines mappings from various raw option keys (case-insensitive) to canonical TerminatorOptions keys.
 export const PARAM_ALIASES: { [key: string]: keyof TerminatorOptions } = {
     timeout: 'timeout',
     timeoutseconds: 'timeout',
@@ -60,8 +62,8 @@ export const PARAM_ALIASES: { [key: string]: keyof TerminatorOptions } = {
     execute: 'command',
 };
 
-// Define the order of preference for applying aliases if multiple map to the same canonical key.
-// Canonical keys should ideally appear first if they are also used as aliases.
+// Defines the order of preference for aliases mapping to the same canonical key.
+// For each canonical key, lists its recognized aliases in preferred order.
 export const ALIAS_PRIORITY_MAP: { [key in keyof TerminatorOptions]?: string[] } = {
     timeout: ['timeout', 'timeoutseconds', 'timeout_seconds', 'customtimeout'],
     lines: ['lines', 'outputlines', 'maxlines'],

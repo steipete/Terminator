@@ -28,26 +28,25 @@ struct GhostyScripts {
         isForeground: Bool,
         shouldActivate: Bool
     ) -> String {
-        let quotedLogFilePath = "'\(outputLogFilePath.replacingOccurrences(of: "'", with: "'\\''"))'"
+        let quotedLogFilePathForShell = "'" + outputLogFilePath.replacingOccurrences(of: "'", with: "'\\\\''") + "'"
+        // Escape completion marker for AppleScript string comparison (basic for Ghosty)
+        let escapedCompletionMarkerForAppleScript = completionMarker.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
+
         var shellCommandToExecute: String
 
         if commandToRunRaw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            // If command is empty, Ghosty might just need to be focused or prepared.
-            // For now, we'll assume an empty `do script` is harmless or Ghosty handles it.
             shellCommandToExecute = ""
         } else if isForeground {
-            let shellEscapedCommand = commandToRunRaw.replacingOccurrences(of: "'", with: "'\\''")
-            shellCommandToExecute = "((\(shellEscapedCommand)) > \(quotedLogFilePath) 2>&1; echo '\(completionMarker)' >> \(quotedLogFilePath))"
+            let shellEscapedCommand = commandToRunRaw.replacingOccurrences(of: "'", with: "'\\\\''")
+            shellCommandToExecute = "((\(shellEscapedCommand)) > \(quotedLogFilePathForShell) 2>&1; echo '\(escapedCompletionMarkerForAppleScript)' >> \(quotedLogFilePathForShell))"
         } else { // Background
-            let shellEscapedCommand = commandToRunRaw.replacingOccurrences(of: "'", with: "'\\''")
-            shellCommandToExecute = "((\(shellEscapedCommand)) > \(quotedLogFilePath) 2>&1) & disown"
+            let shellEscapedCommand = commandToRunRaw.replacingOccurrences(of: "'", with: "'\\\\''")
+            shellCommandToExecute = "((\(shellEscapedCommand)) > \(quotedLogFilePathForShell) 2>&1) & disown"
         }
         
         let appleScriptSafeShellCommand = shellCommandToExecute
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "\"", with: "\\\"")
-
-        let activateBlock = shouldActivate ? "activate" : ""
 
         // Ghosty might always operate on the current/frontmost window/session or create a new one.
         // It might not support `do script in specific_tab`.
@@ -64,7 +63,7 @@ struct GhostyScripts {
                 do script "\(appleScriptSafeShellCommand)"
                 return "OK_COMMAND_SUBMITTED"
             on error errMsg number errNum
-                return "ERROR: Ghosty execute failed: " & errMsg & " (Number: " & errNum & ")"
+                return "ERROR: Ghosty execute failed: " & errMsg & " (Number: " & (errNum as string) & ")"
             end try
         end tell
         """
@@ -88,7 +87,7 @@ struct GhostyScripts {
                     return "Ghosty has no active window to read from."
                 end if
             on error errMsg number errNum
-                return "ERROR: Ghosty read failed: " & errMsg & " (Number: " & errNum & ")"
+                return "ERROR: Ghosty read failed: " & errMsg & " (Number: " & (errNum as string) & ")"
             end try
         end tell
         """
@@ -115,13 +114,13 @@ struct GhostyScripts {
                 -- Attempt 1: Keystroke (most common for less scriptable apps)
                 -- tell application "System Events" to keystroke "c" using control down
                 -- Attempt 2: Sending ETX character (Ctrl+C) via do script if Ghosty supports it
-                do script "\\003" -- ETX character (Ctrl+C)
+                do script "\\\\003" -- ETX character (Ctrl+C)
                 return "OK_CTRL_C_SENT"
             on error errMsg number errNum
                 -- Fallback if `do script ETX` fails, try keystroke if System Events is reliable enough.
                 -- However, direct System Events calls from within another app's tell block can be tricky.
                 -- For V1, just report the error from `do script ETX`.
-                return "ERROR: Ghosty Ctrl+C failed: " & errMsg & " (Number: " & errNum & ")"
+                return "ERROR: Ghosty Ctrl+C failed: " & errMsg & " (Number: " & (errNum as string) & ")"
             end try
         end tell
         """
@@ -138,7 +137,7 @@ struct GhostyScripts {
                 do script "clear"
                 return "OK_CLEAR_SENT"
             on error errMsg number errNum
-                return "ERROR: Ghosty clear screen failed: " & errMsg & " (Number: " & errNum & ")"
+                return "ERROR: Ghosty clear screen failed: " & errMsg & " (Number: " & (errNum as string) & ")"
             end try
         end tell
         """
@@ -152,7 +151,7 @@ struct GhostyScripts {
             try
                 return version
             on error errMsg number errNum
-                error "Failed to get Ghosty version. Error \(errNum): \(errMsg)"
+                error "Failed to get Ghosty version. Error " & (errNum as string) & ": " & errMsg
             end try
         end tell
         """

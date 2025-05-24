@@ -34,7 +34,7 @@ struct AppleTerminalScripts {
                     end repeat
                 end repeat
             on error errMsg number errNum
-                error "AppleScript Error (Code \(errNum)): " & errMsg
+                error "AppleScript Error (Code " & (errNum as string) & "): " & errMsg
             end try
         end tell
         return output_list
@@ -50,6 +50,8 @@ struct AppleTerminalScripts {
         projectHashForGrouping: String?  // Used if windowGrouping is "project"
     ) -> String {
         // Note: Original script from AppleTerminalControl.findOrCreateSessionForAppleTerminal (creation part)
+        let escapedNewSessionTitle = newSessionTitle.replacingOccurrences(of: "\"", with: "\\\"").replacingOccurrences(of: "'", with: "\\'") // AS escape
+        
         var script = """
         tell application "\(appName)"
             if not running then
@@ -134,7 +136,7 @@ struct AppleTerminalScripts {
                 delay 0.2 
                 set newTabTTY to tty of newTab
                 set newTabID to id of newTab as string
-                set custom title of newTab to "\(newSessionTitle.replacingOccurrences(of: "\\"", with: "\\\\""))" // Escape title for AS string
+                set custom title of newTab to "\(escapedNewSessionTitle)" 
                 
                 if \(shouldActivateTerminal) then
                     set selected tab to newTab
@@ -142,7 +144,7 @@ struct AppleTerminalScripts {
             end tell
             set newWindowID to id of targetWindow as string
             
-            return {newWindowID, newTabID, newTabTTY, "\(newSessionTitle.replacingOccurrences(of: "\\"", with: "\\\\""))"}
+            return {newWindowID, newTabID, newTabTTY, "\(escapedNewSessionTitle)"}
         end tell
         """
         return script
@@ -180,87 +182,82 @@ struct AppleTerminalScripts {
         shouldActivateTerminal: Bool
     ) -> String {
         // Quote log file path for shell
-        let quotedLogFilePath = "'" + outputLogFilePath.replacingOccurrences(of: "'", with: "'\\''") + "'"
+        let quotedLogFilePathForShell = "'" + outputLogFilePath.replacingOccurrences(of: "'", with: "'\\\\''") + "'"
+        // Escape log file path for usage inside an AppleScript string literal that will be part of a JSON string
+        let escapedLogPathForAppleScriptJSON = outputLogFilePath.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
+        // Escape completion marker for AppleScript string comparison
+        let escapedCompletionMarkerForAppleScript = completionMarker.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
 
         var shellCommandToExecute: String
         if isForeground {
             // For foreground: ( (actual_command) > logfile 2>&1; echo MARKER >> logfile )
-            // Apple Terminal's `do script` doesn't usually need `& disown` for the script itself to return.
-            let shellEscapedCommand = commandToRunRaw.replacingOccurrences(of: "'", with: "'\\''")
-            shellCommandToExecute = "((\(shellEscapedCommand)) > \(quotedLogFilePath) 2>&1; echo '\\(completionMarker)' >> \(quotedLogFilePath))"
+            let shellEscapedCommand = commandToRunRaw.replacingOccurrences(of: "'", with: "'\\\\''")
+            shellCommandToExecute = "((\(shellEscapedCommand)) > \(quotedLogFilePathForShell) 2>&1; echo '\(completionMarker)' >> \(quotedLogFilePathForShell))"
         } else {
             // For background: ( (actual_command) > logfile 2>&1 ) & disown
-            let shellEscapedCommand = commandToRunRaw.replacingOccurrences(of: "'", with: "'\\''")
-            shellCommandToExecute = "((\(shellEscapedCommand)) > \(quotedLogFilePath) 2>&1) & disown"
+            let shellEscapedCommand = commandToRunRaw.replacingOccurrences(of: "'", with: "'\\\\''")
+            shellCommandToExecute = "((\(shellEscapedCommand)) > \(quotedLogFilePathForShell) 2>&1) & disown"
         }
         
-        // Escape the entire shell command for embedding in AppleScript's `do script`
         let appleScriptSafeShellCommand = shellCommandToExecute
-            .replacingOccurrences(of: "\\\\", with: "\\\\\\\\") // \ -> \\
-            .replacingOccurrences(of: "\"", with: "\\\\\"")   // " -> \"
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
 
         let scriptCore = """
-        set targetWindow to first window whose id is \\(windowID)
-        set targetTab to first tab of targetWindow whose id is \\(tabID)
+        set targetWindow to first window whose id is \(windowID)
+        set targetTab to first tab of targetWindow whose id is \(tabID)
         
         if targetWindow is missing value or targetTab is missing value then
-            -- Ensure log_file path is escaped for JSON string
-            set EscapedLogPathForJSON to "\\(outputLogFilePath.replacingOccurrences(of: "\\"", with: "\\\\""))"
-            return "{\"status\": \"ERROR\", \"message\": \"Session find error: Could not find window ID \\(windowID) or tab ID \\(tabID). Executing in default context not supported for file redirection.\", \"log_file\": \"" & EscapedLogPathForJSON & "\"}"
+            return "{\\\"status\\\": \\\"ERROR\\\", \\\"message\\\": \\\"Session find error: Could not find window ID \(windowID) or tab ID \(tabID). Executing in default context not supported for file redirection.\\\", \\\"log_file\\\": \\\"\(escapedLogPathForAppleScriptJSON)\\\"}"
         end if
 
-        if \\(shouldActivateTerminal) then
+        if \(shouldActivateTerminal) then
             activate
             tell targetWindow to set selected tab to targetTab
         end if
         
-        do script "\\(appleScriptSafeShellCommand)" in targetTab
+        do script "\(appleScriptSafeShellCommand)" in targetTab
         """
 
         var finalScript = """
-        tell application "\\(appName)"
+        tell application "\(appName)"
             if not running then error "Terminal is not running."
             try
-                \\(scriptCore)
+                \(scriptCore)
         """
 
         if isForeground {
-            // For Apple Terminal, foreground marker check is more reliant on tab history within timeout.
             finalScript += """
                 set foundMarker to false
                 set startTime to current date
-                repeat while ((current date) - startTime) < \\(timeoutSeconds) seconds and not foundMarker
+                repeat while ((current date) - startTime) < \(timeoutSeconds) seconds and not foundMarker
                     delay 0.2 -- Polling interval
                     try
                         set tabHistory to history of targetTab
-                        if tabHistory contains "\\(completionMarker.replacingOccurrences(of: "\\"", with: "\\\\\""))" then -- Escape marker for AS string comparison
+                        if tabHistory contains "\(escapedCompletionMarkerForAppleScript)" then
                             set foundMarker to true
                         end if
                     on error errMsg number errNum
-                        log "AppleTerminal: Error reading history during marker poll: " & errMsg
+                        log "AppleTerminal: Error reading history during marker poll: " & errMsg & " (Number: " & (errNum as string) & ")"
                         delay 0.5
                     end try
                 end repeat
 
-                set EscapedLogPathForJSON to "\\(outputLogFilePath.replacingOccurrences(of: "\\"", with: "\\\\""))"
                 if not foundMarker then
-                    return "{\"status\": \"TIMEOUT\", \"message\": \"Timeout waiting for foreground completion marker in tab history. Log file \\(\\"" & EscapedLogPathForJSON & "\\\") may contain output.\", \"log_file\": \"" & EscapedLogPathForJSON & "\"}"
+                    return "{\\\"status\\\": \\\"TIMEOUT\\\", \\\"message\\\": \\\"Timeout waiting for foreground completion marker in tab history. Log file (\\\"\(escapedLogPathForAppleScriptJSON)\\\") may contain output.\\\", \\\"log_file\\\": \\\"\(escapedLogPathForAppleScriptJSON)\\\"}"
                 end if
                 
-                return "{\"status\": \"OK_SUBMITTED_FG\", \"message\": \"Foreground command submitted, completion marker found in history.\", \"log_file\": \"" & EscapedLogPathForJSON & "\"}"
+                return "{\\\"status\\\": \\\"OK_SUBMITTED_FG\\\", \\\"message\\\": \\\"Foreground command submitted, completion marker found in history.\\\", \\\"log_file\\\": \\\"\(escapedLogPathForAppleScriptJSON)\\\"}"
             on error e
-                 set EscapedLogPathForJSON to "\\(outputLogFilePath.replacingOccurrences(of: "\\"", with: "\\\\""))"
-                 return "{\"status\": \"ERROR\", \"message\": \"Error during foreground execution: " & (e as string) & "\", \"log_file\": \"" & EscapedLogPathForJSON & "\"}"
+                 return "{\\\"status\\\": \\\"ERROR\\\", \\\"message\\\": \\\"Error during foreground execution: \" & (e as string) & \"\\\", \\\"log_file\\\": \\\"\(escapedLogPathForAppleScriptJSON)\\\"}"
             end try
         end tell
         """
         } else { // Background
             finalScript += """
-                set EscapedLogPathForJSON to "\\(outputLogFilePath.replacingOccurrences(of: "\\"", with: "\\\\""))"
-                return "{\"status\": \"OK_SUBMITTED_BG\", \"message\": \"Background command submitted.\", \"log_file\": \"" & EscapedLogPathForJSON & "\"}"
+                return "{\\\"status\\\": \\\"OK_SUBMITTED_BG\\\", \\\"message\\\": \\\"Background command submitted.\\\", \\\"log_file\\\": \\\"\(escapedLogPathForAppleScriptJSON)\\\"}"
             on error e
-                 set EscapedLogPathForJSON to "\\(outputLogFilePath.replacingOccurrences(of: "\\"", with: "\\\\""))"
-                 return "{\"status\": \"ERROR\", \"message\": \"Error during background submission: " & (e as string) & "\", \"log_file\": \"" & EscapedLogPathForJSON & "\"}"
+                 return "{\\\"status\\\": \\\"ERROR\\\", \\\"message\\\": \\\"Error during background submission: \" & (e as string) & \"\\\", \\\"log_file\\\": \\\"\(escapedLogPathForAppleScriptJSON)\\\"}"
             end try
         end tell
         """
@@ -318,30 +315,30 @@ struct AppleTerminalScripts {
     static func findPgidScriptForKill(ttyNameOnly: String) -> String {
         // Escaping for "do shell script" needs to be handled by the caller if this string is embedded.
         // This returns a raw shell command string.
-        return "ps -t \\(ttyNameOnly) -o pgid=,stat=,pid=,command= | awk \'$2 ~ /\\\\+/ {print $1 \" \" $3}\' | head -n 1"
+        return "ps -t \(ttyNameOnly) -o pgid=,stat=,pid=,command= | awk '$2 ~ /\\+/ {print $1 \" \" $3}' | head -n 1"
     }
 
     static func getPGIDAppleScript(ttyNameOnly: String) -> String {
         let shellCommand = findPgidScriptForKill(ttyNameOnly: ttyNameOnly)
         // Ensure the shell command itself is properly escaped for inclusion in an AppleScript string
-        let escapedShellCommand = shellCommand.replacingOccurrences(of: "\\\\", with: "\\\\\\\\").replacingOccurrences(of: "\\"", with: "\\\\\\\"")
-        return "do shell script \\"\\(escapedShellCommand)\\""
+        let escapedShellCommand = shellCommand.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
+        return "do shell script \"\(escapedShellCommand)\""
     }
 
     static func clearSessionScript(appName: String, windowID: String, tabID: String, shouldActivateTerminal: Bool) -> String {
         return """
-        tell application "\\(appName)"
+        tell application "\(appName)"
             if not running then return "ERROR_CLEAR: Terminal is not running."
             
             try
-                set targetWindow to first window whose id is \\(windowID)
-                set targetTab to first tab of targetWindow whose id is \\(tabID)
+                set targetWindow to first window whose id is \(windowID)
+                set targetTab to first tab of targetWindow whose id is \(tabID)
                 
                 if targetWindow is missing value or targetTab is missing value then
-                    return "ERROR_CLEAR: Could not find window ID \\(windowID) or tab ID \\(tabID) for clearing."
+                    return "ERROR_CLEAR: Could not find window ID \(windowID) or tab ID \(tabID) for clearing."
                 end if
                 
-                if \\(shouldActivateTerminal) then
+                if \(shouldActivateTerminal) then
                     activate
                     tell targetWindow to set selected tab to targetTab
                 end if
@@ -351,7 +348,7 @@ struct AppleTerminalScripts {
                 delay 0.2 -- Give time for clear to execute
                 
                 -- Step 2: Best-effort Cmd+K
-                if \\(shouldActivateTerminal) then
+                if \(shouldActivateTerminal) then
                     try
                         tell application "System Events" to keystroke "k" using command down
                     on error
@@ -372,18 +369,18 @@ struct AppleTerminalScripts {
         // `do script` with the character itself can work.
         let activateBlock = shouldActivateTerminal ? "activate" : ""
         return """
-        tell application "\\(appName)"
+        tell application "\(appName)"
             if not running then error "Terminal is not running."
-            \\(activateBlock)
+            \(activateBlock)
             
-            set targetWindow to first window whose id is \\(windowID)
-            set targetTab to first tab of targetWindow whose id is \\(tabID)
+            set targetWindow to first window whose id is \(windowID)
+            set targetTab to first tab of targetWindow whose id is \(tabID)
             
             if targetWindow is missing value or targetTab is missing value then
-                error "Could not find window ID \\(windowID) or tab ID \\(tabID) for sending Ctrl+C."
+                error "Could not find window ID \(windowID) or tab ID \(tabID) for sending Ctrl+C."
             end if
 
-            if \\(shouldActivateTerminal) then
+            if \(shouldActivateTerminal) then
                 tell targetWindow to set selected tab to targetTab
             end if
             

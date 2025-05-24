@@ -1,5 +1,13 @@
 import Foundation
 import AppKit // Required for NSAppleScript
+import UniformTypeIdentifiers // Import for UTType
+import CoreServices // For AE* constants
+
+// Define AppleScript type constants using their FourCharCode UInt32 literal values
+let typeText: DescType = 0x54455854       // 'TEXT' = kAEText
+let typeBoolean: DescType = 0x626F6F6C    // 'bool' = kAEBoolean  
+let typeInteger: DescType = 0x6C6F6E67    // 'long' = kAELongInteger
+let typeNull: DescType = 0x6E756C6C       // 'null' = kAENull
 
 enum AppleScriptError: Error {
     case scriptCompilationFailed(errorInfo: [String: Any])

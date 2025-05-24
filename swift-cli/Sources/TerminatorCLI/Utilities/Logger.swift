@@ -37,7 +37,7 @@ struct Logger {
         // Log shutdown initiation if possible (might be tricky if logger itself is what's shutting down)
         // Logger.log(level: .debug, "Logger shutting down. Closing file handle.") 
         // Consider fputs for this specific message if regular log path is compromised during shutdown
-        fputs("[\(timestamp()) DEBUG] Logger shutting down. Closing file handle.\n", stdout) // Or stderr
+        fputs("[\(timestamp()) DEBUG] Logger shutting down. Closing file handle.\n", stderr) // Changed from stdout to stderr
 
         fileHandleQueue.sync { // Ensure all pending writes are done
             do {

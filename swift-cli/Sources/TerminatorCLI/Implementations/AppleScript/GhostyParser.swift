@@ -26,26 +26,19 @@ struct GhostyParser {
     // The executeCommand will handle the "creation" which is likely just using Ghosty's current context.
     // This function might not be directly called if GhostyControl.executeCommand handles session prep directly.
     // However, if a script *were* to return something like a TTY (highly speculative):
-    static func parseCreateNewSessionGhostyOutput(
-        resultData: Any,
-        scriptContent: String,
-        projectPath: String?,
-        tag: String,
-        customTitle: String // Title we attempted to set or use
-    ) throws -> TerminalSessionInfo {
-        Logger.log(level: .warn, "[GhostyParser] parseCreateNewSessionGhostyOutput is largely a placeholder for Ghosty.")
+    static func parseCreateNewSessionGhostyOutput(_ output: String, projectPath: String?, tag: String) -> TerminalSessionInfo {
         // Default placeholder session info, as Ghosty is unlikely to return detailed creation data.
         return TerminalSessionInfo(
-             sessionIdentifier: SessionUtilities.generateSessionIdentifier(projectPath: projectPath, tag: tag),
+             sessionIdentifier: SessionUtilities.generateUserFriendlySessionIdentifier(projectPath: projectPath, tag: tag),
              projectPath: projectPath,
              tag: tag,
-             fullTabTitle: customTitle,
-             tty: "/dev/ghosty_placeholder_tty", // Generic placeholder
-             isBusy: false,
-             windowIdentifier: "GHOSTY_SINGLE_WINDOW", // Assumption
+             fullTabTitle: "Ghosty Session: \(tag)", // Placeholder title
+             tty: nil, // Ghosty might not expose this easily
+             isBusy: false, // Assume not busy initially
+             windowIdentifier: nil, // Ghosty might not have scriptable windows/tabs
              tabIdentifier: nil, // Ghosty might not have scriptable tabs
-             pidFromTitle: nil,
-             ttyFromTitle: nil
+             ttyFromTitle: nil, // Correct order
+             pidFromTitle: nil  // Correct order
          )
     }
     

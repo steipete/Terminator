@@ -15,9 +15,11 @@ struct AppConfig {
     let sigtermWaitSeconds: Int
     let defaultFocusOnKill: Bool
     let defaultBackgroundExecution: Bool
+    let preKillScriptPath: String?
+    let reuseBusySessions: Bool
 
     enum LogLevel: String, CaseIterable, ExpressibleByArgument {
-        case debug, info, warn, error, none
+        case debug, info, warn, error, fatal, none
         
         // To allow comparison, e.g., level.rawValue >= currentLogLevel.rawValue
         var intValue: Int {
@@ -26,7 +28,8 @@ struct AppConfig {
             case .info: return 1
             case .warn: return 2
             case .error: return 3
-            case .none: return 4
+            case .fatal: return 4
+            case .none: return 5
             }
         }
     }
@@ -62,6 +65,7 @@ struct AppConfig {
         case forceFocus = "force-focus"
         case noFocus = "no-focus"
         case autoBehavior = "auto-behavior" 
+        case `default`
     }
 
     init(
@@ -75,31 +79,37 @@ struct AppConfig {
         defaultFocusOption: Bool?,
         sigintWaitOption: Int?,
         sigtermWaitOption: Int?,
-        defaultFocusOnKillOption: Bool?
+        defaultFocusOnKillOption: Bool?,
+        preKillScriptPathOption: String?,
+        reuseBusySessionsOption: Bool?
     ) {
-        self.terminalApp = AppConfig.resolve(
+        let resolvedTerminalApp = AppConfig.resolve(
             cli: terminalAppOption,
             env: ProcessInfo.processInfo.environment["TERMINATOR_APP"],
             default: "Terminal"
         )
 
         // Validate Ghosty if selected (SDD 3.2.3)
-        if self.terminalAppEnum == .ghosty {
+        var validatedTerminalApp = resolvedTerminalApp
+        if resolvedTerminalApp.lowercased() == "ghosty" || resolvedTerminalApp.lowercased() == "ghosty.app" {
             let ghostyValidationScript = "tell application \"Ghosty\" to get version"
             let result = AppleScriptBridge.runAppleScript(script: ghostyValidationScript)
             switch result {
             case .success(let versionInfo):
-                Logger.log(level: .debug, "Ghosty validation successful. Version: \(versionInfo)")
+                // Ghosty validation successful - will log after Logger is configured
+                _ = versionInfo
             case .failure(let error):
                 fputs("Error: TERMINATOR_APP set to Ghosty, but Ghosty failed validation. Error: \(error.localizedDescription). Check if Ghosty is installed and scriptable.\n", stderr)
                 fputs("Terminator will proceed as if Ghosty is not correctly configured (which may lead to exit code 2).\n", stderr)
                 // Mark terminalApp as invalid so subsequent checks can handle it, potentially leading to exit code 2.
                 // A more robust solution might be to make AppConfig.init throwing or have a separate validation function.
-                self.terminalApp = "INVALID_GHOSTY_CONFIGURATION"
+                validatedTerminalApp = "INVALID_GHOSTY_CONFIGURATION"
                 // The terminalAppEnum will now also return .unknown due to this change, which should be handled
                 // by TerminalAppController or TerminatorCLI.validate().
             }
         }
+        
+        self.terminalApp = validatedTerminalApp
 
         let resolvedLogLevelString = AppConfig.resolve(
             cli: logLevelOption,
@@ -181,6 +191,18 @@ struct AppConfig {
             default: false // Default to foreground
         )
         
+        self.preKillScriptPath = AppConfig.resolve(
+            cli: preKillScriptPathOption,
+            env: ProcessInfo.processInfo.environment["TERMINATOR_PRE_KILL_SCRIPT_PATH"],
+            default: nil // Default to nil, meaning no script
+        )
+
+        self.reuseBusySessions = AppConfig.resolveBool(
+            cli: reuseBusySessionsOption,
+            env: ProcessInfo.processInfo.environment["TERMINATOR_REUSE_BUSY_SESSIONS"],
+            default: false // Default to false, do not reuse busy sessions unless explicitly configured
+        )
+        
         // Logger.configure is called from TerminatorCLI.validate() after AppConfig is initialized.
         // Logging AppConfig details is also done from TerminatorCLI.validate() or where AppConfig is instantiated.
     }
@@ -192,6 +214,12 @@ struct AppConfig {
         return defaultValue
     }
     
+    static func resolve(cli: String?, env: String?, default defaultValue: String?) -> String? {
+        if let cliValue = cli { return cliValue.isEmpty && defaultValue == nil ? nil : cliValue }
+        if let envValue = env { return envValue.isEmpty && defaultValue == nil ? nil : envValue }
+        return defaultValue
+    }
+
     static func resolve(cli: String?, env: String?, default defaultValue: String) -> String {
         if let cliValue = cli, !cliValue.isEmpty { return cliValue }
         if let envValue = env, !envValue.isEmpty { return envValue }
@@ -254,10 +282,10 @@ struct AppConfig {
     }
     
     var asDictionary: [String: Any] {
-        return [
+        let configDict: [String: Any?] = [
             "TERMINATOR_APP": terminalApp,
-            "TERMINATOR_LOG_LEVEL": logLevel.rawValue,
             "TERMINATOR_LOG_DIR": logDir.path,
+            "TERMINATOR_LOG_LEVEL": logLevel.rawValue,
             "TERMINATOR_WINDOW_GROUPING": windowGrouping.rawValue,
             "TERMINATOR_DEFAULT_LINES": defaultLines,
             "TERMINATOR_BACKGROUND_STARTUP_SECONDS": backgroundStartupSeconds,
@@ -266,7 +294,10 @@ struct AppConfig {
             "TERMINATOR_SIGINT_WAIT_SECONDS": sigintWaitSeconds,
             "TERMINATOR_SIGTERM_WAIT_SECONDS": sigtermWaitSeconds,
             "TERMINATOR_DEFAULT_FOCUS_ON_KILL": defaultFocusOnKill,
-            "TERMINATOR_DEFAULT_BACKGROUND_EXECUTION": defaultBackgroundExecution
+            "TERMINATOR_DEFAULT_BACKGROUND_EXECUTION": defaultBackgroundExecution,
+            "TERMINATOR_PRE_KILL_SCRIPT_PATH": preKillScriptPath,
+            "TERMINATOR_REUSE_BUSY_SESSIONS": reuseBusySessions
         ]
+        return configDict.compactMapValues { $0 }
     }
 } 

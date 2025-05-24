@@ -16,15 +16,30 @@ struct Info: ParsableCommand {
             logLevelOption: globals.logLevel ?? (globals.verbose ? "debug" : nil),
             logDirOption: globals.logDir,
             groupingOption: globals.grouping,
-            defaultLinesOption: nil, 
-            backgroundStartupOption: nil, 
-            foregroundCompletionOption: nil,
-            defaultFocusOption: nil, 
-            sigintWaitOption: nil, 
-            sigtermWaitOption: nil
+            defaultLinesOption: nil, // Not relevant for Info
+            backgroundStartupOption: nil, // Not relevant for Info
+            foregroundCompletionOption: nil, // Not relevant for Info
+            defaultFocusOption: nil, // Not relevant for Info
+            sigintWaitOption: nil, // Global
+            sigtermWaitOption: nil, // Global
+            defaultFocusOnKillOption: nil,
+            preKillScriptPathOption: nil,
+            reuseBusySessionsOption: nil
         )
         let config = TerminatorCLI.currentConfig!
         Logger.log(level: .info, "Executing 'info' command. JSON output: \(json)")
+
+        // Check for unknown terminal app at the beginning
+        if config.terminalAppEnum == .unknown {
+            if json {
+                // Simplify the JSON output with a manually constructed JSON string
+                print("{\"version\": \"\(TerminatorCLI.APP_VERSION)\", \"error\": \"Unknown terminal application: \(config.terminalApp)\", \"activeConfiguration\": { \"TERMINATOR_APP\": \"\(config.terminalApp)\" } }")
+                throw ExitCode(ErrorCodes.configurationError)
+            } else {
+                fputs("Error: Unknown terminal application: \(config.terminalApp)\n", stderr)
+                throw ExitCode(ErrorCodes.configurationError)
+            }
+        }
 
         var sessions: [TerminalSessionInfo] = []
         
@@ -34,10 +49,14 @@ struct Info: ParsableCommand {
             do {
                 sessions = try appleTerminalController.listSessions(filterByTag: nil)
             } catch let error as TerminalControllerError {
-                fputs("Warning: Failed to list active sessions for info command. Error: \(error.localizedDescription)\n", stderr)
+                if !json {
+                    fputs("Warning: Failed to list active sessions for info command. Error: \(error.localizedDescription)\n", stderr)
+                }
                 // Continue to show version and config
             } catch {
-                fputs("Warning: An unexpected error occurred while listing sessions: \(error.localizedDescription)\n", stderr)
+                if !json {
+                    fputs("Warning: An unexpected error occurred while listing sessions: \(error.localizedDescription)\n", stderr)
+                }
             }
             
         case .iterm:
@@ -45,34 +64,44 @@ struct Info: ParsableCommand {
             do {
                 sessions = try iTermController.listSessions(filterByTag: nil)
             } catch let error as TerminalControllerError {
-                fputs("Warning: Failed to list active sessions for info command. Error: \(error.localizedDescription)\n", stderr)
+                if !json {
+                    fputs("Warning: Failed to list active sessions for info command. Error: \(error.localizedDescription)\n", stderr)
+                }
                 // Continue to show version and config
             } catch {
-                fputs("Warning: An unexpected error occurred while listing sessions: \(error.localizedDescription)\n", stderr)
+                if !json {
+                    fputs("Warning: An unexpected error occurred while listing sessions: \(error.localizedDescription)\n", stderr)
+                }
             }
             
         case .ghosty:
             // GhostyControl is not yet implemented, so this is stubbed
-            fputs("Warning: Ghosty terminal is not yet fully supported for listing sessions.\n", stderr)
+            if !json {
+                fputs("Warning: Ghosty terminal is not yet fully supported for listing sessions.\n", stderr)
+            }
             // When GhostyControl is available:
             // let ghostyController = GhostyControl(config: config, appName: config.terminalApp)
             // do {
             //     sessions = try ghostyController.listSessions(filterByTag: nil)
             // } catch let error as TerminalControllerError {
-            //     fputs("Warning: Failed to list active sessions for info command. Error: \(error.localizedDescription)\n", stderr)
+            //     if !json {
+            //         fputs("Warning: Failed to list active sessions for info command. Error: \(error.localizedDescription)\n", stderr)
+            //     }
             // } catch {
-            //     fputs("Warning: An unexpected error occurred while listing sessions: \(error.localizedDescription)\n", stderr)
+            //     if !json {
+            //         fputs("Warning: An unexpected error occurred while listing sessions: \(error.localizedDescription)\n", stderr)
+            //     }
             // }
             
         case .unknown:
-            Logger.log(level: .error, "Unknown terminal application: \(config.terminalApp)")
-            throw ExitCode(ErrorCodes.configurationError)
+            // This should not be reached if the earlier check is working correctly
+            throw ExitCode(ErrorCodes.internalError)
         }
 
         let codableSessions = sessions.map { InfoOutput.SessionInfo(from: $0).asDictionary }
 
         let infoOutput = InfoOutput(
-            version: APP_VERSION,
+            version: TerminatorCLI.APP_VERSION,
             managedSessions: codableSessions.map { $0.mapValues { AnyCodable($0) } }, // Ensure AnyCodable handles Any? from asDictionary
             activeConfiguration: config.asDictionary.mapValues { AnyCodable($0) }
         )
@@ -89,12 +118,13 @@ struct Info: ParsableCommand {
                     throw ExitCode(ErrorCodes.generalError)
                 }
             } catch {
-                fputs("Error: Failed to generate JSON for info: \(error.localizedDescription)\n", stderr)
-                print("{\"version\": \"\(APP_VERSION)\", \"error\": \"Failed to retrieve full info, check logs.\"}")
+                let specificEncodingError = error // Capture the specific encoding error
+                fputs("Error: Failed to generate JSON for info: \(specificEncodingError.localizedDescription)\nSpecific Encoding Error: \(specificEncodingError)\n", stderr)
+                print("{\"version\": \"\(TerminatorCLI.APP_VERSION)\", \"error\": \"Failed to retrieve full info, check logs.\"}")
                 throw ExitCode(ErrorCodes.generalError)
             }
         } else {
-            print("Terminator CLI Version: \(APP_VERSION)")
+            print("Terminator CLI Version: \(TerminatorCLI.APP_VERSION)")
             print("--- Active Configuration ---")
             // Use .sorted to ensure consistent output order for testing/readability
             for (key, value) in config.asDictionary.sorted(by: { $0.key < $1.key }) {
@@ -118,6 +148,5 @@ struct Info: ParsableCommand {
                 }
             }
         }
-         throw ExitCode(ErrorCodes.success) // Explicitly throw success for clean exit
     }
 } 

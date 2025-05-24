@@ -1,3 +1,5 @@
+// Handles the direct invocation and process management of the Swift CLI 'terminator' binary.
+// Includes logic for spawning the process, handling stdout/stderr, cancellation, and timeouts.
 import { spawn, ChildProcess } from 'child_process';
 import * as path from 'path';
 import { McpContext } from 'modelcontextprotocol'; // For context.signal
@@ -89,7 +91,7 @@ export function invokeSwiftCLI(
             }
             // The 'close' event should eventually fire and resolve the promise.
             // To be safe, if close doesn't fire after a short delay, resolve with timeout status.
-            // This secondary timeout is to prevent hangs if SIGKILL + close event fails.
+            // This secondary timeout is to prevent hangs if SIGKILL + close event fails to trigger 'close' promptly.
             setTimeout(() => {
                  if (!mcpCancelled) { // Check again in case MCP cancellation happened during this small delay
                     resolve({ 

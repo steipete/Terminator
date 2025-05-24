@@ -3,7 +3,7 @@ import Foundation
 // Result struct for the executeCommand operation
 struct ExecuteCommandResult {
     let sessionInfo: TerminalSessionInfo // Information about the session used/created
-    let output: String                   // Captured output (stdout/stderr combined)
+    let output: String?                  // Captured output (stdout/stderr combined) - Can be nil
     let exitCode: Int?                   // Exit code of the command, if applicable and obtainable
     let pid: pid_t?                      // PID of the executed command/shell process
     let wasKilledByTimeout: Bool

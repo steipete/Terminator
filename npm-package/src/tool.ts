@@ -1,3 +1,5 @@
+// Defines the main MCP tool, 'terminator.execute', including its schema,
+// description, and the central handler function that orchestrates calls to other modules.
 import { McpTool, McpContext } from 'modelcontextprotocol';
 import { TerminatorOptions, TerminatorExecuteParams, TerminatorResult } from './types'; 
 import {

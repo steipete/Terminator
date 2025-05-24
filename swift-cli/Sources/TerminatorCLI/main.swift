@@ -1,21 +1,17 @@
 import ArgumentParser
 import Foundation
 
-// Global app version - can be updated by a build script
-let APP_VERSION = "0.1.0"
+// Ensure logger is flushed and file closed on exit
+atexit_b { Logger.shutdown() }
 
-// MARK: - Error Handling (SDD 3.2.8)
-
-// MARK: - Main CLI Structure
-@main
 struct TerminatorCLI: ParsableCommand {
+    static let APP_VERSION = "0.1.0"
     static var configuration = CommandConfiguration(
         abstract: "A Swift CLI to manage macOS terminal sessions for an MCP plugin.",
         version: APP_VERSION,
         subcommands: [Exec.self, Read.self, List.self, Info.self, Focus.self, Kill.self],
         defaultSubcommand: Info.self
     )
-
 
     // Global options, to be usable by subcommands if they embed this type.
     struct GlobalOptions: ParsableArguments {
@@ -36,6 +32,12 @@ struct TerminatorCLI: ParsableCommand {
 
         @Option(name: .long, help: "Default focus behavior for kill actions (true, false). Env: TERMINATOR_DEFAULT_FOCUS_ON_KILL")
         var defaultFocusOnKill: Bool?
+
+        @Option(name: .long, help: "Seconds to wait for SIGINT to gracefully kill a process. Env: TERMINATOR_SIGINT_WAIT_SECONDS")
+        var sigintWaitSeconds: Int?
+
+        @Option(name: .long, help: "Seconds to wait for SIGTERM after SIGINT before sending SIGKILL. Env: TERMINATOR_SIGTERM_WAIT_SECONDS")
+        var sigtermWaitSeconds: Int?
     }
     
     @OptionGroup var globals: GlobalOptions
@@ -48,21 +50,21 @@ struct TerminatorCLI: ParsableCommand {
             logLevelOption: globals.logLevel ?? (globals.verbose ? "debug" : nil),
             logDirOption: globals.logDir,
             groupingOption: globals.grouping,
-            defaultLinesOption: nil, 
+            defaultLinesOption: nil,
             backgroundStartupOption: nil,
             foregroundCompletionOption: nil,
             defaultFocusOption: nil,
-            sigintWaitOption: nil,
-            sigtermWaitOption: nil,
-            defaultFocusOnKillOption: globals.defaultFocusOnKill
+            sigintWaitOption: globals.sigintWaitSeconds,
+            sigtermWaitOption: globals.sigtermWaitSeconds,
+            defaultFocusOnKillOption: globals.defaultFocusOnKill,
+            preKillScriptPathOption: nil,
+            reuseBusySessionsOption: nil
         )
         
         // Configure the logger now that AppConfig is available.
         // Assuming Logger has a static configure method.
-        // Adjust alsoPrintToStdOut as needed, true seems reasonable for a CLI tool.
-        Logger.configure(level: TerminatorCLI.currentConfig.logLevel, 
-                         directory: TerminatorCLI.currentConfig.logDir, 
-                         alsoPrintToStdOut: true) 
+        Logger.configure(level: TerminatorCLI.currentConfig.logLevel,
+                         directory: TerminatorCLI.currentConfig.logDir) 
         
         Logger.log(level: .debug, "Global options validated. Config loaded. Logger configured.")
         Logger.log(level: .debug, "Using Swift version: \(swiftVersion())")
@@ -77,18 +79,12 @@ struct TerminatorCLI: ParsableCommand {
             
             let errorMsg = "Configuration Error: TERMINATOR_APP is set to Ghosty, but Ghosty is not installed, not scriptable, or failed validation. Please check your Ghosty installation and macOS Automation Permissions."
             fputs("Error: \(errorMsg)\n", stderr)
-            Logger.log(level: .error, errorMsg) // Log it as well, in case logger is partially working
-            throw ExitCode(ErrorCodes.configurationError) // Exit code 2
+            Logger.log(level: .error, errorMsg)
+            throw ExitCode(ErrorCodes.configurationError)
         }
     }
-    
-    // This is called automatically by ArgumentParser on exit
-    static func main() {
-        // Ensure logger is flushed and file closed on exit
-        atexit_b { Logger.shutdown() }
-        super.main()
-    }
-    
+
+
     private func swiftVersion() -> String {
         #if swift(>=6.0)
         "Swift 6.0 or later"
@@ -100,17 +96,18 @@ struct TerminatorCLI: ParsableCommand {
         "Older Swift version"
         #endif
     }
-    
+
     private func macOSVersion() -> String {
         let os = ProcessInfo.processInfo.operatingSystemVersion
         return "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
     }
 }
 
-
 // MARK: - Subcommands
 
 // MARK: - Command Definitions (SDD 3.2.5)
+
+TerminatorCLI.main() // Explicitly call main
 
 
 

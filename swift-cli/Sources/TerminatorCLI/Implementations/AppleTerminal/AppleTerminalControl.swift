@@ -11,7 +11,7 @@ struct AppleTerminalControl: TerminalControlling {
     }
 
     func listSessions(filterByTag: String?) throws -> [TerminalSessionInfo] {
-        Logger.log(level: .info, "[AppleTerminalControl] Listing sessions, filter: \(filterByTag ?? "N/A")")
+        Logger.log(level: .info, "[AppleTerminalControl] Listing sessions, filter: \(filterByTag ?? "none")")
         
         let script = AppleTerminalScripts.listSessionsScript(appName: self.appName)
         let appleScriptResult = AppleScriptBridge.runAppleScript(script: script)
@@ -28,7 +28,7 @@ struct AppleTerminalControl: TerminalControlling {
     }
     
     func executeCommand(params: ExecuteCommandParams) throws -> ExecuteCommandResult {
-        Logger.log(level: .info, "[AppleTerminalControl] Attempting to execute command for tag: \(params.tag), project: \(params.projectPath ?? "N/A")")
+        Logger.log(level: .info, "[AppleTerminalControl] Attempting to execute command for tag: \(params.tag), project: \(params.projectPath ?? "none")")
 
         let sessionToUse = try findOrCreateSessionForAppleTerminal(
             projectPath: params.projectPath,
@@ -59,7 +59,7 @@ struct AppleTerminalControl: TerminalControlling {
             Logger.log(level: .info, "[AppleTerminalControl] Session TTY \(tty) for tag \(params.tag) is busy with command '\(foundCommand)' (PGID: \(foundPgid)). Attempting to interrupt.")
             
             // Send SIGINT to the process group
-            ProcessUtilities.killProcessGroup(pgid: foundPgid, signal: SIGINT)
+            _ = ProcessUtilities.killProcessGroup(pgid: foundPgid, signal: SIGINT)
             Logger.log(level: .debug, "[AppleTerminalControl] Sent SIGINT to PGID \(foundPgid) on TTY \(tty).")
             
             // Wait for 3 seconds
@@ -68,10 +68,7 @@ struct AppleTerminalControl: TerminalControlling {
             // Check if TTY is still busy
             if let stillBusyInfo = ProcessUtilities.getForegroundProcessInfo(forTTY: tty) {
                 Logger.log(level: .error, "[AppleTerminalControl] Session TTY \(tty) for tag \(params.tag) remained busy with command '\(stillBusyInfo.command)' after interrupt attempt.")
-                throw TerminalControllerError.sessionBusyError(
-                    message: "Session for tag \(params.tag) (TTY: \(tty)) remained busy with command '\(stillBusyInfo.command)' after interrupt attempt.",
-                    suggestedErrorCode: ErrorCodes.sessionBusyError
-                )
+                throw TerminalControllerError.busy(tty: tty, processDescription: stillBusyInfo.command)
             } else {
                 Logger.log(level: .info, "[AppleTerminalControl] Process on TTY \(tty) was successfully interrupted.")
             }
@@ -103,7 +100,6 @@ struct AppleTerminalControl: TerminalControlling {
         // var output = "" // No longer needed here
         // var exitCode: Int? = nil // No longer needed here
         // var pid: pid_t? = nil // No longer needed here
-        var wasKilledByTimeout = false // This will be set by _processExecuteCommandResult
         
         let trimmedCommandToExecute = commandToExecute.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -164,36 +160,37 @@ struct AppleTerminalControl: TerminalControlling {
 
         guard let jsonString = appleScriptResultData as? String,
               let jsonData = jsonString.data(using: .utf8) else {
-            Logger.log(level: .error, "[AppleTerminalControl] Failed to decode AppleScript response (not a JSON string). Log file: \\(logFilePath). Response: \\(appleScriptResultData)")
+            let logFilePath = "unknown_log_path_exec_applescript_result_invalid"
+            Logger.log(level: .error, "[AppleTerminalControl] AppleScript for command execution did not return a valid non-empty string. Result: \(appleScriptResultData). Attempting to create log path: \(logFilePath)", file: #file, function: #function)
             // Attempt to clean up the log file if we can't even parse the response
-            _ = try? FileManager.default.removeItem(atPath: logFilePath)
-            throw TerminalControllerError.commandExecutionFailed(reason: "Invalid response structure from AppleTerminal execution script (expected JSON string). Log: \\(logFilePath)", scriptContent: scriptContent)
+            _ = try? FileManager.default.removeItem(atPath: logFilePath) // This path might not exist or be correct, but try anyway
+            throw TerminalControllerError.commandExecutionFailed(reason: "Invalid response structure from AppleTerminal execution script (expected JSON string). Log: \(logFilePath)")
         }
 
         let scriptResponse: AppleScriptExecuteResponse
         do {
             let decoder = JSONDecoder()
             scriptResponse = try decoder.decode(AppleScriptExecuteResponse.self, from: jsonData)
-            Logger.log(level: .debug, "[AppleTerminalControl] Decoded AppleScript response: Status='\\(scriptResponse.status)', Message='\\(scriptResponse.message ?? "N/A")', LogFile='\\(scriptResponse.log_file)'")
+            Logger.log(level: .debug, "[AppleTerminalControl] Decoded AppleScript response: Status='\(scriptResponse.status)', Message='\(scriptResponse.message ?? "nil")', LogFile='\(scriptResponse.log_file)'", file: #file, function: #function)
         } catch {
-            Logger.log(level: .error, "[AppleTerminalControl] JSON decoding error for AppleScript response. Error: \\(error.localizedDescription). JSON String: '\\(jsonString)'. Log file: \\(logFilePath)")
+            Logger.log(level: .error, "[AppleTerminalControl] JSON decoding error for AppleScript response. Error: \(error.localizedDescription). JSON String: '\(jsonString)'. Log file: \(logFilePath)", file: #file, function: #function)
             // Attempt to clean up the log file if JSON parsing fails
             _ = try? FileManager.default.removeItem(atPath: logFilePath)
-            throw TerminalControllerError.commandExecutionFailed(reason: "Failed to decode JSON response from AppleTerminal execution script. Error: \\(error.localizedDescription). Log: \\(logFilePath)", scriptContent: scriptContent)
+            throw TerminalControllerError.commandExecutionFailed(reason: "Failed to decode JSON response from AppleTerminal execution script. Error: \(error.localizedDescription). Log: \(logFilePath)")
         }
         
         // The log file path from the script response should ideally be the same one we passed in.
         // If it's different, log a warning but prefer the one from the script as it's authoritative for where the script *actually* wrote.
         let effectiveLogFilePath = scriptResponse.log_file
         if effectiveLogFilePath != logFilePath {
-            Logger.log(level: .warn, "[AppleTerminalControl] Log file path mismatch. Expected: \\(logFilePath), Received from script: \\(effectiveLogFilePath). Using received path.")
+            Logger.log(level: .warn, "[AppleTerminalControl] Log file path mismatch. Expected: \(logFilePath), Received from script: \(effectiveLogFilePath). Using received path.", file: #file, function: #function)
         }
 
         var finalSessionIsBusy = sessionInfo.isBusy // Default to original busy status
 
         switch scriptResponse.status {
         case "OK_SUBMITTED_FG": // Foreground command submitted, marker found in history by AppleScript
-            Logger.log(level: .info, "[AppleTerminalControl] Foreground command submitted for tag: \\(params.tag). AppleScript reported marker found. Now tailing log file: \\(effectiveLogFilePath)")
+            Logger.log(level: .info, "[AppleTerminalControl] Foreground command submitted for tag: \(params.tag). AppleScript reported marker found. Now tailing log file: \(effectiveLogFilePath)", file: #file, function: #function)
             
             let tailResult = ProcessUtilities.tailLogFileForMarker(
                 logFilePath: effectiveLogFilePath,
@@ -207,17 +204,17 @@ struct AppleTerminalControl: TerminalControlling {
             wasKilledByTimeout = tailResult.timedOut // If tailing timed out despite AS saying marker was seen
             
             if tailResult.timedOut {
-                Logger.log(level: .warn, "[AppleTerminalControl] Tailing log file \\(effectiveLogFilePath) for marker timed out, even though AppleScript reported finding it in history. Output may be incomplete.")
-                outputText += "\\n---[TAILING FOR MARKER TIMED OUT IN SWIFT AFTER APPLE SCRIPT REPORTED SUCCESS] ---"
+                Logger.log(level: .warn, "[AppleTerminalControl] Tailing log file \(effectiveLogFilePath) for marker timed out, even though AppleScript reported finding it in history. Output may be incomplete.", file: #file, function: #function)
+                outputText += "\n---[TAILING FOR MARKER TIMED OUT IN SWIFT AFTER APPLE SCRIPT REPORTED SUCCESS] ---"
             } else {
-                Logger.log(level: .info, "[AppleTerminalControl] Successfully tailed log file \\(effectiveLogFilePath) for marker.")
+                Logger.log(level: .info, "[AppleTerminalControl] Successfully tailed log file \(effectiveLogFilePath) for marker.", file: #file, function: #function)
                 // Delete log file on successful foreground command completion and if not just session prep
                 if params.command != nil && !params.command!.isEmpty {
                      do {
                         try FileManager.default.removeItem(atPath: effectiveLogFilePath)
-                        Logger.log(level: .debug, "[AppleTerminalControl] Deleted foreground command output log: \\(effectiveLogFilePath)")
+                        Logger.log(level: .debug, "[AppleTerminalControl] Deleted foreground command output log: \(effectiveLogFilePath)", file: #file, function: #function)
                     } catch {
-                        Logger.log(level: .warn, "[AppleTerminalControl] Failed to delete foreground command output log \\(effectiveLogFilePath): \\(error.localizedDescription)")
+                        Logger.log(level: .warn, "[AppleTerminalControl] Failed to delete foreground command output log \(effectiveLogFilePath): \(error.localizedDescription)", file: #file, function: #function)
                     }
                 } else {
                     // If it was session prep, it wouldn't hit this path usually, but if it did, clear the log.
@@ -228,9 +225,9 @@ struct AppleTerminalControl: TerminalControlling {
 
         case "TIMEOUT": // AppleScript timed out waiting for marker in history
             wasKilledByTimeout = true
-            outputText = scriptResponse.message ?? "Command execution timed out (AppleScript history poll)."
-            outputText += "\\nOutput log: \\(effectiveLogFilePath)"
-            Logger.log(level: .warn, "[AppleTerminalControl] Command execution timed out for tag: \\(params.tag), as reported by AppleScript history poll. Log: \\(effectiveLogFilePath)")
+            outputText = scriptResponse.message ?? "timeout"
+            outputText += "\nOutput log: \(effectiveLogFilePath)"
+            Logger.log(level: .warn, "[AppleTerminalControl] Command execution timed out for tag: \(params.tag), as reported by AppleScript history poll. Log: \(effectiveLogFilePath)", file: #file, function: #function)
             // We might still want to capture partial output if the log file exists
             if FileManager.default.fileExists(atPath: effectiveLogFilePath) {
                 do {
@@ -238,13 +235,13 @@ struct AppleTerminalControl: TerminalControlling {
                     let lines = partialContent.components(separatedBy: .newlines)
                     let captured: String
                     if params.linesToCapture > 0 && lines.count > params.linesToCapture {
-                        captured = lines.suffix(params.linesToCapture).joined(separator: "\\n")
+                        captured = lines.suffix(params.linesToCapture).joined(separator: "\n")
                     } else {
-                        captured = lines.joined(separator: "\\n")
+                        captured = lines.joined(separator: "\n")
                     }
-                    outputText += "\\n--- PARTIAL LOG CONTENT ON TIMEOUT ---\\n" + captured
+                    outputText += "\n--- PARTIAL LOG CONTENT ON TIMEOUT ---\n" + captured
                 } catch {
-                     Logger.log(level: .warn, "[AppleTerminalControl] Failed to read partial log \\(effectiveLogFilePath) on AppleScript timeout: \\(error.localizedDescription)")
+                     Logger.log(level: .warn, "[AppleTerminalControl] Failed to read partial log \(effectiveLogFilePath) on AppleScript timeout: \(error.localizedDescription)", file: #file, function: #function)
                 }
             }
             finalSessionIsBusy = ProcessUtilities.getTTYBusyStatus(tty: sessionInfo.tty) // Re-check busy status
@@ -256,37 +253,37 @@ struct AppleTerminalControl: TerminalControlling {
                     var killMsg = ""
                     if ProcessUtilities.attemptExecuteTimeoutKill(pgid: pgidToKill, config: config, message: &killMsg) {
                         outputText += "\n--- KILLED PROCESS GROUP \(pgidToKill) DUE TO TIMEOUT ---" + killMsg
-                        Logger.log(level: .info, "[AppleTerminalControl] Successfully killed PGID \(pgidToKill) for timed out command on tag \(params.tag).")
+                        Logger.log(level: .info, "[AppleTerminalControl] Successfully killed PGID \(pgidToKill) for timed out command on tag \(params.tag).", file: #file, function: #function)
                     } else {
                         outputText += "\n--- FAILED TO KILL PROCESS GROUP \(pgidToKill) AFTER TIMEOUT ---" + killMsg
-                        Logger.log(level: .warn, "[AppleTerminalControl] Failed to kill PGID \(pgidToKill) for timed out command on tag \(params.tag).")
+                        Logger.log(level: .warn, "[AppleTerminalControl] Failed to kill PGID \(pgidToKill) for timed out command on tag \(params.tag).", file: #file, function: #function)
                     }
                 } else {
                     outputText += "\n--- COULD NOT IDENTIFY PROCESS GROUP TO KILL AFTER TIMEOUT ---"
-                    Logger.log(level: .warn, "[AppleTerminalControl] Could not identify PGID to kill for timed out command on tag \(params.tag).")
+                    Logger.log(level: .warn, "[AppleTerminalControl] Could not identify PGID to kill for timed out command on tag \(params.tag).", file: #file, function: #function)
                 }
             }
 
         case "ERROR":
-            Logger.log(level: .error, "[AppleTerminalControl] AppleScript execution failed for tag: \\(params.tag). Status: ERROR. Message: \\(scriptResponse.message ?? "No message"). Log: \\(effectiveLogFilePath)")
-            outputText = "AppleScript execution error: \\(scriptResponse.message ?? "Unknown error from script"). Log: \\(effectiveLogFilePath)"
+            Logger.log(level: .error, "[AppleTerminalControl] AppleScript execution failed for tag: \(params.tag). Status: ERROR. Message: \(scriptResponse.message ?? "none"). Log: \(effectiveLogFilePath)", file: #file, function: #function)
+            outputText = "AppleScript execution error: \(scriptResponse.message ?? "unknown_script_error"). Log: \(effectiveLogFilePath)"
             // Don't delete error logs by default, they might be useful for debugging.
             // We might re-check busy status here too, as command might not have run or exited cleanly.
             finalSessionIsBusy = ProcessUtilities.getTTYBusyStatus(tty: sessionInfo.tty)
              // This is an error from the AppleScript execution itself (e.g., couldn't find tab, etc.)
             // The command might not have even started.
-            throw TerminalControllerError.appleScriptError(message: "AppleScript execution error: \\(scriptResponse.message ?? "Unknown error from script"). Log: \\(effectiveLogFilePath)", scriptContent: scriptContent, underlyingError: nil)
+            throw TerminalControllerError.appleScriptError(message: "AppleScript execution error: \(scriptResponse.message ?? "unknown_script_error"). Log: \(effectiveLogFilePath)", scriptContent: scriptContent, underlyingError: nil)
 
         default: // Includes implicit background (AppleScript just does `do script ... & disown`)
             if params.executionMode == .background {
-                Logger.log(level: .info, "[AppleTerminalControl] Background command submitted for tag \\(params.tag). Output is being logged to: \\(effectiveLogFilePath)")
-                outputText = "Background command submitted. Output logged to: \\(effectiveLogFilePath)"
+                Logger.log(level: .info, "[AppleTerminalControl] Background command submitted for tag \(params.tag). Output is being logged to: \(effectiveLogFilePath)", file: #file, function: #function)
+                outputText = "Background command submitted. Output logged to: \(effectiveLogFilePath)"
                 
                 // SDD 3.2.5: For background, tail output file for `timeout-seconds` (for initial output)
                 // We use a marker that's not expected to be found to just capture initial output within timeout.
                 let uniqueNonMarker = "TERMINATOR_BG_NEVER_FOUND_\(UUID().uuidString)"
                 let initialOutputTimeout = params.timeout > 0 ? params.timeout : Int(config.backgroundStartupSeconds)
-                Logger.log(level: .debug, "[AppleTerminalControl] Capturing initial output for background command from \\(effectiveLogFilePath) for \\(initialOutputTimeout)s.")
+                Logger.log(level: .debug, "[AppleTerminalControl] Capturing initial output for background command from \(effectiveLogFilePath) for \(initialOutputTimeout)s.", file: #file, function: #function)
 
                 let tailResult = ProcessUtilities.tailLogFileForMarker(
                     logFilePath: effectiveLogFilePath,
@@ -297,10 +294,10 @@ struct AppleTerminalControl: TerminalControlling {
                 )
                 
                 if !tailResult.output.isEmpty {
-                    outputText += "\n--- INITIAL OUTPUT (up to \\(params.linesToCapture) lines) ---\n" + tailResult.output.replacingOccurrences(of: "\n---[MARKER NOT FOUND, TIMEOUT OCURRED] ---", with: "")
+                    outputText += "\n--- INITIAL OUTPUT (up to \(params.linesToCapture) lines) ---\n" + tailResult.output.replacingOccurrences(of: "\n---[MARKER NOT FOUND, TIMEOUT OCURRED] ---", with: "")
                 }
                 if tailResult.timedOut {
-                     Logger.log(level: .debug, "[AppleTerminalControl] Background initial output capture period ended for \\(effectiveLogFilePath).")
+                     Logger.log(level: .debug, "[AppleTerminalControl] Background initial output capture period ended for \(effectiveLogFilePath).", file: #file, function: #function)
                 } // We expect this to timeout for marker finding
 
                 // For background, session is presumed busy until command finishes
@@ -308,8 +305,8 @@ struct AppleTerminalControl: TerminalControlling {
             } else {
                  // This case should ideally not be hit if 'OK_SUBMITTED_FG' handles foreground.
                  // If it's a foreground command but status is not OK_SUBMITTED_FG, TIMEOUT, or ERROR, it's an unexpected script status.
-                Logger.log(level: .warn, "[AppleTerminalControl] Unexpected AppleScript status '\\(scriptResponse.status)' for command on tag \\(params.tag). Log: \\(effectiveLogFilePath)")
-                outputText = "Unexpected script response status: \\(scriptResponse.status). Message: \\(scriptResponse.message ?? "N/A"). Log: \\(effectiveLogFilePath)"
+                Logger.log(level: .warn, "[AppleTerminalControl] Unexpected AppleScript status '\(scriptResponse.status)' for command on tag \(params.tag). Log: \(effectiveLogFilePath)", file: #file, function: #function)
+                outputText = "Unexpected script response status: \(scriptResponse.status). Message: \(scriptResponse.message ?? "unknown_script_error"). Log: \(effectiveLogFilePath)"
                 // Attempt to read the log file as a fallback, as we don't know the command state
                 if FileManager.default.fileExists(atPath: effectiveLogFilePath) {
                      let tailResult = ProcessUtilities.tailLogFileForMarker(
@@ -319,7 +316,7 @@ struct AppleTerminalControl: TerminalControlling {
                         linesToCapture: params.linesToCapture,
                         controlIdentifier: "AppleTerminalUnexpected"
                     )
-                    outputText += "\\n--- FALLBACK LOG CONTENT ---\\n" + tailResult.output
+                    outputText += "\n--- FALLBACK LOG CONTENT ---\n" + tailResult.output
                     wasKilledByTimeout = tailResult.timedOut // It might have timed out here
                     if !tailResult.timedOut { 
                         // If marker was found, implies foreground command might have finished. Clean up.
@@ -342,8 +339,8 @@ struct AppleTerminalControl: TerminalControlling {
             isBusy: finalSessionIsBusy,
             windowIdentifier: sessionInfo.windowIdentifier,
             tabIdentifier: sessionInfo.tabIdentifier,
-            pidFromTitle: sessionInfo.pidFromTitle,
-            ttyFromTitle: sessionInfo.ttyFromTitle
+            ttyFromTitle: sessionInfo.ttyFromTitle,
+            pidFromTitle: sessionInfo.pidFromTitle
         )
 
         return ExecuteCommandResult(
@@ -356,7 +353,7 @@ struct AppleTerminalControl: TerminalControlling {
     }
     
     func readSessionOutput(params: ReadSessionParams) throws -> ReadSessionResult {
-        Logger.log(level: .info, "[AppleTerminalControl] Reading session output for tag: \(params.tag), project: \(params.projectPath ?? "N/A")")
+        Logger.log(level: .info, "[AppleTerminalControl] Reading session output for tag: \(params.tag), project: \(params.projectPath ?? "none")", file: #file, function: #function)
 
         let existingSessions = try self.listSessions(filterByTag: params.tag)
         let targetProjectHash = params.projectPath != nil ? SessionUtilities.generateProjectHash(projectPath: params.projectPath) : "NO_PROJECT"
@@ -391,7 +388,7 @@ struct AppleTerminalControl: TerminalControlling {
     }
     
     func focusSession(params: FocusSessionParams) throws -> FocusSessionResult {
-        Logger.log(level: .info, "[AppleTerminalControl] Focusing session for tag: \(params.tag), project: \(params.projectPath ?? "N/A")")
+        Logger.log(level: .info, "[AppleTerminalControl] Focusing session for tag: \(params.tag), project: \(params.projectPath ?? "none")")
 
         let existingSessions = try self.listSessions(filterByTag: params.tag)
         let targetProjectHash = params.projectPath != nil ? SessionUtilities.generateProjectHash(projectPath: params.projectPath) : "NO_PROJECT"
@@ -422,7 +419,7 @@ struct AppleTerminalControl: TerminalControlling {
     }
     
     func killProcessInSession(params: KillSessionParams) throws -> KillSessionResult {
-        Logger.log(level: .info, "[AppleTerminalControl] Killing process in session for tag: \(params.tag), project: \(params.projectPath ?? "N/A")")
+        Logger.log(level: .info, "[AppleTerminalControl] Killing process in session for tag: \(params.tag), project: \(params.projectPath ?? "none")")
 
         let existingSessions = try self.listSessions(filterByTag: params.tag)
         let targetProjectHash = params.projectPath != nil ? SessionUtilities.generateProjectHash(projectPath: params.projectPath) : "NO_PROJECT"
@@ -467,24 +464,28 @@ struct AppleTerminalControl: TerminalControlling {
                 message += " Cannot attempt Ctrl+C: session missing window/tab identifiers."
                 // killSuccess remains as it was
                 Logger.log(level: .warn, message)
-            }
-            if let windowID = sessionInfo.windowIdentifier, let tabID = sessionInfo.tabIdentifier { // Re-check for safety
-                let ctrlCScript = AppleTerminalScripts.sendControlCScript(
-                    appName: self.appName,
-                    windowID: windowID,
-                    tabID: tabID,
-                    shouldActivateTerminal: attentesFocus(focusPreference: params.focusPreference, defaultFocusSetting: false) // Activate if focus desired
+                return KillSessionResult(
+                    killedSessionInfo: sessionInfo,
+                    killSuccess: killSuccess,
+                    message: message
                 )
+            }
+            let ctrlCScript = AppleTerminalScripts.sendControlCScript(
+                appName: self.appName,
+                windowID: windowID,
+                tabID: tabID,
+                shouldActivateTerminal: attentesFocus(focusPreference: params.focusPreference, defaultFocusSetting: false) // Activate if focus desired
+            )
                 let ctrlCResult = AppleScriptBridge.runAppleScript(script: ctrlCScript)
                 switch ctrlCResult {
                 case .success(let strResult):
-                    if let resultStr = strResult as? String, resultStr == "OK_CTRL_C_SENT" {
+                    if strResult == "OK_CTRL_C_SENT" {
                         message += " Sent Ctrl+C to session as fallback."
                         Logger.log(level: .info, "[AppleTerminalControl] Successfully sent Ctrl+C to session \(params.tag).")
                         killSuccess = true // Mark as success because the action was performed.
                     } else {
-                        message += " Failed to send Ctrl+C to session. AppleScript result: \(strResult ?? "empty")."
-                        Logger.log(level: .warn, "[AppleTerminalControl] Failed to send Ctrl+C to session \(params.tag). Result: \(strResult ?? "empty").")
+                        message += " Failed to send Ctrl+C to session. AppleScript result: \(strResult)."
+                        Logger.log(level: .warn, "[AppleTerminalControl] Failed to send Ctrl+C to session \(params.tag). Result: \(strResult).", file: #file, function: #function)
                         // killSuccess remains as it was
                     }
                 case .failure(let error):
@@ -492,7 +493,6 @@ struct AppleTerminalControl: TerminalControlling {
                     Logger.log(level: .warn, "[AppleTerminalControl] Error sending Ctrl+C to session \(params.tag): \(error.localizedDescription).")
                     // killSuccess remains as it was
                 }
-            }
         } else if config.preKillScriptPath != nil {
             Logger.log(level: .debug, "[AppleTerminalControl] Pre-kill script was configured for \(params.tag). Ctrl+C fallback was skipped or conditions not met.")
         } else if killSuccess {
@@ -560,7 +560,7 @@ struct AppleTerminalControl: TerminalControlling {
     }
 
     private func findOrCreateSessionForAppleTerminal(projectPath: String?, tag: String, commandToExecute: String? = nil, focusPreference: AppConfig.FocusCLIArgument) throws -> TerminalSessionInfo {
-        Logger.log(level: .debug, "[AppleTerminalControl] Finding or creating session for tag: \(tag), project: \(projectPath ?? "N/A")")
+        Logger.log(level: .debug, "[AppleTerminalControl] Finding or creating session for tag: \(tag), project: \(projectPath ?? "none")")
 
         // 1. Try to find existing session
         if let existingSession = _findExistingSession(projectPath: projectPath, tag: tag, focusPreference: focusPreference) {
@@ -572,7 +572,7 @@ struct AppleTerminalControl: TerminalControlling {
     }
 
     private func _findExistingSession(projectPath: String?, tag: String, focusPreference: AppConfig.FocusCLIArgument) -> TerminalSessionInfo? {
-        Logger.log(level: .debug, "[AppleTerminalControl] Attempting to find existing session for tag: \(tag), project: \(projectPath ?? "N/A")")
+        Logger.log(level: .debug, "[AppleTerminalControl] Attempting to find existing session for tag: \(tag), project: \(projectPath ?? "none")")
         do {
             let existingSessions = try self.listSessions(filterByTag: tag)
             let targetProjectHash = projectPath != nil ? SessionUtilities.generateProjectHash(projectPath: projectPath) : "NO_PROJECT"
@@ -581,7 +581,7 @@ struct AppleTerminalControl: TerminalControlling {
                 let sessionProjectHash = session.projectPath ?? "NO_PROJECT" // listSessions stores the hash in projectPath
                 if sessionProjectHash == targetProjectHash {
                     if !session.isBusy || config.reuseBusySessions {
-                        Logger.log(level: .info, "Found suitable existing session for tag '\(tag)' (Project: \(projectPath ?? "Global"), TTY: \(session.tty ?? "N/A")). Reusing.")
+                        Logger.log(level: .info, "Found suitable existing session for tag '\(tag)' (Project: \(projectPath ?? "global"), TTY: \(session.tty ?? "none")). Reusing.")
                         // BEGIN FOCUS HANDLING FOR EXISTING SESSION
                         if attentesFocus(focusPreference: focusPreference, defaultFocusSetting: config.defaultFocusOnAction) {
                             Logger.log(level: .debug, "Focus preference requires focusing existing session.")
@@ -602,21 +602,21 @@ struct AppleTerminalControl: TerminalControlling {
                         // END FOCUS HANDLING FOR EXISTING SESSION
                         return session
                     } else {
-                        Logger.log(level: .info, "Found existing session for tag '\(tag)' (Project: \(projectPath ?? "Global")) but it's busy and reuseBusySessions is false. TTY: \(session.tty ?? "N/A")")
+                        Logger.log(level: .info, "Found existing session for tag '\(tag)' (Project: \(projectPath ?? "global")) but it's busy and reuseBusySessions is false. TTY: \(session.tty ?? "none")")
                     }
                 }
             }
         } catch {
             Logger.log(level: .warn, "Error listing sessions while trying to find existing session for tag '\(tag)': \(error.localizedDescription). This is not fatal if we can create a new one.")
         }
-        Logger.log(level: .debug, "[AppleTerminalControl] No suitable existing session found for tag: \(tag), project: \(projectPath ?? "N/A")")
+        Logger.log(level: .debug, "[AppleTerminalControl] No suitable existing session found for tag: \(tag), project: \(projectPath ?? "none")")
         return nil
     }
 
     private func _createNewSession(projectPath: String?, tag: String, focusPreference: AppConfig.FocusCLIArgument) throws -> TerminalSessionInfo {
-        Logger.log(level: .info, "[AppleTerminalControl] Creating new session for tag: \(tag), project: \(projectPath ?? "N/A")")
+        Logger.log(level: .info, "[AppleTerminalControl] Creating new session for tag: \(tag), project: \(projectPath ?? "none")")
         
-        let newSessionTitle = SessionUtilities.generateSessionTitle(projectPath: projectPath, tag: tag)
+        let newSessionTitle = SessionUtilities.generateSessionTitle(projectPath: projectPath, tag: tag, ttyDevicePath: nil, processId: nil)
         let shouldActivateTerminal = attentesFocus(focusPreference: focusPreference, defaultFocusSetting: config.defaultFocusOnAction)
         let projectHashForGrouping = projectPath != nil ? SessionUtilities.generateProjectHash(projectPath: projectPath) : nil
 
@@ -649,6 +649,8 @@ struct AppleTerminalControl: TerminalControlling {
         case .noFocus:
             return false
         case .default:
+            return defaultFocusSetting
+        case .autoBehavior:
             return defaultFocusSetting
         }
     }

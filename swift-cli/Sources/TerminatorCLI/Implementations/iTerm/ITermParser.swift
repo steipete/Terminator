@@ -35,28 +35,35 @@ struct ITermParser {
                 continue
             }
             
-            let (parsedProj, parsedTag, parsedPID, parsedTTYFromTitle) = SessionUtilities.parseSessionTitle(name)
+            let parsedInfo = SessionUtilities.parseSessionTitle(title: name)
+            let parsedProj = parsedInfo?.projectHash
+            let parsedTag = parsedInfo?.tag
+            let parsedPID = parsedInfo?.pid
+            let parsedTTYFromTitle = parsedInfo?.ttyPath
             
             // Apply tag filter if provided
             if let filterTag = filterByTag, !filterTag.isEmpty, parsedTag != filterTag {
-                Logger.log(level: .debug, "[ITermParser] Filtering out session with tag '\(parsedTag ?? "nil")' as it does not match '\(filterTag)'. Title: \(name)")
+                Logger.log(level: .debug, "[ITermParser] Filtering out session with tag '\(parsedTag ?? "empty_message")' as it does not match '\(filterTag)'. Title: \(name)")
                 continue
             }
 
-            let uniqueIdentifier = SessionUtilities.generateSessionIdentifier(projectPath: parsedProj, tag: parsedTag ?? filterByTag, baseTTY: tty, iTermSessionID: sessionID)
+            let uniqueIdentifier = SessionUtilities.generateUserFriendlySessionIdentifier(projectPath: parsedProj, tag: parsedTag ?? filterByTag ?? "unknown_tag_iterm")
+            
+            // For iTerm, we store both tabID and sessionID in a composite format
+            // Format: "tabID:sessionID" to enable proper script calls
+            let compositeTabIdentifier = "\(tabID):\(sessionID)"
             
             let sessionInfo = TerminalSessionInfo(
                 sessionIdentifier: uniqueIdentifier,
                 projectPath: parsedProj,
-                tag: parsedTag ?? filterByTag, // Prefer tag from title, fallback to explicitly passed tag if any (e.g., during creation)
-                fullTabTitle: name, // iTerm session name is the title
+                tag: parsedTag ?? filterByTag ?? "unknown_tag_iterm_detail",
+                fullTabTitle: name,
                 tty: tty,
-                isBusy: ProcessUtilities.getTTYBusyStatus(tty: tty), // Check actual TTY busy status
+                isBusy: ProcessUtilities.getTTYBusyStatus(tty: tty),
                 windowIdentifier: winID,
-                tabIdentifier: tabID,
-                iTermSessionID: sessionID, // Store iTerm's own session ID
-                pidFromTitle: parsedPID,
-                ttyFromTitle: parsedTTYFromTitle
+                tabIdentifier: compositeTabIdentifier,
+                ttyFromTitle: parsedTTYFromTitle,
+                pidFromTitle: parsedPID
             )
             sessions.append(sessionInfo)
         }

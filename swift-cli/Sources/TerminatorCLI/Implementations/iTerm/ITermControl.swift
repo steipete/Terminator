@@ -7,11 +7,25 @@ struct ITermControl: TerminalControlling {
     init(config: AppConfig, appName: String) {
         self.config = config
         self.appName = appName
-        Logger.log(level: .debug, "ITermControl initialized for app: \(appName)")
+        Logger.log(level: .debug, "ITermControl initialized for app: \(appName)", file: #file, function: #function)
+    }
+    
+    // Helper function to extract sessionID from composite tabIdentifier
+    private static func extractSessionID(from compositeIdentifier: String?) -> String? {
+        guard let composite = compositeIdentifier else { return nil }
+        let parts = composite.split(separator: ":").map(String.init)
+        return parts.count >= 2 ? parts[1] : nil
+    }
+    
+    // Helper function to extract tabID from composite tabIdentifier
+    private static func extractTabID(from compositeIdentifier: String?) -> String? {
+        guard let composite = compositeIdentifier else { return nil }
+        let parts = composite.split(separator: ":").map(String.init)
+        return parts.count >= 1 ? parts[0] : nil
     }
 
     func listSessions(filterByTag: String?) throws -> [TerminalSessionInfo] {
-        Logger.log(level: .info, "[ITermControl] Listing sessions, filter: \(filterByTag ?? "N/A")")
+        Logger.log(level: .info, "[ITermControl] Listing sessions, filter: \(filterByTag ?? "nil")", file: #file, function: #function)
         
         let script = ITermScripts.listSessionsScript(appName: self.appName)
         // Logger.log(level: .debug, "AppleScript for listSessions (iTerm):\\n\(script)") // Script content now in ITermScripts
@@ -20,17 +34,17 @@ struct ITermControl: TerminalControlling {
 
         switch appleScriptResult {
         case .success(let resultStringOrArray):
-            Logger.log(level: .debug, "AppleScript result for iTerm listing: \\(resultStringOrArray)")
+            Logger.log(level: .debug, "AppleScript result for iTerm listing: \\(resultStringOrArray)", file: #file, function: #function)
             return try ITermParser.parseListSessionsOutput(resultData: resultStringOrArray, scriptContent: script, filterByTag: filterByTag)
             
         case .failure(let error):
-            Logger.log(level: .error, "Failed to list sessions for iTerm: \\(error.localizedDescription)")
+            Logger.log(level: .error, "Failed to list sessions for iTerm: \\(error.localizedDescription)", file: #file, function: #function)
             throw TerminalControllerError.appleScriptError(message: "Listing iTerm sessions failed: \\(error.localizedDescription)", scriptContent: script, underlyingError: error)
         }
     }
     
     func executeCommand(params: ExecuteCommandParams) throws -> ExecuteCommandResult {
-        Logger.log(level: .info, "[ITermControl] Attempting to execute command for tag: \\(params.tag), project: \\(params.projectPath ?? "N/A")")
+        Logger.log(level: .info, "[ITermControl] Attempting to execute command for tag: \\(params.tag), project: \\(params.projectPath ?? \"nil\")", file: #file, function: #function)
 
         let sessionToUse = try findOrCreateSessionForITerm(
             projectPath: params.projectPath,
@@ -38,50 +52,49 @@ struct ITermControl: TerminalControlling {
             focusPreference: params.focusPreference // Initial focus applied here
         )
 
-        guard let tabID = sessionToUse.tabIdentifier, 
+        guard let compositeTabID = sessionToUse.tabIdentifier,
+              let tabID = Self.extractTabID(from: compositeTabID),
+              let sessionID = Self.extractSessionID(from: compositeTabID),
               let windowID = sessionToUse.windowIdentifier, 
               let tty = sessionToUse.tty else {
-            throw TerminalControllerError.internalError(details: "Found/created iTerm session is missing critical identifiers (tabID, windowID, or tty). Session: \\(sessionToUse)")
+            throw TerminalControllerError.internalError(details: "Found/created iTerm session is missing critical identifiers (tabID, sessionID, windowID, or tty). Session: \\(sessionToUse)")
         }
         
         // Clear the session screen before any command execution
-        Self._clearSessionScreen(appName: self.appName, windowID: windowID, tabID: tabID, sessionID: sessionToUse.iTermSessionID, tag: params.tag)
+        Self._clearSessionScreen(appName: self.appName, sessionID: sessionID, tag: params.tag)
         
         // SDD 3.2.5: Pre-execution Step: Busy Check & Stop
         if let processInfo = ProcessUtilities.getForegroundProcessInfo(forTTY: tty) {
             let foundPgid = processInfo.pgid
-            let foundCommand = processInfo.command
+            let _ = processInfo.command
             
-            Logger.log(level: .info, "[ITermControl] Session TTY \\(tty) for tag \\(params.tag) is busy with command '\\(foundCommand)' (PGID: \\(foundPgid)). Attempting to interrupt.")
+            Logger.log(level: .info, "[ITermControl] Session TTY \\(tty) for tag \\(params.tag) is busy with command '\\(foundCommand)' (PGID: \\(foundPgid)). Attempting to interrupt.", file: #file, function: #function)
             
             // Send SIGINT to the process group
-            ProcessUtilities.killProcessGroup(pgid: foundPgid, signal: SIGINT)
-            Logger.log(level: .debug, "[ITermControl] Sent SIGINT to PGID \\(foundPgid) on TTY \\(tty).")
+            _ = ProcessUtilities.killProcessGroup(pgid: foundPgid, signal: SIGINT)
+            Logger.log(level: .debug, "[ITermControl] Sent SIGINT to PGID \\(foundPgid) on TTY \\(tty).", file: #file, function: #function)
             
             // Wait for 3 seconds
             Thread.sleep(forTimeInterval: 3.0)
             
             // Check if TTY is still busy
             if let stillBusyInfo = ProcessUtilities.getForegroundProcessInfo(forTTY: tty) {
-                Logger.log(level: .error, "[ITermControl] Session TTY \\(tty) for tag \\(params.tag) remained busy with command '\\(stillBusyInfo.command)' after interrupt attempt.")
-                throw TerminalControllerError.sessionBusyError(
-                    message: "Session for tag \\(params.tag) (TTY: \\(tty)) remained busy with command '\\(stillBusyInfo.command)' after interrupt attempt.",
-                    suggestedErrorCode: ErrorCodes.sessionBusyError
-                )
+                Logger.log(level: .error, "[ITermControl] Session TTY \\(tty) for tag \\(params.tag) remained busy with command '\\(stillBusyInfo.command)' after interrupt attempt.", file: #file, function: #function)
+                throw TerminalControllerError.busy(tty: tty, processDescription: stillBusyInfo.command)
             } else {
-                Logger.log(level: .info, "[ITermControl] Process on TTY \\(tty) was successfully interrupted.")
+                Logger.log(level: .info, "[ITermControl] Process on TTY \\(tty) was successfully interrupted.", file: #file, function: #function)
             }
         }
         // End of Busy Check
 
         // Handle session preparation if command is nil or empty (SDD 3.1.5, 3.2.5)
         if params.command == nil || params.command!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            Logger.log(level: .info, "[ITermControl] No command provided. Preparing session (focus) for tag: \\(params.tag)")
+            Logger.log(level: .info, "[ITermControl] No command provided. Preparing session (focus) for tag: \\(params.tag)", file: #file, function: #function)
             
             // Ensure focus (findOrCreateSession already handled initial focus, this re-confirms if needed)
             // If clearScreen changed focus, or if initial focus was no-op due to focusPreference
             if attentesFocus(focusPreference: params.focusPreference, defaultFocusSetting: config.defaultFocusOnAction) {
-                let focusScript = ITermScripts.focusSessionScript(appName: self.appName, windowID: windowID, tabID: tabID)
+                let focusScript = ITermScripts.focusSessionScript(appName: self.appName, windowID: windowID, tabID: tabID, sessionID: sessionID)
                 _ = AppleScriptBridge.runAppleScript(script: focusScript) // Best effort focus
             }
             
@@ -99,8 +112,8 @@ struct ITermControl: TerminalControlling {
         let trimmedCommandToExecute = commandToExecute.trimmingCharacters(in: .whitespacesAndNewlines)
         
         // Create log file path for output capture
-        let ttyBasename = (tty as NSString).lastPathComponent
-        let timestamp = Int(Date().timeIntervalSince1970)
+        let _ = (tty as NSString).lastPathComponent
+        let _ = Int(Date().timeIntervalSince1970)
         let logFileName = "terminator_output_\\(ttyBasename)_\\(timestamp).log"
         let logFilePathURL = config.logDir.appendingPathComponent("cli_command_outputs").appendingPathComponent(logFileName)
         
@@ -108,7 +121,7 @@ struct ITermControl: TerminalControlling {
         do {
             try FileManager.default.createDirectory(at: logFilePathURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
         } catch {
-            Logger.log(level: .error, "[ITermControl] Could not create directory for command output logs: \\(error.localizedDescription)")
+            Logger.log(level: .error, "[ITermControl] Could not create directory for command output logs: \\(error.localizedDescription)", file: #file, function: #function)
             throw TerminalControllerError.internalError(details: "Failed to create output log directory: \\(error.localizedDescription)")
         }
         
@@ -118,8 +131,7 @@ struct ITermControl: TerminalControlling {
 
         let script = ITermScripts.executeCommandScript(
             appName: self.appName,
-            windowID: windowID,
-            tabID: tabID,
+            sessionID: sessionID,
             commandToRunRaw: trimmedCommandToExecute,
             outputLogFilePath: logFilePathURL.path,
             completionMarker: completionMarker,
@@ -127,7 +139,7 @@ struct ITermControl: TerminalControlling {
             shouldActivateITerm: shouldActivateITermForCommand
         )
 
-        Logger.log(level: .debug, "[ITermControl] Executing command with log file: \\(logFilePathURL.path)")
+        Logger.log(level: .debug, "[ITermControl] Executing command with log file: \\(logFilePathURL.path)", file: #file, function: #function)
         let appleScriptResult = AppleScriptBridge.runAppleScript(script: script)
 
         switch appleScriptResult {
@@ -143,7 +155,7 @@ struct ITermControl: TerminalControlling {
             )
         case .failure(let error):
             let errorMsg = "Failed to execute iTerm command for tag \\(params.tag): \\(error.localizedDescription)"
-            Logger.log(level: .error, errorMsg)
+            Logger.log(level: .error, errorMsg, file: #file, function: #function)
             throw TerminalControllerError.appleScriptError(message: errorMsg, scriptContent: script, underlyingError: error)
         }
     }
@@ -160,17 +172,17 @@ struct ITermControl: TerminalControlling {
         // Parse AppleScript result
         guard let resultArray = resultData as? [String], resultArray.count >= 2 else {
             let errorMsg = "iTerm AppleScript for execute did not return expected format. Result: \\(resultData)"
-            Logger.log(level: .error, errorMsg)
+            Logger.log(level: .error, errorMsg, file: #file, function: #function)
             throw TerminalControllerError.appleScriptError(message: errorMsg, scriptContent: scriptContent)
         }
         
         let status = resultArray[0]
-        let message = resultArray[1]
+        let _ = resultArray[1]
         let pidString = resultArray.count >= 3 ? resultArray[2] : ""
         
         // Handle AppleScript errors
         if status == "ERROR" {
-            Logger.log(level: .error, "[ITermControl] iTerm execute command AppleScript reported error: \\(message)")
+            Logger.log(level: .error, "[ITermControl] iTerm execute command AppleScript reported error: \\(message)", file: #file, function: #function)
             throw TerminalControllerError.appleScriptError(message: "iTerm execute script error: \\(message)", scriptContent: scriptContent)
         }
         
@@ -188,7 +200,7 @@ struct ITermControl: TerminalControlling {
         
         if isForeground {
             // Tail log file for completion marker
-            Logger.log(level: .debug, "[ITermControl] Tailing log file \\(logFilePath) for completion marker with timeout \\(timeoutSeconds)s")
+            Logger.log(level: .debug, "[ITermControl] Tailing log file \\(logFilePath) for completion marker with timeout \\(timeoutSeconds)s", file: #file, function: #function)
             
             let tailResult = ProcessUtilities.tailLogFileForMarker(
                 logFilePath: logFilePath,
@@ -202,7 +214,7 @@ struct ITermControl: TerminalControlling {
             wasKilledByTimeout = tailResult.timedOut
             
             if wasKilledByTimeout {
-                Logger.log(level: .warn, "[ITermControl] Command timed out for tag \\(params.tag) after \\(timeoutSeconds)s")
+                Logger.log(level: .warn, "[ITermControl] Command timed out for tag \\(params.tag) after \\(timeoutSeconds)s", file: #file, function: #function)
                 output = "Command timed out after \\(params.timeout) seconds (iTerm)."
                 
                 // Attempt to kill the process group if we have the TTY
@@ -214,10 +226,10 @@ struct ITermControl: TerminalControlling {
                     if case .success(let resultStringOrArray) = pgidFindResult {
                         let parseResult = _parsePgidFromResult(resultStringOrArray: resultStringOrArray, tty: tty, tag: params.tag)
                         if let pgid = parseResult.pgid {
-                            Logger.log(level: .info, "[ITermControl] Attempting to kill timed-out process group \\(pgid)")
+                            Logger.log(level: .info, "[ITermControl] Attempting to kill timed-out process group \\(pgid)", file: #file, function: #function)
                             var killMessage = ""
                             _ = ProcessUtilities.attemptGracefulKill(pgid: pgid, config: config, message: &killMessage)
-                            Logger.log(level: .debug, "[ITermControl] Kill attempt result: \\(killMessage)")
+                            Logger.log(level: .debug, "[ITermControl] Kill attempt result: \\(killMessage)", file: #file, function: #function)
                         }
                     }
                 }
@@ -228,7 +240,7 @@ struct ITermControl: TerminalControlling {
             }
         } else {
             // Background command - capture initial output
-            Logger.log(level: .info, "[ITermControl] Background command submitted for tag \\(params.tag). Capturing initial output from \\(logFilePath)")
+            Logger.log(level: .info, "[ITermControl] Background command submitted for tag \\(params.tag). Capturing initial output from \\(logFilePath)", file: #file, function: #function)
             
             let tailResult = ProcessUtilities.tailLogFileForMarker(
                 logFilePath: logFilePath,
@@ -248,9 +260,9 @@ struct ITermControl: TerminalControlling {
         if isForeground && !wasKilledByTimeout && FileManager.default.fileExists(atPath: logFilePath) {
             do {
                 try FileManager.default.removeItem(atPath: logFilePath)
-                Logger.log(level: .debug, "[ITermControl] Removed log file after successful completion: \\(logFilePath)")
+                Logger.log(level: .debug, "[ITermControl] Removed log file after successful completion: \\(logFilePath)", file: #file, function: #function)
             } catch {
-                Logger.log(level: .debug, "[ITermControl] Failed to remove log file \\(logFilePath): \\(error.localizedDescription)")
+                Logger.log(level: .debug, "[ITermControl] Failed to remove log file \\(logFilePath): \\(error.localizedDescription)", file: #file, function: #function)
             }
         }
         
@@ -261,7 +273,7 @@ struct ITermControl: TerminalControlling {
             tag: sessionInfo.tag,
             fullTabTitle: sessionInfo.fullTabTitle,
             tty: sessionInfo.tty,
-            isBusy: params.executionMode == .background ? ProcessUtilities.getTTYBusyStatus(sessionInfo.tty ?? "") : false,
+            isBusy: params.executionMode == .background ? ProcessUtilities.getTTYBusyStatus(tty: sessionInfo.tty ?? "") : false,
             windowIdentifier: sessionInfo.windowIdentifier,
             tabIdentifier: sessionInfo.tabIdentifier
         )
@@ -276,7 +288,7 @@ struct ITermControl: TerminalControlling {
     }
     
     func readSessionOutput(params: ReadSessionParams) throws -> ReadSessionResult {
-        Logger.log(level: .info, "[ITermControl] Reading session output for tag: \\(params.tag), project: \\(params.projectPath ?? "N/A")")
+        Logger.log(level: .info, "[ITermControl] Reading session output for tag: \\(params.tag), project: \\(params.projectPath ?? \"nil\")", file: #file, function: #function)
 
         let existingSessions = try self.listSessions(filterByTag: params.tag)
         let targetProjectHash = params.projectPath != nil ? SessionUtilities.generateProjectHash(projectPath: params.projectPath) : "NO_PROJECT"
@@ -285,17 +297,18 @@ struct ITermControl: TerminalControlling {
             throw TerminalControllerError.sessionNotFound(projectPath: params.projectPath, tag: params.tag)
         }
 
-        guard let tabID = sessionInfo.tabIdentifier, 
-              let windowID = sessionInfo.windowIdentifier else {
-            throw TerminalControllerError.internalError(details: "iTerm session found for reading is missing tabID or windowID. Session: \\(sessionInfo)")
+        guard let compositeTabID = sessionInfo.tabIdentifier,
+              let sessionID = Self.extractSessionID(from: compositeTabID),
+              let _ = sessionInfo.windowIdentifier else {
+            throw TerminalControllerError.internalError(details: "iTerm session found for reading is missing sessionID or windowID. Session: \\(sessionInfo)")
         }
         
         let shouldActivateITermForRead = attentesFocus(focusPreference: params.focusPreference, defaultFocusSetting: config.defaultFocusOnAction)
 
         let script = ITermScripts.readSessionOutputScript(
             appName: self.appName,
-            windowID: windowID,
-            tabID: tabID,
+            sessionID: sessionID,
+            linesToRead: params.linesToRead,
             shouldActivateITerm: shouldActivateITermForRead
         )
         // Logger.log(level: .debug, "AppleScript for readSessionOutput (iTerm):\\n\(script)") // Script content now in ITermScripts
@@ -304,17 +317,18 @@ struct ITermControl: TerminalControlling {
 
         switch appleScriptResult {
         case .success(let resultData):
-            return try ITermParser.parseReadSessionOutput(resultData: resultData, scriptContent: script, linesToRead: params.linesToRead)
+            let outputString = try ITermParser.parseReadSessionOutput(resultData: resultData, scriptContent: script, linesToRead: params.linesToRead)
+            return ReadSessionResult(sessionInfo: sessionInfo, output: outputString)
 
         case .failure(let error):
             let errorMsg = "Failed to read iTerm session output for tag \(params.tag): \(error.localizedDescription)"
-            Logger.log(level: .error, errorMsg)
+            Logger.log(level: .error, errorMsg, file: #file, function: #function)
             throw TerminalControllerError.appleScriptError(message: errorMsg, scriptContent: script, underlyingError: error)
         }
     }
     
     func focusSession(params: FocusSessionParams) throws -> FocusSessionResult {
-        Logger.log(level: .info, "[ITermControl] Focusing session for tag: \\(params.tag), project: \\(params.projectPath ?? "N/A")")
+        Logger.log(level: .info, "[ITermControl] Focusing session for tag: \\(params.tag), project: \\(params.projectPath ?? \"nil\")", file: #file, function: #function)
 
         let existingSessions = try self.listSessions(filterByTag: params.tag)
         let targetProjectHash = params.projectPath != nil ? SessionUtilities.generateProjectHash(projectPath: params.projectPath) : "NO_PROJECT"
@@ -323,34 +337,37 @@ struct ITermControl: TerminalControlling {
             throw TerminalControllerError.sessionNotFound(projectPath: params.projectPath, tag: params.tag)
         }
 
-        guard let tabID = sessionInfo.tabIdentifier, 
+        guard let compositeTabID = sessionInfo.tabIdentifier,
+              let tabID = Self.extractTabID(from: compositeTabID),
+              let sessionID = Self.extractSessionID(from: compositeTabID),
               let windowID = sessionInfo.windowIdentifier else {
-            throw TerminalControllerError.internalError(details: "iTerm session found for focus is missing tabID or windowID. Session: \\(sessionInfo)")
+            throw TerminalControllerError.internalError(details: "iTerm session found for focus is missing tabID, sessionID or windowID. Session: \\(sessionInfo)")
         }
 
         let script = ITermScripts.focusSessionScript(
             appName: self.appName,
             windowID: windowID,
-            tabID: tabID
+            tabID: tabID,
+            sessionID: sessionID
         )
         // Logger.log(level: .debug, "AppleScript for focusSession (iTerm):\\n\(script)") // Script content now in ITermScripts
 
         let appleScriptResult = AppleScriptBridge.runAppleScript(script: script)
 
         switch appleScriptResult {
-        case .success(let resultData):
-            Logger.log(level: .info, "Successfully focused iTerm session for tag: \\(params.tag). AppleScript result: \\(resultData)")
+        case .success(_):
+            Logger.log(level: .info, "Successfully focused iTerm session for tag: \\(params.tag).", file: #file, function: #function)
             return FocusSessionResult(focusedSessionInfo: sessionInfo)
 
         case .failure(let error):
             let errorMsg = "Failed to focus iTerm session for tag '\\(params.tag)': \\(error.localizedDescription)"
-            Logger.log(level: .error, errorMsg)
+            Logger.log(level: .error, errorMsg, file: #file, function: #function)
             throw TerminalControllerError.appleScriptError(message: errorMsg, scriptContent: script, underlyingError: error)
         }
     }
     
     func killProcessInSession(params: KillSessionParams) throws -> KillSessionResult {
-        Logger.log(level: .info, "[ITermControl] Killing process in session for tag: \\(params.tag), project: \\(params.projectPath ?? "N/A")")
+        Logger.log(level: .info, "[ITermControl] Killing process in session for tag: \\(params.tag), project: \\(params.projectPath ?? \"nil\")", file: #file, function: #function)
 
         let existingSessions = try self.listSessions(filterByTag: params.tag)
         let targetProjectHash = params.projectPath != nil ? SessionUtilities.generateProjectHash(projectPath: params.projectPath) : "NO_PROJECT"
@@ -360,7 +377,7 @@ struct ITermControl: TerminalControlling {
         }
 
         guard let tty = sessionInfo.tty, !tty.isEmpty else {
-            Logger.log(level: .warn, "iTerm session \\(params.tag) found but has no TTY. Cannot kill process.")
+            Logger.log(level: .warn, "iTerm session \\(params.tag) found but has no TTY. Cannot kill process.", file: #file, function: #function)
             return KillSessionResult(killedSessionInfo: sessionInfo, killSuccess: false, message: "Session has no TTY.")
         }
         
@@ -376,7 +393,7 @@ struct ITermControl: TerminalControlling {
         // 2. Find PGID using AppleScript (`ps` command)
         let ttyNameOnly = (tty as NSString).lastPathComponent
         let pgidFindScript = ITermScripts.getPGIDAppleScript(ttyNameOnly: ttyNameOnly)
-        Logger.log(level: .debug, "[ITermControl] Executing PGID find script for iTerm: \\(pgidFindScript)")
+        Logger.log(level: .debug, "[ITermControl] Executing PGID find script for iTerm: \\(pgidFindScript)", file: #file, function: #function)
         
         let pgidFindResult = AppleScriptBridge.runAppleScript(script: pgidFindScript)
 
@@ -391,9 +408,9 @@ struct ITermControl: TerminalControlling {
                  return KillSessionResult(killedSessionInfo: sessionInfo, killSuccess: true, message: message + " (No process found via ps)")
             }
 
-        case .failure(let error):
+        case .failure(_):
             message += " Failed to query processes on TTY \\(tty) for iTerm session: \\(error.localizedDescription)."
-            Logger.log(level: .error, "[ITermControl] Failed to run ps to find PGID on TTY \\(tty) for iTerm: \\(error.localizedDescription)")
+            Logger.log(level: .error, "[ITermControl] Failed to run ps to find PGID on TTY \\(tty) for iTerm: \\(error.localizedDescription)", file: #file, function: #function)
             // Fall through to Ctrl+C logic if no pre-kill script defined
             if config.preKillScriptPath != nil {
                 return KillSessionResult(killedSessionInfo: sessionInfo, killSuccess: false, message: message)
@@ -404,45 +421,46 @@ struct ITermControl: TerminalControlling {
         if let currentPgid = pgidToKill, currentPgid > 0 {
             killSuccess = ProcessUtilities.attemptGracefulKill(pgid: currentPgid, config: config, message: &message)
             if killSuccess {
-                 Logger.log(level: .info, "[ITermControl] Graceful kill successful for PGID \\(currentPgid) in iTerm session \\(params.tag).")
+                 Logger.log(level: .info, "[ITermControl] Graceful kill successful for PGID \\(currentPgid) in iTerm session \\(params.tag).", file: #file, function: #function)
                  return KillSessionResult(killedSessionInfo: sessionInfo, killSuccess: true, message: message)
             }
             message += " Graceful kill attempt for PGID \\(currentPgid) failed or process persisted."
-            Logger.log(level: .warn, "[ITermControl] Graceful kill failed or process persisted for PGID \\(currentPgid) in iTerm session \\(params.tag).")
+            Logger.log(level: .warn, "[ITermControl] Graceful kill failed or process persisted for PGID \\(currentPgid) in iTerm session \\(params.tag).", file: #file, function: #function)
         }
         
         // 4. Ctrl+C Fallback (SDD 3.2.5)
         // Condition: No pre-kill script defined AND (PGID not found OR graceful kill failed/process persisted)
         if config.preKillScriptPath == nil && (pgidToKill == nil || !killSuccess) {
-            Logger.log(level: .info, "[ITermControl] PGID not found or graceful kill failed for iTerm session \\(params.tag). Attempting Ctrl+C fallback.")
-            guard let windowID = sessionInfo.windowIdentifier, let tabID = sessionInfo.tabIdentifier else {
-                message += " Cannot attempt Ctrl+C: session missing window/tab identifiers."
+            Logger.log(level: .info, "[ITermControl] PGID not found or graceful kill failed for iTerm session \\(params.tag). Attempting Ctrl+C fallback.", file: #file, function: #function)
+            guard let _ = sessionInfo.windowIdentifier, 
+                  let compositeTabID = sessionInfo.tabIdentifier,
+                  let sessionID = Self.extractSessionID(from: compositeTabID) else {
+                message += " Cannot attempt Ctrl+C: session missing window/sessionID identifiers."
                 return KillSessionResult(killedSessionInfo: sessionInfo, killSuccess: false, message: message)
             }
             
             let ctrlCScript = ITermScripts.sendControlCScript(
                 appName: self.appName,
-                windowID: windowID,
-                tabID: tabID,
+                sessionID: sessionID,
                 shouldActivateITerm: attentesFocus(focusPreference: params.focusPreference, defaultFocusSetting: false) // Activate if focus desired
             )
             let ctrlCResult = AppleScriptBridge.runAppleScript(script: ctrlCScript)
             switch ctrlCResult {
             case .success(let strResult):
-                if let resultStr = strResult as? String, resultStr == "OK_CTRL_C_SENT" {
+                if strResult == "OK_CTRL_C_SENT" {
                     message += " Sent Ctrl+C to iTerm session as fallback."
-                    Logger.log(level: .info, "[ITermControl] Successfully sent Ctrl+C to iTerm session \\(params.tag).")
+                    Logger.log(level: .info, "[ITermControl] Successfully sent Ctrl+C to iTerm session \\(params.tag).", file: #file, function: #function)
                     // We can't easily confirm kill success from Ctrl+C, so assume it was delivered.
                     // The next status check or operation will reveal if it's still busy.
                     killSuccess = true // Mark as success because the action was performed.
                 } else {
-                    message += " Failed to send Ctrl+C to iTerm session. AppleScript result: \\(strResult ?? "empty")."
-                    Logger.log(level: .warn, "[ITermControl] Failed to send Ctrl+C to iTerm session \\(params.tag). Result: \\(strResult ?? "empty").")
+                    message += " Failed to send Ctrl+C to iTerm session. AppleScript result: \\(strResult)."
+                    Logger.log(level: .warn, "[ITermControl] Failed to send Ctrl+C to iTerm session \\(params.tag). Result: \\(strResult).", file: #file, function: #function)
                     killSuccess = false
                 }
-            case .failure(let error):
+            case .failure(_):
                 message += " Failed to send Ctrl+C to iTerm session: \\(error.localizedDescription)."
-                Logger.log(level: .warn, "[ITermControl] Error sending Ctrl+C to iTerm session \\(params.tag): \\(error.localizedDescription).")
+                Logger.log(level: .warn, "[ITermControl] Error sending Ctrl+C to iTerm session \\(params.tag): \\(error.localizedDescription).", file: #file, function: #function)
                 killSuccess = false
             }
         } else if config.preKillScriptPath == nil && pgidToKill != nil && killSuccess {
@@ -450,12 +468,13 @@ struct ITermControl: TerminalControlling {
         } else if config.preKillScriptPath != nil {
             // If pre-kill script was run, its success/failure (or the subsequent graceful kill) is the final state.
             // No Ctrl+C fallback in this path according to spec logic.
-            Logger.log(level: .debug, "[ITermControl] Pre-kill script was configured for \\(params.tag). Ctrl+C fallback skipped.")
+            Logger.log(level: .debug, "[ITermControl] Pre-kill script was configured for \\(params.tag). Ctrl+C fallback skipped.", file: #file, function: #function)
         }
         
         // Clear the session screen after all kill attempts
-        if let windowID = sessionInfo.windowIdentifier, let tabID = sessionInfo.tabIdentifier {
-            Self._clearSessionScreen(appName: self.appName, windowID: windowID, tabID: tabID, sessionID: sessionInfo.iTermSessionID, tag: params.tag)
+        if let compositeTabID = sessionInfo.tabIdentifier,
+           let sessionID = Self.extractSessionID(from: compositeTabID) {
+            Self._clearSessionScreen(appName: self.appName, sessionID: sessionID, tag: params.tag)
         }
 
         return KillSessionResult(killedSessionInfo: sessionInfo, killSuccess: killSuccess, message: message)
@@ -463,7 +482,7 @@ struct ITermControl: TerminalControlling {
     
     // MARK: - Private Helper Methods for iTerm
     private func findOrCreateSessionForITerm(projectPath: String?, tag: String, focusPreference: AppConfig.FocusCLIArgument) throws -> TerminalSessionInfo {
-        Logger.log(level: .debug, "[ITermControl] Finding or creating session for tag: \(tag), project: \(projectPath ?? "N/A")")
+        Logger.log(level: .debug, "[ITermControl] Finding or creating session for tag: \(tag), project: \(projectPath ?? "nil")", file: #file, function: #function)
 
         // 1. Try to find existing session
         if let existingSession = _findExistingSessionITerm(projectPath: projectPath, tag: tag, focusPreference: focusPreference) {
@@ -471,11 +490,11 @@ struct ITermControl: TerminalControlling {
         }
         
         // 2. If not found, create a new one.
-        return try _createNewSessionITerm(projectPath: projectPath, tag: tag, focusPreference: focusPreference)
+        return try _findOrCreateSessionForITerm(projectPath: projectPath, tag: tag, focusPreference: focusPreference)
     }
 
     private func _findExistingSessionITerm(projectPath: String?, tag: String, focusPreference: AppConfig.FocusCLIArgument) -> TerminalSessionInfo? {
-        Logger.log(level: .debug, "[ITermControl] Attempting to find existing iTerm session for tag: \(tag), project: \(projectPath ?? "N/A")")
+        Logger.log(level: .debug, "[ITermControl] Attempting to find existing iTerm session for tag: \(tag), project: \(projectPath ?? "nil")", file: #file, function: #function)
         do {
             let existingSessions = try self.listSessions(filterByTag: tag)
             let targetProjectHash = projectPath != nil ? SessionUtilities.generateProjectHash(projectPath: projectPath) : "NO_PROJECT"
@@ -484,71 +503,175 @@ struct ITermControl: TerminalControlling {
                 let sessionProjectHash = session.projectPath ?? "NO_PROJECT"
                 if sessionProjectHash == targetProjectHash {
                     if !session.isBusy || config.reuseBusySessions {
-                        Logger.log(level: .info, "Found suitable existing iTerm session for tag '\(tag)' (Project: \(projectPath ?? "Global"), TTY: \(session.tty ?? "N/A")). Reusing.")
+                        Logger.log(level: .info, "Found suitable existing iTerm session for tag '\(tag)' (Project: \(projectPath ?? "Global"), TTY: \(session.tty ?? "nil")). Reusing.", file: #file, function: #function)
                         
                         if attentesFocus(focusPreference: focusPreference, defaultFocusSetting: config.defaultFocusOnAction) {
-                            Logger.log(level: .debug, "Focus preference requires focusing existing iTerm session.")
-                            guard let existingTabID = session.tabIdentifier, let existingWindowID = session.windowIdentifier else {
-                                Logger.log(level: .warn, "Cannot focus existing iTerm session for tag '\(tag)' due to missing identifiers.")
+                            Logger.log(level: .debug, "Focus preference requires focusing existing iTerm session.", file: #file, function: #function)
+                            guard let compositeTabID = session.tabIdentifier,
+                                  let existingTabID = Self.extractTabID(from: compositeTabID),
+                                  let existingSessionID = Self.extractSessionID(from: compositeTabID),
+                                  let existingWindowID = session.windowIdentifier else {
+                                Logger.log(level: .warn, "Cannot focus existing iTerm session for tag '\(tag)' due to missing identifiers.", file: #file, function: #function)
                                 return session // Return session without focusing if IDs are missing
                             }
                             let focusScript = ITermScripts.focusSessionScript(
                                 appName: self.appName,
                                 windowID: existingWindowID,
-                                tabID: existingTabID
+                                tabID: existingTabID,
+                                sessionID: existingSessionID
                             )
-                            Logger.log(level: .debug, "Executing focus script for existing iTerm session: \\n\(focusScript)")
+                            Logger.log(level: .debug, "Executing focus script for existing iTerm session: \\n\(focusScript)", file: #file, function: #function)
                             let focusResult = AppleScriptBridge.runAppleScript(script: focusScript)
                             switch focusResult {
                             case .success:
-                                Logger.log(level: .info, "Successfully focused existing iTerm session: \(session.sessionIdentifier)")
+                                Logger.log(level: .info, "Successfully focused existing iTerm session: \(session.sessionIdentifier)", file: #file, function: #function)
                             case .failure(let err):
-                                Logger.log(level: .warn, "Failed to focus existing iTerm session \(session.sessionIdentifier): \(err.localizedDescription)")
+                                Logger.log(level: .warn, "Failed to focus existing iTerm session \(session.sessionIdentifier): \(err.localizedDescription)", file: #file, function: #function)
                             }
                         }
                         return session
                     } else {
-                        Logger.log(level: .info, "Found existing iTerm session for tag '\(tag)' (Project: \(projectPath ?? "Global")) but it's busy and reuseBusySessions is false. TTY: \(session.tty ?? "N/A")")
+                        Logger.log(level: .info, "Found existing iTerm session for tag '\(tag)' (Project: \(projectPath ?? "Global")) but it's busy and reuseBusySessions is false. TTY: \(session.tty ?? "nil")", file: #file, function: #function)
                     }
                 }
             }
         } catch {
-            Logger.log(level: .warn, "Error listing iTerm sessions while trying to find existing session for tag '\(tag)': \(error.localizedDescription). This is not fatal if new one can be created.")
+            Logger.log(level: .warn, "Error listing iTerm sessions while trying to find existing session for tag '\(tag)': \(error.localizedDescription). This is not fatal if new one can be created.", file: #file, function: #function)
         }
-        Logger.log(level: .debug, "[ITermControl] No suitable existing iTerm session found for tag: \(tag), project: \(projectPath ?? "N/A")")
+        Logger.log(level: .debug, "[ITermControl] No suitable existing iTerm session found for tag: \(tag), project: \(projectPath ?? "nil")", file: #file, function: #function)
         return nil
     }
 
-    private func _createNewSessionITerm(projectPath: String?, tag: String, focusPreference: AppConfig.FocusCLIArgument) throws -> TerminalSessionInfo {
-        Logger.log(level: .debug, "[ITermControl] Creating new iTerm session for tag: \(tag), project: \(projectPath ?? "N/A")")
+    private func _findOrCreateSessionForITerm(projectPath: String?, tag: String, focusPreference: AppConfig.FocusCLIArgument) throws -> TerminalSessionInfo {
+        Logger.log(level: .debug, "[ITermControl] Finding or creating session for tag: \(tag), project: \(projectPath ?? "nil")", file: #file, function: #function)
         
-        let projectHashForTitle = SessionUtilities.getProjectHashForTitle(projectPath: projectPath, config: config)
+        // 1. Determine shouldActivateITerm based on focusPreference
+        let shouldActivateITerm = attentesFocus(focusPreference: focusPreference, defaultFocusSetting: config.defaultFocusOnAction)
+        
+        // 2. Generate projectHashForTitle and customTitle using SessionUtilities
+        let projectHash = SessionUtilities.generateProjectHash(projectPath: projectPath)
         let customTitle = SessionUtilities.generateSessionTitle(projectPath: projectPath, tag: tag, ttyDevicePath: nil, processId: nil)
-        let shouldActivate = attentesFocus(focusPreference: focusPreference, defaultFocusSetting: config.defaultFocusOnAction)
         
-        // For iTerm, a command is typically run *after* session creation, not during the initial AppleScript typically.
-        // However, if a setup command is absolutely needed, it would be passed here.
-        // For now, assuming no initial command during creation via this path.
-        let script = ITermScripts.createNewSessionScript(
-            appName: self.appName,
-            projectPath: projectPath, // Pass for potential future use in script logic
-            tag: tag,
-            commandToRunEscaped: nil, // No command during creation script for iTerm in this model
-            customTitle: customTitle,
-            shouldActivateITerm: shouldActivate
-        )
-
-        Logger.log(level: .debug, "AppleScript for _createNewSessionITerm:\n\(script)")
-        let appleScriptResult = AppleScriptBridge.runAppleScript(script: script)
-
-        switch appleScriptResult {
-        case .success(let resultString):
-            return try ITermParser.parseCreateNewSessionITermOutput(resultString, scriptContent: script, projectPathProvided: projectPath, tag: tag, customTitle: customTitle)
-        case .failure(let error):
-            let errorMsg = "Failed to create new iTerm session for tag '\\(tag)'. Error: \\(error.localizedDescription)"
-            Logger.log(level: .error, errorMsg)
-            throw TerminalControllerError.appleScriptError(message: errorMsg, scriptContent: script, underlyingError: error)
+        // 3. Implement window/tab creation strategy
+        var targetWindowID: String? = nil
+        var winID: String? = nil
+        var tabID: String? = nil
+        var sessionID: String? = nil
+        var tty: String? = nil
+        
+        let groupingStrategy = config.windowGrouping
+        
+        if groupingStrategy == .project, let projectPath = projectPath {
+            // 3a. If grouping is "project", try to find an existing window for that project
+            let findWindowScript = ITermScripts.findWindowForProjectScript(appName: self.appName, projectPath: projectPath)
+            let findWindowResult = AppleScriptBridge.runAppleScript(script: findWindowScript)
+            
+            if case .success(let resultData) = findWindowResult {
+                // Parse the result - expecting a simple string with window ID or empty
+                let resultString = resultData
+                if !resultString.isEmpty {
+                    targetWindowID = resultString
+                    Logger.log(level: .debug, "[ITermControl] Found existing window for project: \(targetWindowID ?? "nil")", file: #file, function: #function)
+                }
+            }
+        } else if groupingStrategy == .smart {
+            // 3b. If grouping is "current", get the current window ID
+            let getCurrentWindowScript = ITermScripts.getCurrentWindowIDScript(appName: self.appName)
+            let getCurrentWindowResult = AppleScriptBridge.runAppleScript(script: getCurrentWindowScript)
+            
+            if case .success(let resultData) = getCurrentWindowResult {
+                let resultString = resultData
+                if !resultString.isEmpty {
+                    targetWindowID = resultString
+                    Logger.log(level: .debug, "[ITermControl] Using current window: \(targetWindowID ?? "nil")", file: #file, function: #function)
+                }
+            }
         }
+        // 3c. If grouping is "new" or no window found/determined, we'll create a new window
+        
+        // 4. Create session based on whether we have a target window
+        if let existingWindowID = targetWindowID {
+            // Create a new tab in the existing window
+            let createTabScript = ITermScripts.createNewTabInWindowScript(
+                appName: self.appName,
+                windowID: existingWindowID,
+                customTitle: customTitle,
+                commandToRunEscaped: nil,
+                shouldActivateITerm: shouldActivateITerm
+            )
+            let createTabResult = AppleScriptBridge.runAppleScript(script: createTabScript)
+            
+            switch createTabResult {
+            case .success(let resultData):
+                let tabInfo = try ITermParser.parseNewTabOutput(resultData: resultData, scriptContent: createTabScript)
+                winID = existingWindowID
+                tabID = tabInfo.tabID
+                sessionID = tabInfo.sessionID
+                tty = tabInfo.tty
+                Logger.log(level: .info, "[ITermControl] Created new tab in existing window. Tab: \(tabID ?? "nil"), Session: \(sessionID ?? "nil"), TTY: \(tty ?? "nil")", file: #file, function: #function)
+            case .failure(let error):
+                let errorMsg = "Failed to create new tab in iTerm window '\(existingWindowID)' for tag '\(tag)': \(error.localizedDescription)"
+                Logger.log(level: .error, errorMsg, file: #file, function: #function)
+                throw TerminalControllerError.appleScriptError(message: errorMsg, scriptContent: createTabScript, underlyingError: error)
+            }
+        } else {
+            // Create a new window with session
+            let createWindowScript = ITermScripts.createNewWindowWithSessionScript(
+                appName: self.appName,
+                customTitle: customTitle,
+                commandToRunEscaped: nil,
+                shouldActivateITerm: shouldActivateITerm
+            )
+            let createWindowResult = AppleScriptBridge.runAppleScript(script: createWindowScript)
+            
+            switch createWindowResult {
+            case .success(let resultData):
+                let windowInfo = try ITermParser.parseNewWindowOutput(resultData: resultData, scriptContent: createWindowScript)
+                winID = windowInfo.winID
+                tabID = windowInfo.tabID
+                sessionID = windowInfo.sessionID
+                tty = windowInfo.tty
+                Logger.log(level: .info, "[ITermControl] Created new window. Window: \(winID ?? "nil"), Tab: \(tabID ?? "nil"), Session: \(sessionID ?? "nil"), TTY: \(tty ?? "nil")", file: #file, function: #function)
+            case .failure(let error):
+                let errorMsg = "Failed to create new iTerm window for tag '\(tag)': \(error.localizedDescription)"
+                Logger.log(level: .error, errorMsg, file: #file, function: #function)
+                throw TerminalControllerError.appleScriptError(message: errorMsg, scriptContent: createWindowScript, underlyingError: error)
+            }
+        }
+        
+        // 5. Construct TerminalSessionInfo
+        let sessionIdentifier = SessionUtilities.generateUserFriendlySessionIdentifier(
+            projectPath: projectPath,
+            tag: tag
+        )
+        
+        // Store both tabID and sessionID in composite format for iTerm
+        let compositeTabIdentifier = "\(tabID ?? ""):\(sessionID ?? "")"
+        
+        let sessionInfo = TerminalSessionInfo(
+            sessionIdentifier: sessionIdentifier,
+            projectPath: projectHash,
+            tag: tag,
+            fullTabTitle: customTitle,
+            tty: tty,
+            isBusy: false, // New session is not busy
+            windowIdentifier: winID,
+            tabIdentifier: compositeTabIdentifier
+        )
+        
+        // 6. Focus the session if needed
+        if shouldActivateITerm, let windowID = winID, let tabID = tabID, let sessionID = sessionID {
+            let focusScript = ITermScripts.focusSessionScript(
+                appName: self.appName,
+                windowID: windowID,
+                tabID: tabID,
+                sessionID: sessionID
+            )
+            _ = AppleScriptBridge.runAppleScript(script: focusScript) // Best effort focus
+        }
+        
+        Logger.log(level: .info, "[ITermControl] Successfully created new iTerm session: \(sessionIdentifier)", file: #file, function: #function)
+        return sessionInfo
     }
     
     private func attentesFocus(focusPreference: AppConfig.FocusCLIArgument, defaultFocusSetting: Bool) -> Bool {
@@ -558,6 +681,8 @@ struct ITermControl: TerminalControlling {
         case .noFocus:
             return false
         case .autoBehavior:
+            return defaultFocusSetting
+        case .default:
             return defaultFocusSetting
         }
     }
@@ -572,24 +697,24 @@ struct ITermControl: TerminalControlling {
             if let pgidStr = parts.first, let foundPgid = pid_t(pgidStr) {
                 pgidToKill = foundPgid
                 message += " Identified foreground process group ID: \\(foundPgid)."
-                Logger.log(level: .info, "Identified PGID \\(foundPgid) on TTY \\(tty) for iTerm session \\(tag).")
+                Logger.log(level: .info, "Identified PGID \\(foundPgid) on TTY \\(tty) for iTerm session \\(tag).", file: #file, function: #function)
             } else {
                 message += " Could not parse PGID from ps output: '\\(resultString)'."
-                Logger.log(level: .warn, "Could not parse PGID from output: '\\(resultString)' for iTerm TTY \\(tty).")
+                Logger.log(level: .warn, "Could not parse PGID from output: '\\(resultString)' for iTerm TTY \\(tty).", file: #file, function: #function)
             }
         } else {
             message += " No foreground process found on TTY \\(tty) in iTerm session to kill."
-            Logger.log(level: .info, "No foreground process found on TTY \\(tty) for iTerm session \\(tag). Assuming success.")
+            Logger.log(level: .info, "No foreground process found on TTY \\(tty) for iTerm session \\(tag). Assuming success.", file: #file, function: #function)
             shouldReturnEarly = true // Indicate that we should return early from the calling function
         }
         return (pgidToKill, message, shouldReturnEarly)
     }
     
-    private static func _clearSessionScreen(appName: String, windowID: String, tabID: String, sessionID: String?, tag: String) {
-        let clearScript = ITermScripts.clearSessionScript(appName: appName, windowID: windowID, tabID: tabID, sessionID: sessionID)
+    private static func _clearSessionScreen(appName: String, sessionID: String, tag: String) {
+        let clearScript = ITermScripts.clearSessionScript(appName: appName, sessionID: sessionID, shouldActivateITerm: false)
         let clearScriptResult = AppleScriptBridge.runAppleScript(script: clearScript)
-        if case .failure(let error) = clearScriptResult {
-            Logger.log(level: .warn, "[ITermControl] Failed to clear iTerm session for tag \\(tag): \\(error.localizedDescription)")
+        if case .failure(_) = clearScriptResult {
+            Logger.log(level: .warn, "[ITermControl] Failed to clear iTerm session for tag \\(tag): \\(error.localizedDescription)", file: #file, function: #function)
         }
     }
 } 
