@@ -37,4 +37,4 @@ struct KillSessionParams {
     let tag: String
     let focusPreference: AppConfig.FocusCLIArgument // For any ancillary actions (e.g., screen clearing post-kill)
     // sigintWait and sigtermWait will be taken from AppConfig
-} 
+}

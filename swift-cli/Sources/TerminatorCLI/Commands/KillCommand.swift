@@ -32,11 +32,12 @@ struct Kill: ParsableCommand {
             sigtermWaitOption: globals.sigtermWaitSeconds,
             defaultFocusOnKillOption: focusOnKill, // Pass from Kill command option
             preKillScriptPathOption: nil, // No direct CLI option for pre-kill script here
-            reuseBusySessionsOption: nil  // No direct CLI option for reuse here
+            reuseBusySessionsOption: nil, // No direct CLI option for reuse here
+            iTermProfileNameOption: nil // Added
         )
         let config = TerminatorCLI.currentConfig!
         Logger.log(level: .info, "Executing 'kill' command for tag: \(tag)" + (projectPath != nil ? " in project: \(projectPath!)" : ""))
-        
+
         let resolvedFocusMode: AppConfig.FocusCLIArgument
         if let focusModeString = focusMode?.lowercased(), let mode = AppConfig.FocusCLIArgument(rawValue: focusModeString) {
             resolvedFocusMode = mode
@@ -52,7 +53,7 @@ struct Kill: ParsableCommand {
 
         do {
             let result: KillSessionResult
-            
+
             switch config.terminalAppEnum {
             case .appleTerminal:
                 let appleTerminalController = AppleTerminalControl(config: config, appName: config.terminalApp)
@@ -67,10 +68,10 @@ struct Kill: ParsableCommand {
                 Logger.log(level: .error, "Unknown terminal application for kill: \(config.terminalApp)")
                 throw ExitCode(ErrorCodes.configurationError)
             }
-            
+
             print("Terminator: Process in session '\(result.killedSessionInfo.sessionIdentifier)' was targeted for termination. Success: \(result.killSuccess)")
             if !result.killSuccess {
-                 fputs("Warning: Kill command issued, but process might still be running or was not found.\n", stderr)
+                fputs("Warning: Kill command issued, but process might still be running or was not found.\n", stderr)
             }
             throw ExitCode(result.killSuccess ? ErrorCodes.success : ErrorCodes.generalError)
         } catch let error as TerminalControllerError {
@@ -79,10 +80,10 @@ struct Kill: ParsableCommand {
             case .sessionNotFound:
                 exitCode = ErrorCodes.sessionNotFound
                 fputs("Error: Session for tag '\(tag)' in project '\(projectPath ?? "N/A")' not found for kill.\n", stderr)
-            case .appleScriptError(let msg, _, _):
+            case let .appleScriptError(msg, _, _):
                 exitCode = ErrorCodes.appleScriptError
                 fputs("Error: AppleScript failed during kill operation. Details: \(msg)\n", stderr)
-            case .busy(let tty, let processDescription):
+            case let .busy(tty, processDescription):
                 exitCode = ErrorCodes.sessionBusyError
                 var errorMsg = "Error: Session on TTY '\(tty)' is busy during kill."
                 if let procDesc = processDescription {
@@ -102,4 +103,4 @@ struct Kill: ParsableCommand {
             throw ExitCode(ErrorCodes.generalError)
         }
     }
-} 
+}

@@ -4,8 +4,7 @@ import Foundation
 // Contains AppleScript snippets for interacting with the Ghosty terminal application.
 // As per SDD, Ghosty support is "best-effort" for V1, so scripts are minimal.
 
-struct GhostyScripts {
-
+enum GhostyScripts {
     static func listSessionsScript(appName: String) -> String {
         // For V1, listing distinct sessions in Ghosty might not be feasible or reliable.
         // This script can just try to activate it to see if it's running.
@@ -24,7 +23,7 @@ struct GhostyScripts {
         appName: String,
         commandToRunRaw: String,
         outputLogFilePath: String, // For potential output redirection
-        completionMarker: String,  // For foreground completion detection
+        completionMarker: String, // For foreground completion detection
         isForeground: Bool,
         shouldActivate: Bool
     ) -> String {
@@ -43,7 +42,7 @@ struct GhostyScripts {
             let shellEscapedCommand = commandToRunRaw.replacingOccurrences(of: "'", with: "'\\\\''")
             shellCommandToExecute = "((\(shellEscapedCommand)) > \(quotedLogFilePathForShell) 2>&1) & disown"
         }
-        
+
         let appleScriptSafeShellCommand = shellCommandToExecute
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "\"", with: "\\\"")
@@ -58,7 +57,7 @@ struct GhostyScripts {
             else if \(shouldActivate) then
                 activate
             end if
-            
+
             try
                 do script "\(appleScriptSafeShellCommand)"
                 return "OK_COMMAND_SUBMITTED"
@@ -142,7 +141,7 @@ struct GhostyScripts {
         end tell
         """
     }
-    
+
     // Minimalistic get version script for validation
     static func getVersionScript(appName: String) -> String {
         return """
@@ -156,4 +155,4 @@ struct GhostyScripts {
         end tell
         """
     }
-} 
+}

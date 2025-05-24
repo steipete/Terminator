@@ -1,47 +1,47 @@
 import Foundation
 
-struct ProcessUtilities {
+enum ProcessUtilities {
     static func getForegroundProcessInfo(forTTY ttyPath: String) -> (pgid: pid_t, pid: pid_t, command: String)? {
         let ttyName = (ttyPath as NSString).lastPathComponent
         if ttyName.isEmpty {
             Logger.log(level: .warn, "Could not extract TTY name from path: \(ttyPath)")
             return nil
         }
-        
+
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/ps")
         process.arguments = ["-t", ttyName, "-o", "pgid=,pid=,stat=,comm="]
-        
+
         let pipe = Pipe()
         process.standardOutput = pipe
-        
+
         do {
             try process.run()
             process.waitUntilExit()
-            
+
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             guard let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) else {
                 Logger.log(level: .warn, "Failed to get output from ps for TTY \(ttyName)")
                 return nil
             }
-            
+
             Logger.log(level: .debug, "ps output for TTY \(ttyName):\n\(output)")
-            
+
             if output.isEmpty { return nil }
-            
+
             let lines = output.split(whereSeparator: \.isNewline)
             let commonShells = ["bash", "zsh", "fish", "sh", "tcsh", "csh", "login", "script"]
-            
+
             for line in lines {
                 let columns = line.split(separator: " ", omittingEmptySubsequences: true).map { String($0) }
                 guard columns.count >= 4 else { continue }
-                
+
                 let pgidStr = columns[0]
                 let pidStr = columns[1]
                 let state = columns[2]
                 let commandName = (columns[3] as NSString).lastPathComponent
-                
-                if state.contains("+") && !state.contains("s") && !commonShells.contains(commandName.lowercased()) {
+
+                if state.contains("+"), !state.contains("s"), !commonShells.contains(commandName.lowercased()) {
                     guard let pgid = pid_t(pgidStr), let pid = pid_t(pidStr) else {
                         Logger.log(level: .warn, "Failed to parse PGID or PID from ps output")
                         continue
@@ -50,7 +50,7 @@ struct ProcessUtilities {
                     return (pgid: pgid, pid: pid, command: commandName)
                 }
             }
-            
+
             Logger.log(level: .debug, "TTY \(ttyName) has no non-shell foreground process.")
             return nil
         } catch {
@@ -58,16 +58,16 @@ struct ProcessUtilities {
             return nil
         }
     }
-    
+
     static func getTTYBusyStatus(tty: String?) -> Bool {
         guard let ttyPath = tty, !ttyPath.isEmpty else {
             Logger.log(level: .debug, "TTY path is nil or empty, cannot determine busy status.")
             return false
         }
-        
+
         return getForegroundProcessInfo(forTTY: ttyPath) != nil
     }
-    
+
     static func isProcessRunning(pid: pid_t) -> Bool {
         if pid <= 0 { // Invalid PID
             Logger.log(level: .debug, "isProcessRunning check for invalid PID \(pid): assuming not running.")
@@ -91,7 +91,7 @@ struct ProcessUtilities {
             return false
         }
     }
-    
+
     // Helper to kill a process group
     // Returns true if kill command was issued without immediate error, false otherwise.
     // It does not guarantee the process group is terminated, only that the signal was sent.
@@ -131,7 +131,7 @@ struct ProcessUtilities {
             } else {
                 // For other errors (like EPERM), assume it might be running or in a state we can't fully determine as "not running".
                 Logger.log(level: .debug, "isProcessGroupRunning check for PGID \(pgid): killpg(0) failed with errno \(errorNumber) (\(String(cString: strerror(errorNumber)))). Assuming running or indeterminate.")
-                return true 
+                return true
             }
         }
     }
@@ -150,7 +150,7 @@ struct ProcessUtilities {
             message += " Sent SIGINT to PGID \(pgid)."
             Logger.log(level: .debug, "Sent SIGINT to PGID \(pgid). Waiting for \(config.sigintWaitSeconds)s...")
             Thread.sleep(forTimeInterval: TimeInterval(config.sigintWaitSeconds))
-            if !isProcessGroupRunning(pgid: pgid) { 
+            if !isProcessGroupRunning(pgid: pgid) {
                 killSuccess = true
                 message += " Process group terminated after SIGINT."
                 Logger.log(level: .info, "Process group \(pgid) terminated after SIGINT.")
@@ -171,7 +171,7 @@ struct ProcessUtilities {
                     Logger.log(level: .info, "Process group \(pgid) terminated after SIGTERM.")
                 }
             } else {
-                 message += " Failed to send SIGTERM to PGID \(pgid)."
+                message += " Failed to send SIGTERM to PGID \(pgid)."
             }
         }
 
@@ -190,14 +190,14 @@ struct ProcessUtilities {
                     Logger.log(level: .warn, "Process group \(pgid) did not terminate even after SIGKILL.")
                 }
             } else {
-                 message += " Failed to send SIGKILL to PGID \(pgid)."
-                 Logger.log(level: .error, "Failed to send SIGKILL to PGID \(pgid).")
+                message += " Failed to send SIGKILL to PGID \(pgid)."
+                Logger.log(level: .error, "Failed to send SIGKILL to PGID \(pgid).")
             }
         }
         return killSuccess
     }
 
-    static func tailLogFileForMarker(logFilePath: String, marker: String, timeoutSeconds: Int, linesToCapture: Int, controlIdentifier: String = "LogTailing") -> (output: String, timedOut: Bool) {
+    static func tailLogFileForMarker(logFilePath: String, marker: String, timeoutSeconds: Int, linesToCapture: Int, controlIdentifier _: String = "LogTailing") -> (output: String, timedOut: Bool) {
         Logger.log(level: .debug, "[\\(controlIdentifier)] Tailing \\\\(logFilePath) for marker '\\\\(marker)' with timeout \\\\(timeoutSeconds)s")
         let startTime = Date()
         var capturedOutput = ""
@@ -234,7 +234,7 @@ struct ProcessUtilities {
             do {
                 let content = try String(contentsOfFile: logFilePath, encoding: .utf8)
                 let lines = content.components(separatedBy: .newlines)
-                if linesToCapture > 0 && lines.count > linesToCapture {
+                if linesToCapture > 0, lines.count > linesToCapture {
                     capturedOutput = lines.suffix(linesToCapture).joined(separator: "\\n")
                 } else {
                     capturedOutput = lines.joined(separator: "\\n")
@@ -248,6 +248,28 @@ struct ProcessUtilities {
             capturedOutput = "Log file \\\\(logFilePath) not found or empty after timeout."
         }
         return (capturedOutput, true)
+    }
+
+    // MARK: - Shell Escaping Utilities
+
+    /// Escapes a string for safe inclusion as an argument in a shell command.
+    /// This typically involves wrapping it in single quotes and escaping any internal single quotes.
+    static func escapePathForShell(_ path: String) -> String {
+        // ' -> '\''
+        return "'" + path.replacingOccurrences(of: "'", with: "'\\''") + "'"
+    }
+
+    /// Escapes a command string for safe execution in a shell.
+    /// This primarily focuses on escaping single quotes if the command itself is to be wrapped in single quotes,
+    /// or escaping special characters if it's to be used directly.
+    /// For the current use case where the command is part of `( (CMD) > LOG 2>&1; echo MARKER >> LOG )`,
+    /// we need to ensure the `CMD` part is safe, especially if it contains single quotes.
+    static func escapeCommandForShell(_ command: String) -> String {
+        // This simple version escapes single quotes for when the command might be part of a larger single-quoted shell script block.
+        // It assumes the command itself doesn't need complex internal quoting for its own arguments,
+        // which should be handled by the caller if necessary before passing to this function.
+        // Example: if command is `echo 'hello'`, it becomes `echo '\''hello'\''`
+        return command.replacingOccurrences(of: "'", with: "'\\''")
     }
 }
 
@@ -291,10 +313,10 @@ extension ProcessUtilities {
                     Logger.log(level: .warn, "Process group \(pgid) did not terminate even after SIGKILL (post-timeout).")
                 }
             } else {
-                 message += " Failed to send SIGKILL to PGID \(pgid) (post-timeout)."
-                 Logger.log(level: .error, "Failed to send SIGKILL to PGID \(pgid) (post-timeout).")
+                message += " Failed to send SIGKILL to PGID \(pgid) (post-timeout)."
+                Logger.log(level: .error, "Failed to send SIGKILL to PGID \(pgid) (post-timeout).")
             }
         }
         return killSuccess
     }
-} 
+}

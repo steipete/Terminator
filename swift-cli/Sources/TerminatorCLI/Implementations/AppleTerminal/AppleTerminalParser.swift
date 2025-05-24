@@ -1,6 +1,6 @@
 import Foundation
 
-struct AppleTerminalParser {
+enum AppleTerminalParser {
     static func parseSessionListOutput(resultStringOrArray: Any, scriptContent: String, filterByTag: String?) throws -> [TerminalSessionInfo] {
         var sessions: [TerminalSessionInfo] = []
 
@@ -11,7 +11,7 @@ struct AppleTerminalParser {
         }
 
         for itemArray in resultArray {
-            var sessionData: [String: String] = [:] 
+            var sessionData: [String: String] = [:]
             for item in itemArray {
                 let parts = item.split(separator: ":", maxSplits: 1)
                 if parts.count == 2 {
@@ -22,20 +22,21 @@ struct AppleTerminalParser {
             guard let windowIdentifier = sessionData["win_id"],
                   let tabIdentifier = sessionData["tab_id"],
                   let tty = sessionData["tty"],
-                  let title = sessionData["title"] else {
+                  let title = sessionData["title"]
+            else {
                 Logger.log(level: .warn, "Skipping malformed item from AppleScript (Terminal.app list): \\(itemArray)")
                 continue
             }
-            
+
             let parsedInfo = SessionUtilities.parseSessionTitle(title: title)
             let projectHash = parsedInfo?.projectHash
             let parsedTag = parsedInfo?.tag
-            
+
             guard let tag = parsedTag else {
                 Logger.log(level: .warn, "[AppleTerminalParser] Could not parse tag from session title: \\(title)")
                 continue
             }
-            
+
             if let filter = filterByTag, !filter.isEmpty, tag != filter {
                 Logger.log(level: .debug, "Skipping session due to tag filter. Session tag: \\(tag), Filter: \\(filter)")
                 continue
@@ -43,10 +44,10 @@ struct AppleTerminalParser {
 
             let sessionIdentifier = SessionUtilities.generateUserFriendlySessionIdentifier(projectPath: projectHash, tag: tag)
             let isBusy = ProcessUtilities.getTTYBusyStatus(tty: tty)
-            
+
             let sessionInfo = TerminalSessionInfo(
                 sessionIdentifier: sessionIdentifier,
-                projectPath: projectHash, 
+                projectPath: projectHash,
                 tag: tag,
                 fullTabTitle: title,
                 tty: tty.isEmpty ? nil : tty,
@@ -80,15 +81,15 @@ struct AppleTerminalParser {
         let actualTitleSet = resultArray[3]
 
         Logger.log(level: .info, "[AppleTerminalParser] Successfully parsed new tab. WindowID: \\(windowID), TabID: \\(tabID), TTY: \\(tty), Title: \\(actualTitleSet)")
-        
+
         let parsedInfoAfterCreation = SessionUtilities.parseSessionTitle(title: actualTitleSet)
         let parsedProjectHash = parsedInfoAfterCreation?.projectHash
         let parsedTag = parsedInfoAfterCreation?.tag
 
         guard let finalTag = parsedTag, finalTag == tag else {
-             let errorMsg = "Tag parsed from newly created tab ('\(parsedTag ?? "unknown_parsed_tag")') does not match requested tag ('\(tag)'). Full title set: '\(actualTitleSet)'"
-             Logger.log(level: .error, errorMsg)
-             throw TerminalControllerError.internalError(details: errorMsg)
+            let errorMsg = "Tag parsed from newly created tab ('\(parsedTag ?? "unknown_parsed_tag")') does not match requested tag ('\(tag)'). Full title set: '\(actualTitleSet)'"
+            Logger.log(level: .error, errorMsg)
+            throw TerminalControllerError.internalError(details: errorMsg)
         }
 
         // Determine the projectPath to store in TerminalSessionInfo.
@@ -98,7 +99,7 @@ struct AppleTerminalParser {
 
         let sessionInfo = TerminalSessionInfo(
             sessionIdentifier: SessionUtilities.generateUserFriendlySessionIdentifier(projectPath: projectPath, tag: finalTag),
-            projectPath: sessionProjectPath, 
+            projectPath: sessionProjectPath,
             tag: finalTag,
             fullTabTitle: actualTitleSet,
             tty: tty.isEmpty ? nil : tty,
@@ -115,7 +116,7 @@ struct AppleTerminalParser {
             Logger.log(level: .error, errorMsg)
             throw TerminalControllerError.appleScriptError(message: errorMsg, scriptContent: scriptContent)
         }
-        
+
         var outputToReturn = historyOutput
         if linesToRead > 0 {
             let lines = historyOutput.split(separator: "\n", omittingEmptySubsequences: false)
@@ -125,4 +126,4 @@ struct AppleTerminalParser {
         }
         return ReadSessionResult(sessionInfo: sessionInfo, output: outputToReturn)
     }
-} 
+}

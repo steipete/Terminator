@@ -1,14 +1,17 @@
 import ArgumentParser
 import Foundation
 
+// Global application version. Ideally, this would be set during the build process.
+// For now, it's hardcoded. Consider using a build script to inject this.
+let appVersion = "0.9.0" // Updated to reflect significant refactoring
+
 // Ensure logger is flushed and file closed on exit
 atexit_b { Logger.shutdown() }
 
 struct TerminatorCLI: ParsableCommand {
-    static let APP_VERSION = "0.1.0"
     static var configuration = CommandConfiguration(
         abstract: "A Swift CLI to manage macOS terminal sessions for an MCP plugin.",
-        version: APP_VERSION,
+        version: "0.9.0", // Updated to reflect significant refactoring
         subcommands: [Exec.self, Read.self, List.self, Info.self, Focus.self, Kill.self],
         defaultSubcommand: Info.self
     )
@@ -39,7 +42,7 @@ struct TerminatorCLI: ParsableCommand {
         @Option(name: .long, help: "Seconds to wait for SIGTERM after SIGINT before sending SIGKILL. Env: TERMINATOR_SIGTERM_WAIT_SECONDS")
         var sigtermWaitSeconds: Int?
     }
-    
+
     @OptionGroup var globals: GlobalOptions
 
     static var currentConfig: AppConfig! // Holds the globally resolved config
@@ -58,25 +61,26 @@ struct TerminatorCLI: ParsableCommand {
             sigtermWaitOption: globals.sigtermWaitSeconds,
             defaultFocusOnKillOption: globals.defaultFocusOnKill,
             preKillScriptPathOption: nil,
-            reuseBusySessionsOption: nil
+            reuseBusySessionsOption: nil,
+            iTermProfileNameOption: nil
         )
-        
+
         // Configure the logger now that AppConfig is available.
         // Assuming Logger has a static configure method.
         Logger.configure(level: TerminatorCLI.currentConfig.logLevel,
-                         directory: TerminatorCLI.currentConfig.logDir) 
-        
+                         directory: TerminatorCLI.currentConfig.logDir)
+
         Logger.log(level: .debug, "Global options validated. Config loaded. Logger configured.")
         Logger.log(level: .debug, "Using Swift version: \(swiftVersion())")
         Logger.log(level: .debug, "macOS version: \(macOSVersion())")
 
         // SDD 3.2.3: Validate Ghosty configuration - if AppConfig marked it as invalid,
         // the CLI should error out with code 2.
-        if TerminatorCLI.currentConfig.terminalApp == "INVALID_GHOSTY_CONFIGURATION" || 
-           (TerminatorCLI.currentConfig.terminalAppEnum == .unknown && 
-            (globals.terminalApp?.lowercased() == "ghosty" || 
-             ProcessInfo.processInfo.environment["TERMINATOR_APP"]?.lowercased() == "ghosty")) {
-            
+        if TerminatorCLI.currentConfig.terminalApp == "INVALID_GHOSTY_CONFIGURATION" ||
+            (TerminatorCLI.currentConfig.terminalAppEnum == .unknown &&
+                (globals.terminalApp?.lowercased() == "ghosty" ||
+                    ProcessInfo.processInfo.environment["TERMINATOR_APP"]?.lowercased() == "ghosty"))
+        {
             let errorMsg = "Configuration Error: TERMINATOR_APP is set to Ghosty, but Ghosty is not installed, not scriptable, or failed validation. Please check your Ghosty installation and macOS Automation Permissions."
             fputs("Error: \(errorMsg)\n", stderr)
             Logger.log(level: .error, errorMsg)
@@ -84,16 +88,15 @@ struct TerminatorCLI: ParsableCommand {
         }
     }
 
-
     private func swiftVersion() -> String {
         #if swift(>=6.0)
-        "Swift 6.0 or later"
+            "Swift 6.0 or later"
         #elseif swift(>=5.9)
-        "Swift 5.9"
+            "Swift 5.9"
         #elseif swift(>=5.8)
-        "Swift 5.8"
+            "Swift 5.8"
         #else
-        "Older Swift version"
+            "Older Swift version"
         #endif
     }
 
@@ -108,9 +111,3 @@ struct TerminatorCLI: ParsableCommand {
 // MARK: - Command Definitions (SDD 3.2.5)
 
 TerminatorCLI.main() // Explicitly call main
-
-
-
-
-
-

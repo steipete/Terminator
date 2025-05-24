@@ -1,16 +1,17 @@
 import Foundation
 
 // MARK: - Global Logger (SDD 3.2.7)
-struct Logger {
+
+enum Logger {
     private static var currentLogLevel: AppConfig.LogLevel = .info // Assuming AppConfig.LogLevel is accessible or moved too
-    private static var logFileURL: URL? = nil
+    private static var logFileURL: URL?
     private static let fileHandleQueue = DispatchQueue(label: "com.steipete.terminator.logFileQueue")
-    private static var fileHandle: FileHandle? = nil
+    private static var fileHandle: FileHandle?
 
     static func configure(level: AppConfig.LogLevel, directory: URL) {
         currentLogLevel = level
         logFileURL = directory.appendingPathComponent("terminator_cli.log")
-        
+
         fileHandleQueue.async {
             if let path = logFileURL?.path {
                 if !FileManager.default.fileExists(atPath: path) {
@@ -24,7 +25,7 @@ struct Logger {
                     fileHandle = nil // Ensure it's nil if open failed
                 }
             } else {
-                 fputs("Error: Log file URL is nil during configuration.\n", stderr)
+                fputs("Error: Log file URL is nil during configuration.\n", stderr)
             }
         }
         // Avoid logging from within configure itself if it depends on AppConfig being fully set up,
@@ -32,10 +33,10 @@ struct Logger {
         // Logger.log(level: .info, "Logger configured. Level: \(level.rawValue), Path: \(logFileURL?.path ?? "N/A")")
         // This initial log can be done after AppConfig is fully initialized and Logger.configure is called from outside.
     }
-    
+
     static func shutdown() {
         // Log shutdown initiation if possible (might be tricky if logger itself is what's shutting down)
-        // Logger.log(level: .debug, "Logger shutting down. Closing file handle.") 
+        // Logger.log(level: .debug, "Logger shutting down. Closing file handle.")
         // Consider fputs for this specific message if regular log path is compromised during shutdown
         fputs("[\(timestamp()) DEBUG] Logger shutting down. Closing file handle.\n", stderr) // Changed from stdout to stderr
 
@@ -52,11 +53,11 @@ struct Logger {
 
     static func log(level: AppConfig.LogLevel, _ messageToLog: @autoclosure () -> String, file: String = #file, line: Int = #line, function: String = #function) {
         guard level.intValue >= currentLogLevel.intValue else { return }
-        
+
         let message = messageToLog() // Evaluate the autoclosure only if log level is met
         let fileName = (file as NSString).lastPathComponent
         let logEntry = "[\(timestamp()) \(level.rawValue.uppercased()) \(fileName):\(line) \(function)] \(message)\n"
-        
+
         // Print to stdout (or stderr for errors) regardless of file logging success
         if level.intValue >= AppConfig.LogLevel.error.intValue {
             fputs(logEntry, stderr)
@@ -72,10 +73,10 @@ struct Logger {
                     // Avoid recursive logging
                     fputs("Critical Error: Could not write to log file. Error: \(error.localizedDescription). Original message: \(logEntry)", stderr)
                 }
-            } else if logFileURL != nil && fileHandle == nil {
-                 // Log file was intended but not opened (e.g. permissions)
-                 // This situation should be flagged during configure or first write attempt if possible
-                 // fputs("Warning: Log file handle is nil. Message not written to file: \(logEntry)", stderr)
+            } else if logFileURL != nil, fileHandle == nil {
+                // Log file was intended but not opened (e.g. permissions)
+                // This situation should be flagged during configure or first write attempt if possible
+                // fputs("Warning: Log file handle is nil. Message not written to file: \(logEntry)", stderr)
             }
         }
     }
@@ -85,4 +86,4 @@ struct Logger {
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds] // Match common log formats like Zerolog
         return formatter.string(from: Date())
     }
-} 
+}

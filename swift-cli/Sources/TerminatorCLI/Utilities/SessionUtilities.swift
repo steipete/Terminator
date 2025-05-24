@@ -1,7 +1,17 @@
-import Foundation
 import CryptoKit // Required for SHA256
+import Foundation
 
-struct SessionUtilities {
+// Constants related to session identification and naming
+enum SessionConstants {
+    // Prefix for iTerm2 session GUIDs when stored in comments or metadata
+    static let iTermSessionGuidPrefix = "ITERM_SESSION_GUID:"
+    // Prefix for iTerm2 session tags embedded in session names for easier parsing
+    static let iTermSessionTagPrefix = "[tag:"
+    // Prefix for project path hashes used in default tag generation
+    static let projectHashPrefix = "project@"
+}
+
+enum SessionUtilities {
     static let noProjectIdentifier = "NO_PROJECT" // SDD 3.2.4
     static let sessionPrefix = "::TERMINATOR_SESSION::"
 
@@ -9,7 +19,7 @@ struct SessionUtilities {
         let projectHash: String?
         let tag: String?
         let ttyPath: String? // Decoded TTY path from title
-        let pid: pid_t?      // PID from title
+        let pid: pid_t? // PID from title
     }
 
     static func parseSessionTitle(title: String) -> ParsedTitleInfo? {
@@ -18,10 +28,10 @@ struct SessionUtilities {
             return nil
         }
 
-        var projectHash: String? = nil
-        var tag: String? = nil
-        var ttyPath: String? = nil
-        var pid: pid_t? = nil
+        var projectHash: String?
+        var tag: String?
+        var ttyPath: String?
+        var pid: pid_t?
 
         let trimmedTitle = title.hasPrefix(sessionPrefix) ? String(title.dropFirst(sessionPrefix.count)) : title
         let components = trimmedTitle.split(separator: "::").filter { !$0.isEmpty }
@@ -31,7 +41,7 @@ struct SessionUtilities {
             if parts.count == 2 {
                 let key = parts[0]
                 var value = parts[1]
-                
+
                 // General URL decoding for values that might need it.
                 // Specifically TAG and TTY_PATH were encoded.
                 if key == "TAG" || key == "TTY_PATH" {
@@ -54,7 +64,7 @@ struct SessionUtilities {
                 }
             }
         }
-        
+
         // A valid session title must at least have a tag for our purposes.
         // Project hash can be nil (NO_PROJECT).
         guard tag != nil else {
@@ -65,7 +75,7 @@ struct SessionUtilities {
         Logger.log(level: .debug, "Parsed title - Project Hash: \(projectHash ?? "nil"), Tag: \(tag ?? "nil"), TTY: \(ttyPath ?? "nil"), PID: \(pid != nil ? String(pid!) : "nil")")
         return ParsedTitleInfo(projectHash: projectHash, tag: tag, ttyPath: ttyPath, pid: pid)
     }
-    
+
     static func generateProjectHash(projectPath: String?) -> String {
         guard let projPath = projectPath, !projPath.isEmpty else {
             return noProjectIdentifier
@@ -82,13 +92,13 @@ struct SessionUtilities {
     static func generateSessionTitle(projectPath: String?, tag: String, ttyDevicePath: String?, processId: pid_t?) -> String {
         let projectHashString = generateProjectHash(projectPath: projectPath)
         let projectHashComponent = "PROJECT_HASH=\(projectHashString)"
-        
+
         // SDD 3.2.4: resolvedTag_urlEncoded. Using .urlQueryAllowed for broader character set support.
         let encodedTag = tag.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? tag
         let tagComponent = "TAG=\(encodedTag)"
-        
+
         var titleParts = [sessionPrefix, projectHashComponent, tagComponent]
-        
+
         if let tty = ttyDevicePath, !tty.isEmpty {
             // SDD 3.2.4: ttyDevicePath_urlEncoded. .urlPathAllowed is suitable for file paths.
             let encodedTTY = tty.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? tty
@@ -97,9 +107,9 @@ struct SessionUtilities {
         if let pid = processId {
             titleParts.append("PID=\(pid)")
         }
-        
+
         let title = titleParts.joined(separator: "::") + (titleParts.count > 1 ? "::" : "") // Ensure trailing :: if there are components
-        
+
         Logger.log(level: .debug, "Generated session title: \(title)")
         return title
     }
@@ -118,4 +128,4 @@ struct SessionUtilities {
         }
         return "\(projectName): \(tag)"
     }
-} 
+}

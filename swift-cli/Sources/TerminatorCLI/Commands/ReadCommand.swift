@@ -11,11 +11,11 @@ struct Read: ParsableCommand {
 
     @Option(name: .long, help: "Absolute path to the project directory. Env: TERMINATOR_PROJECT_PATH")
     var projectPath: String?
-    
+
     @Option(name: .long, help: "Maximum number of recent output lines to return. Env: TERMINATOR_DEFAULT_LINES")
     var lines: Int?
 
-    @Option(name: .long, help: "Focus behavior. See 'exec --help'. Env: TERMINATOR_DEFAULT_FOCUS_ON_ACTION") 
+    @Option(name: .long, help: "Focus behavior. See 'exec --help'. Env: TERMINATOR_DEFAULT_FOCUS_ON_ACTION")
     var focusMode: String?
 
     mutating func run() throws {
@@ -32,13 +32,14 @@ struct Read: ParsableCommand {
             sigtermWaitOption: globals.sigtermWaitSeconds,
             defaultFocusOnKillOption: nil,
             preKillScriptPathOption: nil,
-            reuseBusySessionsOption: nil
+            reuseBusySessionsOption: nil,
+            iTermProfileNameOption: nil
         )
         let config = TerminatorCLI.currentConfig!
-        
+
         Logger.log(level: .info, "Reading output... Tag: \(tag), Project: \(projectPath ?? "N/A")")
         let resolvedLines = lines ?? config.defaultLines
-        
+
         let focusPreferenceString: String
         if let fm = focusMode, !fm.isEmpty {
             focusPreferenceString = fm
@@ -46,7 +47,7 @@ struct Read: ParsableCommand {
             focusPreferenceString = config.defaultFocusOnAction ? "auto-behavior" : "no-focus"
         }
         let resolvedFocusPreference = AppConfig.FocusCLIArgument(rawValue: focusPreferenceString) ?? .autoBehavior
-        
+
         Logger.log(level: .debug, "  Lines to read: \(resolvedLines)")
         Logger.log(level: .debug, "  Focus Mode CLI: \(focusMode ?? "nil") -> \(resolvedFocusPreference.rawValue)")
 
@@ -59,33 +60,33 @@ struct Read: ParsableCommand {
 
         do {
             let result: ReadSessionResult
-            
+
             switch config.terminalAppEnum {
             case .appleTerminal:
                 let appleTerminalController = AppleTerminalControl(config: config, appName: config.terminalApp)
                 result = try appleTerminalController.readSessionOutput(params: readParams)
-                
+
             case .iterm:
                 let iTermController = ITermControl(config: config, appName: config.terminalApp)
                 result = try iTermController.readSessionOutput(params: readParams)
-                
+
             case .ghosty:
                 // GhostyControl may not exist yet, so we'll handle it with a placeholder
                 Logger.log(level: .error, "Ghosty read operation not implemented")
                 throw TerminalControllerError.unsupportedTerminalApp(appName: config.terminalApp)
-                
+
             case .unknown:
                 Logger.log(level: .error, "Unknown terminal application for read: \(config.terminalApp)")
                 throw TerminalControllerError.unsupportedTerminalApp(appName: config.terminalApp)
             }
-            
+
             print(result.output)
             throw ExitCode(ErrorCodes.success)
         } catch let error as TerminalControllerError {
             let baseErrorMessage = "Error reading session output for tag \"\(tag)\""
             let projectContext = projectPath != nil ? " in project \"\(projectPath!)\"" : ""
             let detailedErrorMessage = "\(baseErrorMessage)\(projectContext). Details: \(error.localizedDescription)"
-            
+
             fputs("\(detailedErrorMessage)\n", stderr)
             if let scriptContent = error.scriptContent, !scriptContent.isEmpty {
                 fputs("Underlying script (if applicable):\n\(scriptContent)\n", stderr)
@@ -100,4 +101,4 @@ struct Read: ParsableCommand {
             throw ExitCode(ErrorCodes.generalError)
         }
     }
-} 
+}

@@ -14,7 +14,7 @@ struct Exec: ParsableCommand { // Changed from TerminatorSubcommand to ParsableC
 
     @Option(name: .long, help: "The shell command to execute. If omitted, session is prepared (cleared, focused) but no command runs.")
     var command: String?
-    
+
     @Flag(name: .long, help: "Run command in background. Default: false.")
     var background: Bool = false
 
@@ -24,7 +24,7 @@ struct Exec: ParsableCommand { // Changed from TerminatorSubcommand to ParsableC
     @Option(name: .long, help: "Timeout in seconds for the command. Env: TERMINATOR_FOREGROUND_COMPLETION_SECONDS / TERMINATOR_BACKGROUND_STARTUP_SECONDS")
     var timeout: Int?
 
-    @Option(name: .long, help: "Focus behavior (force-focus, no-focus, auto-behavior). Env: TERMINATOR_DEFAULT_FOCUS_ON_ACTION") 
+    @Option(name: .long, help: "Focus behavior (force-focus, no-focus, auto-behavior). Env: TERMINATOR_DEFAULT_FOCUS_ON_ACTION")
     var focusMode: String?
 
     @Flag(name: .long, help: "Reuse busy sessions. Default: false.")
@@ -44,7 +44,8 @@ struct Exec: ParsableCommand { // Changed from TerminatorSubcommand to ParsableC
             sigtermWaitOption: globals.sigtermWaitSeconds,
             defaultFocusOnKillOption: nil,
             preKillScriptPathOption: nil,
-            reuseBusySessionsOption: reuseBusySession
+            reuseBusySessionsOption: reuseBusySession,
+            iTermProfileNameOption: nil
         )
         let config = TerminatorCLI.currentConfig!
 
@@ -55,10 +56,10 @@ struct Exec: ParsableCommand { // Changed from TerminatorSubcommand to ParsableC
             Logger.log(level: .info, "  No command provided. Preparing session only.")
         }
         Logger.log(level: .debug, "  Background: \(background)")
-        
+
         let resolvedLines = lines ?? config.defaultLines
         let resolvedTimeout = timeout ?? (background ? config.backgroundStartupSeconds : config.foregroundCompletionSeconds)
-        
+
         let focusPreferenceString: String
         if let fm = focusMode, !fm.isEmpty {
             focusPreferenceString = fm
@@ -78,12 +79,12 @@ struct Exec: ParsableCommand { // Changed from TerminatorSubcommand to ParsableC
             executionMode: background ? .background : .foreground,
             linesToCapture: resolvedLines,
             timeout: resolvedTimeout,
-            focusPreference: resolvedFocusPreference 
+            focusPreference: resolvedFocusPreference
         )
 
         do {
             let result: ExecuteCommandResult
-            
+
             switch config.terminalAppEnum {
             case .appleTerminal:
                 let appleTerminalController = AppleTerminalControl(config: config, appName: config.terminalApp)
@@ -107,14 +108,14 @@ struct Exec: ParsableCommand { // Changed from TerminatorSubcommand to ParsableC
             } else {
                 // For successful foreground commands, print their output
                 if !background, let output = result.output, let cmd = command, !cmd.isEmpty {
-                    print(output) 
+                    print(output)
                 }
                 // For background, a success message is usually handled by the wrapper.
                 // Here we just ensure clean exit.
                 if background, let cmd = command, !cmd.isEmpty {
                     Logger.log(level: .info, "Background command '\(cmd)' submitted successfully for tag '\(tag)'. PID (if available): \(result.pid?.description ?? "N/A")")
                 } else if command == nil || command!.isEmpty {
-                     Logger.log(level: .info, "Session '\(tag)' prepared successfully.")
+                    Logger.log(level: .info, "Session '\(tag)' prepared successfully.")
                 }
                 throw ExitCode(ErrorCodes.success) // Ensure success exit code
             }
@@ -126,4 +127,4 @@ struct Exec: ParsableCommand { // Changed from TerminatorSubcommand to ParsableC
             throw ExitCode(ErrorCodes.generalError)
         }
     }
-} 
+}

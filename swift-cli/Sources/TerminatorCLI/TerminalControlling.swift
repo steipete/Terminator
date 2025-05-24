@@ -3,18 +3,18 @@ import Foundation
 // MARK: - Protocols
 
 protocol TerminalControlling {
-    // Initializer for the specific controller. 
+    // Initializer for the specific controller.
     // It needs AppConfig for settings and appName to confirm it's the right controller (or for minor variations if one controller handles multiple similar apps).
     init(config: AppConfig, appName: String)
 
     func listSessions(filterByTag: String?) throws -> [TerminalSessionInfo]
-    
+
     func executeCommand(params: ExecuteCommandParams) throws -> ExecuteCommandResult
-    
+
     func readSessionOutput(params: ReadSessionParams) throws -> ReadSessionResult
-    
+
     func focusSession(params: FocusSessionParams) throws -> FocusSessionResult
-    
+
     func killProcessInSession(params: KillSessionParams) throws -> KillSessionResult
 }
 
@@ -27,21 +27,21 @@ struct TerminalAppController {
 
     init(config: AppConfig) {
         self.config = config
-        self.appName = config.terminalApp 
-        
+        appName = config.terminalApp
+
         // Instantiate the specific controller based on appName
-        switch self.appName.lowercased() {
+        switch appName.lowercased() {
         case "terminal", "terminal.app":
             Logger.log(level: .debug, "Instantiating AppleTerminalControl.")
-            self.specificController = AppleTerminalControl(config: config, appName: self.appName)
+            specificController = AppleTerminalControl(config: config, appName: appName)
         case "iterm", "iterm.app", "iterm2", "iterm2.app":
             Logger.log(level: .debug, "Instantiating ITermControl.")
-            self.specificController = ITermControl(config: config, appName: self.appName)
+            specificController = ITermControl(config: config, appName: appName)
         // Add case for "Ghosty" when its controller is ready
         // case "ghosty", "ghosty.app":
         //     self.specificController = GhostyControl(config: config, appName: self.appName)
         default:
-            let errorMsg = "TerminalAppController: No specific controller available for unsupported terminal application: \(self.appName). This should have been caught by AppConfig validation."
+            let errorMsg = "TerminalAppController: No specific controller available for unsupported terminal application: \(appName). This should have been caught by AppConfig validation."
             Logger.log(level: .fatal, errorMsg) // Log as fatal as this is a critical setup error.
             // To allow compilation and testing up to this point, but clearly indicate a failure:
             // Throwing from init is complex with non-optional `specificController`.
@@ -49,7 +49,7 @@ struct TerminalAppController {
             // In a production build, this path might be guarded by earlier validation in AppConfig ensuring appName is always supported.
             fatalError(errorMsg)
         }
-        Logger.log(level: .info, "TerminalAppController initialized for \(self.appName) using \(String(describing: type(of: self.specificController))).")
+        Logger.log(level: .info, "TerminalAppController initialized for \(appName) using \(String(describing: type(of: specificController))).")
     }
 
     // MARK: - Public API Methods (Forwarded to specificController)
@@ -68,7 +68,7 @@ struct TerminalAppController {
         Logger.log(level: .info, "[Controller Facade] Reading session output for tag: \(params.tag)")
         return try specificController.readSessionOutput(params: params)
     }
-    
+
     func focusSession(params: FocusSessionParams) throws -> FocusSessionResult {
         Logger.log(level: .info, "[Controller Facade] Focusing session for tag: \(params.tag)")
         return try specificController.focusSession(params: params)
@@ -87,6 +87,3 @@ struct TerminalAppController {
 // MOVED: TerminalControllerError (to Models/TerminalAppControllerError.swift)
 // MOVED: ExecuteCommandParams, ReadSessionParams etc. (to Models/CommandParams.swift)
 // MOVED: ExecuteCommandResult, ReadSessionResult etc. (to Models/CommandResults.swift)
-
-
- 

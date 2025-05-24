@@ -1,13 +1,13 @@
-import Foundation
 import AppKit // Required for NSAppleScript
-import UniformTypeIdentifiers // Import for UTType
 import CoreServices // For AE* constants
+import Foundation
+import UniformTypeIdentifiers // Import for UTType
 
 // Define AppleScript type constants using their FourCharCode UInt32 literal values
-let typeText: DescType = 0x54455854       // 'TEXT' = kAEText
-let typeBoolean: DescType = 0x626F6F6C    // 'bool' = kAEBoolean  
-let typeInteger: DescType = 0x6C6F6E67    // 'long' = kAELongInteger
-let typeNull: DescType = 0x6E756C6C       // 'null' = kAENull
+let typeText: DescType = 0x5445_5854 // 'TEXT' = kAEText
+let typeBoolean: DescType = 0x626F_6F6C // 'bool' = kAEBoolean
+let typeInteger: DescType = 0x6C6F_6E67 // 'long' = kAELongInteger
+let typeNull: DescType = 0x6E75_6C6C // 'null' = kAENull
 
 enum AppleScriptError: Error {
     case scriptCompilationFailed(errorInfo: [String: Any])
@@ -17,8 +17,7 @@ enum AppleScriptError: Error {
     case typeConversionError(message: String)
 }
 
-struct AppleScriptBridge {
-
+enum AppleScriptBridge {
     static func runAppleScript(script: String) -> Result<String, AppleScriptError> {
         Logger.log(level: .debug, "Attempting to run AppleScript:")
         // Log the script itself only at debug for PII
@@ -58,11 +57,11 @@ struct AppleScriptBridge {
 
         guard let resultDescriptor = eventResult.coerce(toDescriptorType: typeText) else {
             if eventResult.descriptorType == typeBoolean { // Check if it's a boolean
-                 if eventResult.booleanValue {
+                if eventResult.booleanValue {
                     return .success("true")
-                 } else {
+                } else {
                     return .success("false")
-                 }
+                }
             } else if eventResult.descriptorType == typeInteger {
                 return .success("\(eventResult.int32Value)")
             }
@@ -70,16 +69,16 @@ struct AppleScriptBridge {
             // It could be a list or record, which we'd need to parse differently.
             // For now, if direct coercion to text fails, and no error was reported, it's an issue.
             Logger.log(level: .warn, "AppleScript execution did not return a text-coercible result, and no error dictionary was provided. Descriptor type: \(eventResult.descriptorType.description)")
-             // Check if the eventResult is typeNull, indicating no actual return value (e.g. `delay` command)
+            // Check if the eventResult is typeNull, indicating no actual return value (e.g. `delay` command)
             if eventResult.descriptorType == typeNull {
                 return .success("") // Successfully executed, but no string output
             }
             return .failure(.typeConversionError(message: "Result could not be coerced to String. Type was: \(eventResult.descriptorType.description)"))
         }
-        
+
         Logger.log(level: .debug, "AppleScript executed successfully.")
         // Log output only at debug level
         Logger.log(level: .debug, "AppleScript result: \(resultDescriptor.stringValue ?? "N/A")")
         return .success(resultDescriptor.stringValue ?? "")
     }
-} 
+}

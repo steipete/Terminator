@@ -4,17 +4,17 @@ import Foundation
 // This is used by various commands like list, info, and as part of results for exec, focus, kill.
 struct TerminalSessionInfo: Codable {
     let sessionIdentifier: String // User-friendly display name, e.g., "ProjectName / task_tag" or "🤖💥 ProjectName / task_tag"
-    let projectPath: String?      // Absolute path to the project if applicable
-    let tag: String               // The specific tag for this session
-    let fullTabTitle: String?     // The complete, raw title of the tab/session as read from the terminal
-    let tty: String?              // The TTY device path (e.g., /dev/ttys003)
-    let isBusy: Bool              // True if a non-shell foreground process is detected on the TTY
+    let projectPath: String? // Absolute path to the project if applicable
+    let tag: String // The specific tag for this session
+    let fullTabTitle: String? // The complete, raw title of the tab/session as read from the terminal
+    let tty: String? // The TTY device path (e.g., /dev/ttys003)
+    let isBusy: Bool // True if a non-shell foreground process is detected on the TTY
     let windowIdentifier: String? // AppleScript ID or unique reference for the window
-    let tabIdentifier: String?    // AppleScript ID or unique reference for the tab (Terminal) or session (iTerm)
-    
+    let tabIdentifier: String? // AppleScript ID or unique reference for the tab (Terminal) or session (iTerm)
+
     // New fields from SDD 3.2.4, parsed from the session title string itself
-    let ttyFromTitle: String?     // TTY path that was embedded in the title at session creation
-    let pidFromTitle: Int32?      // PID of the Terminator CLI that created the session, from title
+    let ttyFromTitle: String? // TTY path that was embedded in the title at session creation
+    let pidFromTitle: Int32? // PID of the Terminator CLI that created the session, from title
 
     // Consider adding:
     // let processId: Int?        // PID of the shell process or primary process in the session (if reliably obtainable)
@@ -33,7 +33,7 @@ struct TerminalSessionInfo: Codable {
         case ttyFromTitle = "tty_from_title"
         case pidFromTitle = "pid_from_title"
     }
-    
+
     // Initializer to construct from raw components typically gathered via AppleScript + system calls
     init(
         sessionIdentifier: String,
@@ -58,4 +58,4 @@ struct TerminalSessionInfo: Codable {
         self.ttyFromTitle = ttyFromTitle
         self.pidFromTitle = pidFromTitle
     }
-} 
+}

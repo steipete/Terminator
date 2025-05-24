@@ -8,10 +8,10 @@ struct List: ParsableCommand {
 
     @Option(name: .long, help: "Filter sessions by project path.")
     var projectPath: String?
-    
+
     @Option(name: .long, help: "Filter sessions by tag.")
     var tag: String?
-    
+
     @Flag(name: .long, help: "Output in JSON format.")
     var json: Bool = false
 
@@ -29,15 +29,16 @@ struct List: ParsableCommand {
             sigtermWaitOption: nil,
             defaultFocusOnKillOption: nil,
             preKillScriptPathOption: nil,
-            reuseBusySessionsOption: nil
+            reuseBusySessionsOption: nil,
+            iTermProfileNameOption: nil
         )
         let config = TerminatorCLI.currentConfig!
-        Logger.log(level: .info, "Executing 'list' command." 
+        Logger.log(level: .info, "Executing 'list' command."
             + (projectPath != nil ? " Filtering by project: \(projectPath!)" : "")
             + (tag != nil ? " Filtering by tag: \(tag!)" : ""))
 
         let sessions: [TerminalSessionInfo]
-        
+
         // Wrap session listing in do-catch to handle errors gracefully
         do {
             switch config.terminalAppEnum {
@@ -66,7 +67,7 @@ struct List: ParsableCommand {
             // Exit successfully as per requirements
             throw ExitCode(ErrorCodes.success)
         }
-        
+
         // Filter sessions if needed
         let filteredSessions: [TerminalSessionInfo]
         if let projPath = projectPath {
@@ -82,14 +83,14 @@ struct List: ParsableCommand {
             if json {
                 print("[]")
             } else {
-                print("No active sessions found" 
-                    + (projectPath != nil ? " for project \(projectPath!)" : "") 
-                    + (tag != nil ? " with tag \(tag!)" : "") 
+                print("No active sessions found"
+                    + (projectPath != nil ? " for project \(projectPath!)" : "")
+                    + (tag != nil ? " with tag \(tag!)" : "")
                     + ".")
             }
         } else {
             if json {
-                let codableSessions = filteredSessions.map { InfoOutput.SessionInfo(from: $0) } 
+                let codableSessions = filteredSessions.map { InfoOutput.SessionInfo(from: $0) }
                 let encoder = JSONEncoder()
                 encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
                 do {
@@ -114,8 +115,8 @@ struct List: ParsableCommand {
                 }
             }
         }
-        
+
         // Always exit with success
         throw ExitCode(ErrorCodes.success)
     }
-} 
+}

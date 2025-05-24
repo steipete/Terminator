@@ -16,42 +16,42 @@ enum TerminalControllerError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .sessionNotFound(let projectPath, let tag):
+        case let .sessionNotFound(projectPath, tag):
             return "Session for tag '\(tag)'" + (projectPath != nil ? " in project '\(projectPath!)'" : "") + " not found."
-        case .appleScriptError(let message, _, _):
+        case let .appleScriptError(message, _, _):
             return "AppleScript execution failed: \(message)"
-        case .busy(let tty, let processDescription):
+        case let .busy(tty, processDescription):
             var desc = "Session on TTY '\(tty)' is busy."
             if let procDesc = processDescription {
                 desc += " Process: \(procDesc)"
             }
             return desc
-        case .commandExecutionFailed(let reason):
+        case let .commandExecutionFailed(reason):
             return "Command execution failed: \(reason)"
-        case .timeout(let operation, let timeoutSeconds):
+        case let .timeout(operation, timeoutSeconds):
             return "Operation '\(operation)' timed out after \(timeoutSeconds) seconds."
-        case .unsupportedTerminalApp(let appName):
+        case let .unsupportedTerminalApp(appName):
             return "The configured terminal application ('\(appName)') is not supported for this operation."
-        case .internalError(let details):
+        case let .internalError(details):
             return "An internal error occurred: \(details)"
-        case .processInteractionError(let signal, let pid, let reason):
+        case let .processInteractionError(signal, pid, reason):
             return "Failed to interact with process (PID: \(pid ?? -1)) using signal \(signal). Reason: \(reason)"
-        case .outputParsingError(let details, _):
+        case let .outputParsingError(details, _):
             return "Failed to parse output: \(details)"
-        case .fileIOError(let path, let operation, let underlyingError):
+        case let .fileIOError(path, operation, underlyingError):
             return "File I/O error during '\(operation)' on path '\(path)': \(underlyingError.localizedDescription)"
         }
     }
-    
+
     var scriptContent: String? {
         switch self {
-        case .appleScriptError(_, let scriptContent, _):
+        case let .appleScriptError(_, scriptContent, _):
             return scriptContent
         default:
             return nil
         }
     }
-    
+
     var suggestedErrorCode: Int32 {
         switch self {
         case .sessionNotFound:
@@ -76,4 +76,4 @@ enum TerminalControllerError: Error, LocalizedError {
             return ErrorCodes.generalError
         }
     }
-} 
+}

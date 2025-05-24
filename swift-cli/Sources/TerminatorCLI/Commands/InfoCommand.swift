@@ -11,7 +11,7 @@ struct Info: ParsableCommand {
 
     mutating func run() throws {
         // Ensure config is loaded based on global options for Info command too
-         TerminatorCLI.currentConfig = AppConfig(
+        TerminatorCLI.currentConfig = AppConfig(
             terminalAppOption: globals.terminalApp,
             logLevelOption: globals.logLevel ?? (globals.verbose ? "debug" : nil),
             logDirOption: globals.logDir,
@@ -24,7 +24,8 @@ struct Info: ParsableCommand {
             sigtermWaitOption: nil, // Global
             defaultFocusOnKillOption: nil,
             preKillScriptPathOption: nil,
-            reuseBusySessionsOption: nil
+            reuseBusySessionsOption: nil,
+            iTermProfileNameOption: nil
         )
         let config = TerminatorCLI.currentConfig!
         Logger.log(level: .info, "Executing 'info' command. JSON output: \(json)")
@@ -42,7 +43,7 @@ struct Info: ParsableCommand {
         }
 
         var sessions: [TerminalSessionInfo] = []
-        
+
         switch config.terminalAppEnum {
         case .appleTerminal:
             let appleTerminalController = AppleTerminalControl(config: config, appName: config.terminalApp)
@@ -58,7 +59,7 @@ struct Info: ParsableCommand {
                     fputs("Warning: An unexpected error occurred while listing sessions: \(error.localizedDescription)\n", stderr)
                 }
             }
-            
+
         case .iterm:
             let iTermController = ITermControl(config: config, appName: config.terminalApp)
             do {
@@ -73,7 +74,7 @@ struct Info: ParsableCommand {
                     fputs("Warning: An unexpected error occurred while listing sessions: \(error.localizedDescription)\n", stderr)
                 }
             }
-            
+
         case .ghosty:
             // GhostyControl is not yet implemented, so this is stubbed
             if !json {
@@ -92,7 +93,7 @@ struct Info: ParsableCommand {
             //         fputs("Warning: An unexpected error occurred while listing sessions: \(error.localizedDescription)\n", stderr)
             //     }
             // }
-            
+
         case .unknown:
             // This should not be reached if the earlier check is working correctly
             throw ExitCode(ErrorCodes.internalError)
@@ -133,11 +134,11 @@ struct Info: ParsableCommand {
                     // This path might not be hit if asDictionary returns [String: Any]
                     // and AnyCodable is applied later. For now, assume direct display or basic types.
                     // A more robust way to pretty print AnyCodable might be needed if it wraps complex types here.
-                     displayValue = "\(anyCodableValue)" // May need custom description for AnyCodable
+                    displayValue = "\(anyCodableValue)" // May need custom description for AnyCodable
                 } else {
                     displayValue = "\(value)"
                 }
-                 print("  \(key): \(displayValue == "NSNull()" ? "nil" : displayValue)")
+                print("  \(key): \(displayValue == "NSNull()" ? "nil" : displayValue)")
             }
             print("--- Managed Sessions ---")
             if sessions.isEmpty {
@@ -149,4 +150,4 @@ struct Info: ParsableCommand {
             }
         }
     }
-} 
+}
