@@ -25,12 +25,12 @@ rm -f "$ARM64_BINARY_TEMP" "$X86_64_BINARY_TEMP" "$FINAL_BINARY_PATH.tmp"
 
 echo "🏗️ Building for arm64 (Apple Silicon)..."
 (cd "$SWIFT_PROJECT_PATH" && swift build --arch arm64 -c release $SWIFT_OPTIMIZATION_FLAGS)
-cp "$SWIFT_PROJECT_PATH/.build/arm64-apple-macosx/release/TerminatorCLI" "$ARM64_BINARY_TEMP"
+cp "$SWIFT_PROJECT_PATH/.build/arm64-apple-macosx/release/$FINAL_BINARY_NAME" "$ARM64_BINARY_TEMP"
 echo "✅ arm64 build complete: $ARM64_BINARY_TEMP"
 
 echo "🏗️ Building for x86_64 (Intel)..."
 (cd "$SWIFT_PROJECT_PATH" && swift build --arch x86_64 -c release $SWIFT_OPTIMIZATION_FLAGS)
-cp "$SWIFT_PROJECT_PATH/.build/x86_64-apple-macosx/release/TerminatorCLI" "$X86_64_BINARY_TEMP"
+cp "$SWIFT_PROJECT_PATH/.build/x86_64-apple-macosx/release/$FINAL_BINARY_NAME" "$X86_64_BINARY_TEMP"
 echo "✅ x86_64 build complete: $X86_64_BINARY_TEMP"
 
 echo "🔗 Creating universal binary..."
