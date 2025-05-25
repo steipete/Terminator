@@ -7,14 +7,14 @@ final class InfoCommandTests: BaseTerminatorTests {
 
     struct TestInfoOutput: Decodable {
         let version: String
-        let configuration: [String: String]
-        let sessions: [String] // Will be array of session objects in real usage
+        let configuration: [String: AnyCodable]
+        let sessions: [AnyCodable] // Will be array of session objects in real usage
     }
 
     struct TestErrorOutput: Decodable {
         let version: String
         let error: String
-        let activeConfiguration: [String: String]?
+        let activeConfiguration: [String: AnyCodable]?
     }
 
     // MARK: - Tests
@@ -110,7 +110,7 @@ final class InfoCommandTests: BaseTerminatorTests {
                 "JSON output for unknown app should contain activeConfiguration."
             )
             XCTAssertEqual(
-                decodedOutput.activeConfiguration?["TERMINATOR_APP"],
+                decodedOutput.activeConfiguration?["TERMINATOR_APP"]?.stringValue,
                 "UnknownApp123",
                 "TERMINATOR_APP in JSON should match the unknown app"
             )

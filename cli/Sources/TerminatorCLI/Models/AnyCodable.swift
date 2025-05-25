@@ -3,6 +3,22 @@ import Foundation
 // Helper to allow mixed types in JSON for active_configuration and managed_sessions
 struct AnyCodable: Codable {
     private let value: Any
+    
+    var stringValue: String? {
+        value as? String
+    }
+    
+    var intValue: Int? {
+        value as? Int
+    }
+    
+    var boolValue: Bool? {
+        value as? Bool
+    }
+    
+    var doubleValue: Double? {
+        value as? Double
+    }
 
     init(_ value: (some Any)?) {
         self.value = value ?? ()

@@ -307,12 +307,13 @@ struct AppConfig {
         let logDirEnvValue = ProcessInfo.processInfo.environment["TERMINATOR_LOG_DIR"]
         let logDirCliValue = logDirOption
 
-        let resolvedLogDirString: String = if let cliValue = logDirCliValue, !cliValue.isEmpty {
-            cliValue
+        let resolvedLogDirString: String
+        if let cliValue = logDirCliValue, !cliValue.isEmpty {
+            resolvedLogDirString = cliValue
         } else if let envValue = logDirEnvValue, !envValue.isEmpty {
-            envValue
+            resolvedLogDirString = envValue
         } else {
-            "~/Library/Logs/terminator-mcp/"
+            resolvedLogDirString = "~/Library/Logs/terminator-mcp/"
         }
 
         let logDir: URL = if resolvedLogDirString.uppercased() == "SYSTEM_TEMP" { // SDD 3.2.3 Log Dir Fallback

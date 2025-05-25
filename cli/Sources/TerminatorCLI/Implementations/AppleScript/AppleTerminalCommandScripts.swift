@@ -32,15 +32,16 @@ enum AppleTerminalCommandScripts {
         let clearCommand = clearBeforeExecute ? "clear && " : ""
         let fullCommand = clearCommand + command
 
-        let cdCommand = if let projectPath {
-            """
+        let cdCommand: String
+        if let projectPath {
+            cdCommand = """
             -- First, navigate to the project directory
             do script "cd '\(projectPath)'" in targetTab
             delay 0.5
 
             """
         } else {
-            ""
+            cdCommand = ""
         }
 
         let backgroundSuffix = execInBackground ? " &" : ""

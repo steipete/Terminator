@@ -38,12 +38,13 @@ struct Read: ParsableCommand {
         let config = TerminatorCLI.currentConfig!
 
         Logger.log(level: .info, "Reading output... Tag: \(tag), Project: \(projectPath ?? "N/A")")
-        let resolvedLines = lines ?? config.defaultLines
+        let resolvedLines = max(0, lines ?? config.defaultLines)
 
-        let focusPreferenceString: String = if let fm = focusMode, !fm.isEmpty {
-            fm
+        let focusPreferenceString: String
+        if let fm = focusMode, !fm.isEmpty {
+            focusPreferenceString = fm
         } else {
-            config.defaultFocusOnAction ? "auto-behavior" : "no-focus"
+            focusPreferenceString = config.defaultFocusOnAction ? "auto-behavior" : "no-focus"
         }
         let resolvedFocusPreference = AppConfig.FocusCLIArgument(rawValue: focusPreferenceString) ?? .autoBehavior
 

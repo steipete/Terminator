@@ -139,8 +139,9 @@ struct ITermControl: TerminalControlling {
         }
 
         // Create session script
-        let createScript: String = if let windowID = targetWindowID {
-            ITermScripts.createTabInWindowWithProfileScript(
+        let createScript: String
+        if let windowID = targetWindowID {
+            createScript = ITermScripts.createTabInWindowWithProfileScript(
                 appName: appName,
                 windowID: windowID,
                 profileName: config.iTermProfileName ?? "Default",
@@ -148,7 +149,7 @@ struct ITermControl: TerminalControlling {
                 selectTab: shouldActivate
             )
         } else {
-            ITermScripts.createWindowWithProfileScript(
+            createScript = ITermScripts.createWindowWithProfileScript(
                 appName: appName,
                 profileName: config.iTermProfileName ?? "Default",
                 shouldActivate: shouldActivate
