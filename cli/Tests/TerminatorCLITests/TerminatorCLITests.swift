@@ -12,6 +12,6 @@ final class TerminatorCLITests: XCTestCase {
         ("KillCommandTests", KillCommandTests.allTests),
         ("ExecCommandTests", ExecCommandTests.allTests),
         ("ExecCommandGroupingTests", ExecCommandGroupingTests.allTests),
-        ("ExecCommandITermTests", ExecCommandITermTests.allTests)
+        ("ExecCommandITermTests", ExecCommandITermTests.allTests),
     ]
 }

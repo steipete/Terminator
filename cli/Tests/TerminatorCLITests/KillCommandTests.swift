@@ -39,7 +39,7 @@ final class KillCommandTests: BaseTerminatorTests {
             "--project-path",
             projectPath,
             "--focus-on-kill",
-            "false"
+            "false",
         ])
 
         XCTAssertNotEqual(

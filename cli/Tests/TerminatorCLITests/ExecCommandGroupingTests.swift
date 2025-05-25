@@ -23,7 +23,7 @@ final class ExecCommandGroupingTests: BaseTerminatorTests {
             "--project-path",
             projectPath,
             "--command",
-            commandToRun
+            commandToRun,
         ])
 
         XCTAssertNotEqual(
@@ -57,7 +57,7 @@ final class ExecCommandGroupingTests: BaseTerminatorTests {
             "--command",
             commandToRun,
             "--focus-mode",
-            "no-focus"
+            "no-focus",
         ])
 
         XCTAssertNotEqual(
@@ -91,7 +91,7 @@ final class ExecCommandGroupingTests: BaseTerminatorTests {
             "--command",
             commandToRun,
             "--focus-mode",
-            "force-focus"
+            "force-focus",
         ])
 
         XCTAssertNotEqual(
@@ -125,7 +125,7 @@ final class ExecCommandGroupingTests: BaseTerminatorTests {
             "--command",
             commandToRun,
             "--focus-mode",
-            "auto-behavior"
+            "auto-behavior",
         ])
 
         XCTAssertNotEqual(
@@ -183,7 +183,7 @@ final class ExecCommandGroupingTests: BaseTerminatorTests {
             "--command",
             commandToRun,
             "--focus-mode",
-            "force-focus"
+            "force-focus",
         ])
 
         XCTAssertNotEqual(
@@ -214,7 +214,7 @@ final class ExecCommandGroupingTests: BaseTerminatorTests {
             "--command",
             commandToRun,
             "--focus-mode",
-            "no-focus"
+            "no-focus",
         ])
 
         XCTAssertNotEqual(
@@ -245,7 +245,7 @@ final class ExecCommandGroupingTests: BaseTerminatorTests {
             "--command",
             commandToRun,
             "--focus-mode",
-            "auto-behavior"
+            "auto-behavior",
         ])
 
         XCTAssertNotEqual(
@@ -302,7 +302,7 @@ final class ExecCommandGroupingTests: BaseTerminatorTests {
             "--command",
             commandToRun,
             "--focus-mode",
-            "no-focus"
+            "no-focus",
         ])
 
         XCTAssertNotEqual(
@@ -333,7 +333,7 @@ final class ExecCommandGroupingTests: BaseTerminatorTests {
             "--command",
             commandToRun,
             "--focus-mode",
-            "force-focus"
+            "force-focus",
         ])
 
         XCTAssertNotEqual(
@@ -364,7 +364,7 @@ final class ExecCommandGroupingTests: BaseTerminatorTests {
             "--command",
             commandToRun,
             "--focus-mode",
-            "auto-behavior"
+            "auto-behavior",
         ])
 
         XCTAssertNotEqual(

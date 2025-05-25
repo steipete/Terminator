@@ -263,7 +263,7 @@ struct AppConfig {
             "TERMINATOR_DEFAULT_BACKGROUND_EXECUTION": defaultBackgroundExecution,
             "TERMINATOR_PRE_KILL_SCRIPT_PATH": preKillScriptPath,
             "TERMINATOR_REUSE_BUSY_SESSIONS": reuseBusySessions,
-            "TERMINATOR_ITERM_PROFILE_NAME": iTermProfileName
+            "TERMINATOR_ITERM_PROFILE_NAME": iTermProfileName,
         ]
         return configDict.compactMapValues { $0 }
     }
