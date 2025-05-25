@@ -7,9 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [v0.5.2] - YYYY-MM-DD 
+## [v0.5.2] - 2025-01-25
+
+### Added
+- **Release Preparation**: Added comprehensive release preparation script with Git, TypeScript, Swift, and package verification checks
+- **Universal Binary Build**: Added build script to create optimized universal binaries (arm64 + x86_64) with size reduction
+- **SwiftFormat Configuration**: Added .swiftformat configuration for consistent code style
+- **Swift Version File**: Added .swift-version file specifying Swift 5.9
+- **Package Metadata**: Added repository, keywords, bugs, homepage, and engine requirements to package.json
 
 ### Changed
+- **Code Quality**: Eliminated all 56 SwiftLint violations through comprehensive refactoring:
+  - Split monolithic test file (1438 lines) into 9 focused test files
+  - Extracted helper methods to fix function_body_length violations
+  - Split large files to fix file_length violations
+  - Introduced parameter structs to fix function_parameter_count violations
+  - Created result structs to fix large_tuple violations
+- **Test Organization**: Restructured test suite with BaseTerminatorTests class for shared utilities
+- **Swift Code Structure**: Refactored large Swift files into smaller, focused modules for better maintainability
+- **Build Process**: Replaced platform-specific build script with universal binary builder
 - **MCP Tool Parameters**: Renamed AI-facing `projectPath` parameter to `project_path` (snake_case) for the `terminator.execute` tool.
 - **MCP Tool Parameters**: Flattened `options` parameter for `terminator.execute` tool, moving sub-fields (`tag`, `command`, `background`, `lines`, `timeout`, `focus`) to the root level of tool parameters.
 - **MCP Tool Parameters**: Made `project_path` a mandatory parameter for `terminator.execute`.
