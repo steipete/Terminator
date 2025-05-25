@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.1] - 2025-01-26
+
+### Added
+- **Comprehensive Release Process**: Complete npm release preparation script from Peekaboo project
+- **AppleScript Test Integration**: AppleScript tests are now part of the release process
+- **AppleScript Consistency Verification**: New script to ensure AppleScript code consistency between test files and source code
+- **Universal Binary Support**: Enhanced build process for creating optimized universal binaries
+
+### Changed
+- **Major Version Bump**: Moving to 1.0.0-alpha.1 to indicate significant maturity and stability
+- **Test Infrastructure**: Improved AppleScript test runner with better output handling and pattern matching
+
+### Fixed
+- **Swift Tests**: Fixed all 47 failing Swift tests
+  - Fixed Swift 5.9 if-let expression syntax compatibility issues
+  - Fixed AnyCodable value access by adding property getters
+  - Fixed InfoCommand JSON test structure issues
+  - Fixed AppleScriptBridge nested list handling (root cause of iTerm test failures)
+- **AppleScript Tests**: Fixed failing createWindow test and improved test resilience
+
 ## [0.5.2] - 2025-01-25
 
 ### Added
