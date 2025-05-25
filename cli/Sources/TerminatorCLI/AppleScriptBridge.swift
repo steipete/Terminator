@@ -127,6 +127,16 @@ enum AppleScriptBridge {
             return descriptor.int32Value
         case typeNull:
             return NSNull()
+        case typeAEList:
+            // Handle nested lists recursively
+            var nestedArray: [Any] = []
+            for nestedIndex in 1...descriptor.numberOfItems {
+                if let nestedDescriptor = descriptor.atIndex(nestedIndex) {
+                    let nestedValue = convertDescriptorToSwiftValue(nestedDescriptor, index: nestedIndex)
+                    nestedArray.append(nestedValue)
+                }
+            }
+            return nestedArray
         default:
             // For other types, attempt to get string value
             if let strVal = descriptor.stringValue {

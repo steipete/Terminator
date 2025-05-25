@@ -28,9 +28,11 @@ extension ITermControl {
         )
 
         let script = ITermScripts.listSessionsScript(appName: appName)
-        // Logger.log(level: .debug, "AppleScript for listSessions (iTerm):\n\(script)") // Script content now in ITermScripts
+        Logger.log(level: .debug, "[ITermControl] Generated AppleScript for listSessions")
 
+        Logger.log(level: .debug, "[ITermControl] About to run AppleScript")
         let appleScriptResult = AppleScriptBridge.runAppleScript(script: script)
+        Logger.log(level: .debug, "[ITermControl] AppleScript execution completed")
 
         switch appleScriptResult {
         case let .success(resultStringOrArray):

@@ -40,7 +40,9 @@ struct ITermControl: TerminalControlling {
         )
 
         // Check for existing session
+        Logger.log(level: .debug, "[ITermControl] About to call listSessions")
         let existingSessions = try listSessions(filterByTag: tag)
+        Logger.log(level: .debug, "[ITermControl] listSessions returned \(existingSessions.count) sessions")
 
         if let existingSession = findMatchingSession(
             sessions: existingSessions,
