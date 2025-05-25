@@ -1,21 +1,17 @@
 tell application "Terminal"
-    if not running then
-        if true then
-            activate
-        else
-            run
-        end if
-        delay 0.5
-    else if true then
-        activate
-    end if
-    
-    set new_window_ref to make new window
-    delay 0.5 -- Increased delay
+    activate
+    delay 0.5
     try
-        set new_window_id to id of new_window_ref
-        return new_window_id as string
-    on error err_msg number err_num
-        error "Failed to get ID of new window. Error: (" & err_num & ") " & err_msg
+        set newWindow to make new window
+        set windowID to id of newWindow
+        return windowID as string
+    on error errMsg number errNum
+        -- If we can't create a new window, return the ID of the front window
+        if (count of windows) > 0 then
+            set windowID to id of front window
+            return windowID as string
+        else
+            error "Failed to create window and no existing windows found: " & errMsg
+        end if
     end try
 end tell

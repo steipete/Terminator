@@ -20,7 +20,9 @@
     "prepare-release": "node ./scripts/prepare-release.js",
     "format:swift": "cd cli && swiftformat .",
     "lint:swift": "cd cli && swiftlint",
-    "test:swift": "cd cli && swift test"
+    "test:swift": "cd cli && swift test",
+    "test:applescript": "cd cli/Tests/AppleScriptTests && bash bin/run_apple_terminal_tests.sh",
+    "verify:applescript": "node ./scripts/verify-applescript-consistency.js"
   },
   "author": "@steipete",
   "license": "MIT",

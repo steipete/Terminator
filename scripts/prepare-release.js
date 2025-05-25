@@ -15,6 +15,7 @@ import { readFileSync, existsSync, rmSync } from 'fs';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { verifyAppleScriptConsistency } from './verify-applescript-consistency.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -204,6 +205,28 @@ function checkSwift() {
     return false;
   }
   logSuccess('Swift tests passed');
+
+  // Run AppleScript tests
+  log('Running AppleScript tests...', colors.cyan);
+  const appleScriptTestPath = join(cliPath, 'Tests', 'AppleScriptTests', 'bin', 'run_apple_terminal_tests.sh');
+  
+  if (existsSync(appleScriptTestPath)) {
+    if (!execWithOutput(`cd "${cliPath}/Tests/AppleScriptTests" && bash bin/run_apple_terminal_tests.sh`, 'AppleScript tests')) {
+      logError('AppleScript tests failed');
+      return false;
+    }
+    logSuccess('AppleScript tests passed');
+  } else {
+    logWarning('AppleScript tests not found. Skipping...');
+  }
+
+  // Verify AppleScript consistency
+  log('Verifying AppleScript consistency...', colors.cyan);
+  if (!verifyAppleScriptConsistency()) {
+    logError('AppleScript consistency check failed');
+    return false;
+  }
+  logSuccess('AppleScript consistency verified');
 
   // Test Swift CLI commands directly
   log('Testing Swift CLI commands...', colors.cyan);
