@@ -1,11 +1,12 @@
 {
   "name": "@steipete/terminator-mcp",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "description": "MCP plugin to manage macOS terminal sessions.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
+    "terminator-mcp": "dist/index.js",
     "terminator-mcp-swift": "bin/terminator"
   },
   "scripts": {

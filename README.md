@@ -5,7 +5,7 @@
 [![macOS](https://img.shields.io/badge/macOS-14.0%2B-blue.svg)](https://www.apple.com/macos/)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 
-**Version:** 1.0.0-alpha.1
+**Version:** 1.0.0-alpha.2
 
 **MCP plugin to manage macOS terminal sessions.**
 

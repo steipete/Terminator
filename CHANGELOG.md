@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.2] - 2025-01-26
+
+### Fixed
+- **MCP Server Startup**: Added missing `terminator-mcp` binary entry point in package.json
+- **Executable Permission**: Added shebang to index.ts for proper executable generation
+
 ## [1.0.0-alpha.1] - 2025-01-26
 
 ### Added

@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 // Placeholder for the main entry point of the @steipete/terminator-mcp package.
 // This file will implement the MCP server logic and interface with the Swift CLI.
 
