@@ -1,29 +1,142 @@
 # @steipete/terminator-mcp
 
-**Version:** 0.1.0
+[![npm version](https://badge.fury.io/js/%40steipete%2Fterminator-mcp.svg)](https://www.npmjs.com/package/@steipete/terminator-mcp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![macOS](https://img.shields.io/badge/macOS-14.0%2B-blue.svg)](https://www.apple.com/macos/)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
+
+**Version:** 1.0.0-alpha.1
 
 **MCP plugin to manage macOS terminal sessions.**
 
 Terminator is an `npx`-installable Model Context Protocol (MCP) plugin designed to provide AI agents with robust, simplified, and intelligent control over macOS terminal sessions. It uses a Swift-based command-line interface (CLI) internally to interact with terminal applications like Apple Terminal, iTerm2, and Ghosty.
 
-## Installation
+## 🚀 Installation
 
-This package is intended to be used by MCP hosts (like AI-powered IDEs or agents). If you are an end-user, your MCP host environment will typically manage the installation of such plugins.
+### Requirements
 
-For developers of MCP hosts or for direct testing:
+- **macOS 14.0+** (Sonoma or later)
+- **Node.js 18.0+**
 
-```bash
-npm install @steipete/terminator-mcp
-# or
-yarn add @steipete/terminator-mcp
+### 🕯️ Quick Installation
+
+Add Terminator to your Claude Desktop configuration:
+
+```json
+{
+  "mcpServers": {
+    "terminator": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@steipete/terminator-mcp@beta"
+      ],
+      "env": {
+        "TERMINATOR_APP": "Terminal"
+      }
+    }
+  }
+}
 ```
 
-If using `npx` for one-off commands (primarily for testing the CLI indirectly via its Node wrapper in a similar way an MCP host would call it):
+1. Open Claude Desktop settings
+2. Navigate to "Developer" → "Edit Config"
+3. Add the configuration above
+4. Restart Claude Desktop
+
+That's it! Terminator is now ready to manage your terminal sessions! 🎯
+
+### 🔧 Configuration Options
+
+Customize Terminator's behavior with environment variables:
+
+```json
+{
+  "mcpServers": {
+    "terminator": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@steipete/terminator-mcp@beta"
+      ],
+      "env": {
+        "TERMINATOR_APP": "iTerm",
+        "TERMINATOR_LOG_LEVEL": "debug",
+        "TERMINATOR_LOG_DIR": "~/Library/Logs/terminator-mcp",
+        "TERMINATOR_WINDOW_GROUPING": "smart",
+        "TERMINATOR_DEFAULT_LINES": "100",
+        "TERMINATOR_DEFAULT_FOCUS_ON_ACTION": "true"
+      }
+    }
+  }
+}
+```
+
+### 📦 Alternative Installation Methods
+
+#### From npm Registry
 
 ```bash
-# Note: This is a conceptual example. Direct npx usage like this is not the primary use case.
-# The plugin is designed to be invoked by an MCP host.
-# npx @steipete/terminator-mcp <command_for_node_wrapper_if_it_were_a_cli_itself>
+npm install -g @steipete/terminator-mcp
+```
+
+Then configure your MCP client:
+
+```json
+{
+  "mcpServers": {
+    "terminator": {
+      "command": "terminator-mcp",
+      "args": [],
+      "env": {
+        "TERMINATOR_APP": "Terminal"
+      }
+    }
+  }
+}
+```
+
+#### From Source
+
+```bash
+# Clone the repository
+git clone https://github.com/steipete/terminator.git
+cd terminator
+
+# Install dependencies
+npm install
+
+# Build TypeScript
+npm run build
+
+# Build Swift CLI
+cd cli
+swift build -c release
+cd ..
+
+# Copy the binary
+cp cli/.build/release/terminator bin/
+
+# Optional: Link globally
+npm link
+```
+
+For local development configuration:
+
+```json
+{
+  "mcpServers": {
+    "terminator_local": {
+      "command": "node",
+      "args": [
+        "/path/to/terminator/dist/index.js"
+      ],
+      "env": {
+        "TERMINATOR_LOG_LEVEL": "debug"
+      }
+    }
+  }
+}
 ```
 
 ## Functionality
