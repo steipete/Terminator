@@ -77,7 +77,7 @@ extension AppleTerminalControl {
             appName: appName,
             windowID: windowID,
             tabID: tabID,
-            shellCommandToExecute: fullCommand,
+            command: fullCommand,
             shouldActivateTerminal: shouldActivateForCommand
         )
         let scriptResult = AppleScriptBridge.runAppleScript(script: script)

@@ -34,7 +34,7 @@ struct Kill: ParsableCommand {
         } catch let error as TerminalControllerError {
             throw handleTerminalError(error, config: config)
         } catch {
-            handleGeneralError(error)
+            try handleGeneralError(error)
         }
     }
 
@@ -141,11 +141,11 @@ struct Kill: ParsableCommand {
         return ExitCode(exitCode)
     }
 
-    private func handleGeneralError(_ error: Error) -> Never {
+    private func handleGeneralError(_ error: Error) throws -> Never {
         fputs(
             "Error: An unexpected error occurred during the kill operation: \(error.localizedDescription)\n",
             stderr
         )
-        exit(ErrorCodes.generalError)
+        throw ExitCode(ErrorCodes.generalError)
     }
 }

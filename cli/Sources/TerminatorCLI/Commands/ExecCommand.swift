@@ -50,7 +50,7 @@ struct Exec: ParsableCommand { // Changed from TerminatorSubcommand to ParsableC
 
         do {
             let result = try executeCommand(config: config, params: params)
-            processResult(result, params: params)
+            try processResult(result, params: params)
         } catch let error as TerminalControllerError {
             fputs(
                 "Error executing command: \(error.localizedDescription)\nScript (if applicable):\n\(error.scriptContent ?? "N/A")\n",
