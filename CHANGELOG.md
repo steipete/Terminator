@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [v0.5.2] - 2025-01-25
+## [0.5.2] - 2025-01-25
 
 ### Added
 - **Release Preparation**: Added comprehensive release preparation script with Git, TypeScript, Swift, and package verification checks
@@ -39,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Ensured `docs/spec.md` is consistent with the updated MCP tool parameters and descriptions.
 
-## [v0.5.1] - 2025-01-22
+## [0.5.1] - 2025-01-22
 
 ### Added
 - **Enhanced Project Path Detection**: Reliable detection of project paths as the first argument when they start with "/" and don't contain command flags
@@ -64,7 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All core functionality (session management, project grouping, automatic cd) works reliably
 - 9/10 tests pass with comprehensive validation of major features
 
-## [v0.4.7] - 2025-01-22
+## [0.4.7] - 2025-01-22
 
 ### Added
 - **Project Path Support**: Added optional project path as first argument for better organization
@@ -99,7 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation**: Comprehensive inline documentation and usage examples
 - **Version Tracking**: Updated from v0.4.4 to v0.4.7 with proper version metadata
 
-## [v0.4.4] - Initial Release
+## [0.4.4] - Initial Release
 
 ### Added
 - **Basic Terminal Session Management**: Create and manage tagged terminal sessions
