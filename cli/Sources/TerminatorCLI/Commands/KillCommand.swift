@@ -66,12 +66,12 @@ struct Kill: ParsableCommand {
     }
 
     private func prepareKillParams() -> KillSessionParams {
-        let resolvedFocusMode: AppConfig.FocusCLIArgument
-        if let focusModeString = focusMode?.lowercased(),
-           let mode = AppConfig.FocusCLIArgument(rawValue: focusModeString) {
-            resolvedFocusMode = mode
+        let resolvedFocusMode: AppConfig.FocusCLIArgument = if let focusModeString = focusMode?.lowercased(),
+                                                               let mode = AppConfig
+                                                               .FocusCLIArgument(rawValue: focusModeString) {
+            mode
         } else {
-            resolvedFocusMode = .autoBehavior
+            .autoBehavior
         }
 
         return KillSessionParams(

@@ -33,11 +33,10 @@ enum SessionUtilities {
         var ttyPath: String?
         var pid: pid_t?
 
-        let trimmedTitle: String
-        if title.hasPrefix(sessionPrefix) && title.count >= sessionPrefix.count {
-            trimmedTitle = String(title.dropFirst(sessionPrefix.count))
+        let trimmedTitle: String = if title.hasPrefix(sessionPrefix) && title.count >= sessionPrefix.count {
+            String(title.dropFirst(sessionPrefix.count))
         } else {
-            trimmedTitle = title
+            title
         }
         let components = trimmedTitle.split(separator: "::").filter { !$0.isEmpty }
 

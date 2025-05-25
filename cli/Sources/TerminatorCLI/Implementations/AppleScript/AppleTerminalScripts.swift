@@ -46,16 +46,15 @@ enum AppleTerminalScripts {
         shouldActivateTerminal: Bool
     ) -> String {
         // Complex find or create session logic - kept here due to size
-        let cdCommand: String
-        if let projectPath {
-            cdCommand = """
+        let cdCommand = if let projectPath {
+            """
             -- Navigate to project directory
             do script "cd '\(projectPath)'" in selectedTab
             delay 0.5
 
             """
         } else {
-            cdCommand = ""
+            ""
         }
 
         let activateCommand = shouldActivateTerminal ? "activate\n" : ""

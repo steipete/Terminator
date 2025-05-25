@@ -175,11 +175,10 @@ struct Info: ParsableCommand {
     }
 
     private func formatConfigValue(_ value: Any) -> String {
-        let displayValue: String
-        if let anyCodableValue = value as? AnyCodable {
-            displayValue = "\(anyCodableValue)"
+        let displayValue = if let anyCodableValue = value as? AnyCodable {
+            "\(anyCodableValue)"
         } else {
-            displayValue = "\(value)"
+            "\(value)"
         }
         return displayValue == "NSNull()" ? "nil" : displayValue
     }
