@@ -5,6 +5,24 @@ All notable changes to Terminator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [v0.5.2] - YYYY-MM-DD 
+
+### Changed
+- **MCP Tool Parameters**: Renamed AI-facing `projectPath` parameter to `project_path` (snake_case) for the `terminator.execute` tool.
+- **MCP Tool Parameters**: Flattened `options` parameter for `terminator.execute` tool, moving sub-fields (`tag`, `command`, `background`, `lines`, `timeout`, `focus`) to the root level of tool parameters.
+- **MCP Tool Parameters**: Made `project_path` a mandatory parameter for `terminator.execute`.
+- **MCP Tool Parameters**: `tag` parameter is now optional for `terminator.execute`, with its default derived from `project_path` if not provided.
+- **MCP Tool Parameters**: Expanded description for the `command` parameter in `terminator.execute`.
+- **MCP Tool Description**: Dynamically appends Terminator MCP version and configured terminal app (e.g., "Terminator MCP 0.1.0 using iTerm") to the main description of the `terminator.execute` tool.
+- **MCP Tool Description**: `action` parameter description now lists all possible enum values and specifies its default (`exec`).
+- **Documentation**: Updated `README.md` to reflect all MCP tool parameter and description changes.
+- **Internal**: Updated TypeScript MCP server source (`src/types.ts`, `src/tool.ts`, `src/index.ts`, `src/config.ts`) and documentation (`docs/spec.md`) to reflect these parameter changes.
+
+### Fixed
+- Ensured `docs/spec.md` is consistent with the updated MCP tool parameters and descriptions.
+
 ## [v0.5.1] - 2025-01-22
 
 ### Added

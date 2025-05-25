@@ -1,0 +1,64 @@
+---
+description: test
+globs: 
+alwaysApply: false
+---
+# Learnings from Terminator Refactoring & Testing Session
+
+## 1. AppleScript to Swift Refactoring Strategy
+
+*   **Decomposition:** Large, monolithic AppleScript strings are difficult to manage and debug. It's effective to break them down into smaller, single-purpose AppleScripts.
+*   **Logic in Swift:** Shift complex logic (loops, conditionals, data parsing, state management) from AppleScript to Swift. Swift offers better type safety, error handling, and testability.
+    *   Example: `findOrCreateSessionInternal` now uses Swift to parse window/tab lists from AppleScript and decide whether to create new windows/tabs.
+    *   Example: `executeCommand` moved polling logic and status determination into Swift, using AppleScript only for basic command execution and history retrieval.
+*   **Interface:** Define clear interfaces between Swift and AppleScript. Swift calls specific, focused AppleScripts and processes their raw output.
+
+## 2. AppleScript Development & Debugging
+
+*   **Robustness:** AppleScripts interacting with UI elements can be fragile.
+    *   `createWindowScript` initially struggled with reliably getting the ID of a newly created window. Using `set new_window_ref to make new window` and then getting `id of new_window_ref` along with `try...on error` blocks improved this.
+*   **Error Codes:**
+    *   `-1728` (Can't get object): Often indicates an issue with how an AppleScript is trying to reference an element (e.g., wrong index, non-existent element).
+    *   `-10000` (AppleEvent handler failed): A more generic error that can occur if the target application (e.g., Terminal.app) is in a bad state or cannot process the command. Restarting the application is a valid troubleshooting step.
+    *   `-1700` (Can't make some data into the expected type): Typically a path or file reference issue when trying to `run script (file "path_to_script")` if the path is incorrect or the file object isn't properly resolved to an alias.
+*   **Path Handling:** When scripts reference other script files (e.g., a test script running a unit script), ensure paths are correctly constructed and resolved, potentially using `POSIX file` and `alias` conversions.
+
+## 3. Swift Development for CLI Tools
+
+*   **Type Safety & Casting:** Parsing results from AppleScript (which are often untyped or loosely typed) requires careful casting in Swift (e.g., `NSArray` to `[Any]`, then to more specific types). Optional handling is critical.
+*   **String Escaping:** When constructing shell commands within Swift strings that will then be executed by AppleScript, quote escaping is complex. For example, a single quote within a shell command might need to be represented as `'\\\\\\\\\\\\\\''\\''` in a Swift string literal to be correctly interpreted through multiple layers of execution.
+*   **Build System & Dependencies:** Direct `swift build` and `swift test` commands with `--package-path` are reliable.
+*   **Global Constants vs. Type Properties:** Changes like `TerminatorCLI.APP_VERSION` to a global `appVersion` constant require updates in tests and any dependent code.
+*   **XCTest Assertions:** `XCTAssertEqual` with `Optional<String>` and `String` can lead to unexpected failures if the optional is `nil`. Ensure that values being compared are of the expected optionality or provide default values.
+
+## 4. Testing Strategies
+
+*   **Swift Unit Tests:** Essential for verifying Swift logic. Test failures (e.g., due to `APP_VERSION` change or `nil` optionals in `InfoCommand`) highlight areas needing careful review.
+*   **AppleScript Unit Testing Framework:**
+    *   Isolate individual AppleScripts into "unit" files (e.g., `cli/Tests/AppleScriptTests/AppleTerminal/units/createWindow.applescript`).
+    *   Create corresponding "test" AppleScripts (e.g., `cli/Tests/AppleScriptTests/AppleTerminal/tests/test_createWindow.applescript`) that:
+        1.  Execute the unit script.
+        2.  Verify its output (if any).
+        3.  Check for side effects (e.g., window creation, UI changes).
+        4.  Clean up (e.g., close created windows).
+    *   Use a shell script runner (e.g., `run_apple_terminal_tests.sh`) to automate the execution of these AppleScript tests and report results.
+*   **Environment Variables for Testing:** Using environment variables (`TERMINATOR_WINDOW_GROUPING`, `TERMINATOR_APP`) is effective for testing different configurations of the CLI.
+*   **Focus Mode Testing:** Ensure test commands match the actual CLI arguments (e.g., `--focus-mode` vs. `--focus`).
+
+## 5. Tooling Observations
+
+*   **`mcp_terminator_execute`:**
+    *   Functional for basic interactions like `action: "info"`.
+    *   Showed potential issues with "output parsing failed" for some commands (`action: "list"` initially).
+    *   May exhibit caching behavior or delays in picking up the latest CLI build, as evidenced by the tool using an old version of `createWindowScript` even after the Swift source and CLI were updated. This needs to be considered when testing changes through this tool.
+*   **`mcp_agent_claude_code`:** Useful for creating multiple files and directory structures in one go, especially when `mcp_filesystem_create_directory` might face permission-like issues or for more complex file content generation.
+*   **`mcp_automator_execute_script` & `mcp_automator_get_scripting_tips`:**
+    *   `get_scripting_tips` is a good starting point but may not always have a direct, runnable script for every common task (e.g., "quit application by name").
+    *   Basic AppleScript commands (like `tell application "AppName" to quit`) can be executed directly using `script_content` if a pre-built script isn't found or necessary.
+
+## 6. Key Debugging Insights
+
+*   **Isolate the Problem:** When an error occurs (e.g., `-10000` from `createWindowScript`), try to reproduce it in the simplest possible context (e.g., a minimal AppleScript unit test).
+*   **Verify Inputs/Environment:** Double-check paths, file existence, application state (is Terminal.app responsive?), and permissions.
+*   **Incremental Changes:** When refactoring or debugging, make small changes and test frequently. This helps pinpoint where an issue was introduced.
+*   **Edit Corruption:** Be aware that extensive automated edits can sometimes lead to unexpected issues in unrelated code sections. A clean rebuild or careful review of diffs can help identify these.

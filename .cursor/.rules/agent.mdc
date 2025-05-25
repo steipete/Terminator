@@ -3,7 +3,9 @@ description:
 globs: 
 alwaysApply: true
 ---
-Minimize asking the user, work and continue until everything is done.
-If you are stuck somewhere, work on other parts.
-If you need a second opinion or do batch file operations, use claude code.
-the file mcp tool needs absolute paths.
+- Minimize asking the user, work and continue until everything is done.
+- If you are stuck somewhere, work on other parts.
+- If you need a second opinion or do batch file operations, use claude code.
+- the file mcp tools need absolute paths.
+- Use mcp automator to close apps such as the terminal
+- use mcp peekaboo for screenshots

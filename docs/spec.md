@@ -70,10 +70,12 @@ Terminator consists of two main components:
             *   On initialization, the wrapper reads all relevant `TERMINATOR_*` environment variables (listed in Section 3.2.3).
             *   These read values are used to populate the *default values* for corresponding parameters (`lines`, `timeout`, `focus`, `background`) in the JSON schema of the `terminator.execute` tool presented to the AI.
             *   The resolved `TERMINATOR_APP` name will be incorporated into the overall tool description string.
+            *   A suffix indicating the Terminator MCP version and the resolved `TERMINATOR_APP` will be appended to the main tool description (e.g., "...manage terminal processes. \nTerminator MCP [VERSION] using [APP_NAME]").
             *   The `TERMINATOR_*` environment variables **do not alter the structural definition** (e.g., adding/removing parameters) of the tool schema; they only affect the default values and descriptive text.
         *   **Parameter Parsing & Validation (AI Input):**
-            *   **Action Defaulting:** If the `action` parameter is omitted by the AI, it defaults to `"execute"`.
-            *   **Canonical Keys:** All option keys documented and presented to the AI in the tool schema are strictly `camelCase` (e.g., `projectPath`, `timeoutSeconds`).
+            *   **Action Defaulting:** If the `action` parameter is omitted by the AI, it defaults to `\"execute\"`.
+            *   **`project_path` Mandate:** The `project_path` parameter is mandatory.
+            *   **Canonical Keys:** All option keys documented and presented to the AI in the tool schema are strictly `snake_case` or `camelCase` as defined (e.g., `project_path`, `timeout`).
             *   **Lenient Key Matching (Internal):**
                 *   The wrapper maintains a predefined, ordered map of common aliases to their canonical `camelCase` form. Example:
                     ```typescript
@@ -92,7 +94,7 @@ Terminator consists of two main components:
                 *   A debug message will be logged if multiple aliases for the same canonical option are provided, indicating which one was chosen.
             *   **Type Coercion (Strict for `options` values):**
                 *   `command`: Must be a string.
-                *   `projectPath`: Must be a string.
+                *   `project_path`: Must be a string.
                 *   `tag`: Must be a string.
                 *   `background`: Strings `"true"`, `"1"`, `"t"`, `"yes"`, `"on"` (case-insensitive) coerce to `true`. Strings `"false"`, `"0"`, `"f"`, `"no"`, `"off"` (case-insensitive) coerce to `false`. Other types/values result in an error if the parameter is provided with an uncoercible value. If `background` is not provided, its default is used.
                 *   `lines`: Strings representing integers (e.g., `"50"`) coerce to `number`. Floating point strings (e.g. `"50.5"`) will be floored. Non-numeric strings result in an error if the parameter is provided. If `lines` is not provided, its default is used.
@@ -102,16 +104,16 @@ Terminator consists of two main components:
             *   **Ignoring Unknown Parameters:** Extra, unrecognized parameters within `options` will be ignored, and a debug message logged (e.g., "Ignoring unknown option 'fooBar' in terminator.execute call.").
             *   **Input Size:** For V1, reasonable input sizes for strings like `command` (e.g., < 16KB) are assumed. Extremely large inputs may lead to OS-level errors during process spawning; the wrapper does not impose its own limits but may fail if `child_process.spawn` fails due to argument length.
         *   **`effectiveProjectPath` Resolution (Strict Order of Priority):**
-            1.  Explicit `projectPath` from AI call `options`. Must be an absolute path if provided. If relative, an error is returned.
-            2.  Path from MCP `ctx.requestContext.roots`: Uses the `uri.path` of the *first* root object in the `roots` array where `uri.scheme === 'file'` and `uri.path` is non-empty and represents an absolute path.
-            3.  Predefined list of environment variables (checked in this order):
+            1.  Explicit `project_path` from AI call (mandatory). Must be an absolute path. If relative, an error is returned.
+            2.  Path from MCP `ctx.requestContext.roots`: (No longer primary for `effectiveProjectPath` as `project_path` is mandatory from AI, but could be a fallback or cross-reference if needed for other context in the future, though not for `effectiveProjectPath` itself).
+            3.  Predefined list of environment variables (checked in this order): (No longer primary for `effectiveProjectPath`)
                 a.  `CURSOR_ACTIVE_PROJECT_ROOT`
                 b.  `VSCODE_CWD` (commonly set by VS Code integrated terminals, may reflect project root)
                 c.  `TERMINATOR_MCP_PROJECT_ROOT` (a user-configurable override)
-            4.  If none of the above yield a valid, absolute path, operations that strictly require a project context (e.g., certain `TERMINATOR_WINDOW_GROUPING` strategies if no `tag` is given) may fail or operate in a global/untagged context if permissible by the action.
+            4.  The `project_path` provided by the AI is the sole source for `effectiveProjectPath`. If it's not a valid, absolute path, an error is returned.
         *   **Default `tag` Resolution:**
-            *   If `options.tag` is omitted by the AI *and* an `effectiveProjectPath` is determined:
-                1.  The default tag will be the last path component (basename) of `effectiveProjectPath`.
+            *   If `options.tag` (now a root-level `tag` parameter) is omitted by the AI:
+                1.  The default tag will be the last path component (basename) of the mandatory `effectiveProjectPath` (derived from the AI-provided `project_path`).
                 2.  If the last component is empty (e.g., path ends in `/`), the second-to-last component will be used.
                 3.  If `effectiveProjectPath` is `/` or resolution yields an empty string (e.g. path is `///`), a fixed default tag `"_root_project_"` will be used.
                 4.  **Sanitization Rule for Derived Tag:** The derived tag is sanitized to ensure it is safe for internal use and display:
@@ -119,9 +121,9 @@ Terminator consists of two main components:
                     *   Truncated to a maximum of 64 characters.
                     *   If the result is empty after sanitization (e.g., input was `///`), use `"_default_tag_"`.
                     *   Example Regex for allowed characters (applied after basename extraction): `/[^a-zA-Z0-9_-]/g` (replace with `_`).
-            *   If `options.tag` is omitted and `effectiveProjectPath` cannot be determined, and the `action` requires a `tag` (e.g., `execute`, `read`, `kill`, `focus`), an error will be returned to the AI ("Cannot determine a session tag. Please provide a 'tag' or ensure a project context is available."). `list` and `info` can operate without a tag.
+            *   If `options.tag` is omitted and `effectiveProjectPath` cannot be determined (this should not happen as `project_path` is mandatory), and the `action` requires a `tag` (e.g., `execute`, `read`, `kill`, `focus`), an error will be returned to the AI ("Cannot determine a session tag. Please provide a 'tag' or ensure a project context is available."). `list` and `info` can operate without a tag if the Swift CLI supports it (though usually a tag is derived).
         *   **Swift CLI (`terminator`) Invocation:**
-            *   Constructs the appropriate `terminator` subcommand (e.g., `execute`, `list`) and arguments (e.g., `--project-path`, `--tag`, `--lines`). All Swift CLI arguments will be `kebab-case`.
+            *   Constructs the appropriate `terminator` subcommand (e.g., `execute`, `list`) and arguments (e.g., `--project_path`, `--tag`, `--lines`). All Swift CLI arguments will be `kebab-case`.
             *   Spawns the bundled `terminator` Swift binary as a child process using `child_process.spawn`.
             *   **Environment Variable Forwarding:** The Node.js wrapper will *selectively* pass only the known `TERMINATOR_*` environment variables (listed in Section 3.2.3) that are present in its own environment to the Swift CLI process. It does not pass its entire `process.env`.
             *   Includes an internal, non-configurable timeout for the Swift CLI process itself. This timeout will be `MAX(TERMINATOR_FOREGROUND_COMPLETION_SECONDS, TERMINATOR_BACKGROUND_STARTUP_SECONDS) + 60 seconds` (a fixed 60-second buffer). If this wrapper-level timeout is hit, the Swift CLI process will be killed using `SIGKILL`, and an error "Terminator Swift CLI unresponsive and was terminated." returned to the AI.
@@ -154,24 +156,23 @@ Terminator consists of two main components:
 
     *   **3.1.5. MCP Tool Definition: `terminator.execute` (Presented to AI Agent)**
         *   **(Dynamically Constructed) Overall Description:**
-            "Manages macOS terminal sessions using the `[Resolved TERMINATOR_APP, e.g., "iTerm"]` application. Ideal for running commands, especially those that might be long-running or could hang, as it isolates them to protect your workflow. The session screen is automatically cleared before executing a new command or after a process is killed. Use this to execute shell commands, retrieve output, and manage terminal processes. If 'action' is not specified, it defaults to 'execute'."
-        *   **Parameters (Schema):**
-            *   `action?: string`: (Optional, default: `"execute"`) The operation to perform.
-                *   Enum: `"execute"`, `"read"`, `"list"`, `"info"`, `"focus"`, `"kill"`.
-            *   `options?: object`: (All keys are `camelCase`)
-                *   `projectPath?: string`: (Optional) Absolute path to the project directory. If not provided, an attempt is made to use the active project context from your IDE or relevant environment variables.
-                *   `tag?: string`: (Optional) A unique identifier for the session (e.g., "ui-build", "api-server"). If `projectPath` is provided and `tag` is omitted, the last component of `projectPath` (sanitized) will be used as the tag. Required for actions `execute`, `read`, `kill`, `focus` if `projectPath` is not available/determinable or if a specific non-project-derived tag is intended.
-                *   `command?: string`: (Optional, primarily for `action: "execute"`) The shell command to execute. If `action: "execute"` and `command` is empty or omitted, the session will be prepared (cleared, focused if applicable), but no new command is run.
-                *   `background?: boolean`: (Optional, for `action: "execute"`, default: `false`, reflected from `TERMINATOR_DEFAULT_BACKGROUND_EXECUTION` if set, otherwise `false`)
-                    *   If `true`, command is treated as long-running; `terminator` waits up to the background startup timeout (default: `[Resolved TERMINATOR_BACKGROUND_STARTUP_SECONDS, e.g., 5]` seconds, see `timeout` option) for initial output, then returns, leaving the command running.
+            "Manages macOS terminal sessions using the `[Resolved TERMINATOR_APP, e.g., \"iTerm\"]` application. Ideal for running commands, especially those that might be long-running or could hang, as it isolates them to protect your workflow. The session screen is automatically cleared before executing a new command or after a process is killed. Use this to execute shell commands, retrieve output, and manage terminal processes. If 'action' is not specified, it defaults to 'execute'. \nTerminator MCP [SERVER_VERSION] using [Resolved TERMINATOR_APP]"
+        *   **Parameters (Schema - Flattened Structure):**
+            *   `action?: string`: (Optional, default: `\"execute\"`) The operation to perform: 'execute', 'read', 'list', 'info', 'focus', or 'kill'. Defaults to 'execute'.
+                *   Enum: `\"execute\"`, `\"read\"`, `\"list\"`, `\"info\"`, `\"focus\"`, `\"kill\"`.
+            *   `project_path: string`: (Mandatory) Absolute path to the project directory.
+            *   `tag?: string`: (Optional) A unique identifier for the session (e.g., \"ui-build\", \"api-server\"). If omitted, a tag will be derived from the `project_path`.
+            *   `command?: string`: (Optional, primarily for `action: \"execute\"`) The shell command to execute. If `action` is 'execute' and `command` is empty or omitted, the session will be prepared (cleared, focused if applicable), but no new command is run.
+            *   `background?: boolean`: (Optional, for `action: \"execute\"`, default: `false`, reflected from `TERMINATOR_DEFAULT_BACKGROUND_EXECUTION` if set, otherwise `false`)
+                *   If `true`, command is treated as long-running; `terminator` waits up to the background startup timeout (default: `[Resolved TERMINATOR_BACKGROUND_STARTUP_SECONDS, e.g., 5]` seconds, see `timeout` option) for initial output, then returns, leaving the command running.
                     *   If `false` (default), command is expected to complete; `terminator` waits up to the foreground completion timeout (default: `[Resolved TERMINATOR_FOREGROUND_COMPLETION_SECONDS, e.g., 60]` seconds, see `timeout` option) for it to finish.
-                *   `lines?: number`: (Optional, for `action: "execute"`, `"read"`, default: `[Resolved TERMINATOR_DEFAULT_LINES, e.g., 100]`) Maximum number of recent output lines (from `stdout` and `stderr` combined for `execute`, or scrollback for `read`) to return.
-                *   `timeout?: number`: (Optional, for `action: "execute"`, in seconds) Overrides the system's default timeout for this specific call.
-                    *   If `background: true`, this `timeout` applies to the background startup period.
-                    *   If `background: false`, this `timeout` applies to the foreground completion period.
-                    *   If omitted, system defaults (derived from `TERMINATOR_BACKGROUND_STARTUP_SECONDS` or `TERMINATOR_FOREGROUND_COMPLETION_SECONDS`) are used based on the `background` flag.
-                *   `focus?: boolean`: (Optional, for actions `execute`, `read`, `kill`, `focus`, default: `[Resolved TERMINATOR_DEFAULT_FOCUS_ON_ACTION, e.g., true]`) If true, `terminator` will attempt to bring the terminal application to the foreground and focus the relevant session's tab/window.
-        *   **Returns:** `Promise<{ success: boolean, message: string }}`. The `message` field contains human-readable output or error details.
+            *   `lines?: number`: (Optional, for `action: \"execute\"`, `\"read\"`, default: `[Resolved TERMINATOR_DEFAULT_LINES, e.g., 100]`) Maximum number of recent output lines (from `stdout` and `stderr` combined for `execute`, or scrollback for `read`) to return.
+            *   `timeout?: number`: (Optional, for `action: \"execute\"`, in seconds) Overrides the system's default timeout for this specific call.
+                *   If `background: true`, this `timeout` applies to the background startup period.
+                *   If `background: false`, this `timeout` applies to the foreground completion period.
+                *   If omitted, system defaults (derived from `TERMINATOR_BACKGROUND_STARTUP_SECONDS` or `TERMINATOR_FOREGROUND_COMPLETION_SECONDS`) are used based on the `background` flag.
+            *   `focus?: boolean`: (Optional, for actions `execute`, `read`, `kill`, `focus`, default: `[Resolved TERMINATOR_DEFAULT_FOCUS_ON_ACTION, e.g., true]`) If true, `terminator` will attempt to bring the terminal application to the foreground and focus the relevant session's tab/window.
+        *   **Returns:** `Promise<{ success: boolean, message: string }>`. The `message` field contains human-readable output or error details.
 
 **3.2. Swift CLI (Binary Name: `terminator`)**
 
@@ -205,8 +206,8 @@ Terminator consists of two main components:
                 *   `"off"`: Always aims for a new window unless an *exact* session (identified by project hash and tag) already exists in *any* window. If it exists, that tab is reused. Otherwise, new window, new tab.
                 *   `"project"`: Aims to group tabs into an existing window already associated with the *same* `effectiveProjectPath` (matched by project hash in tab title). If multiple such windows exist, the one with the most Terminator tabs is chosen. If no such window exists, a new window is created.
                 *   `"smart"`:
-                    1.  If `projectPath` is provided: Try to find an existing window associated with this *exact* `projectPath` (matched by project hash). If found, use it. If multiple, prefer one with more Terminator tabs.
-                    2.  Else (no `projectPath` or no existing window specifically for it): Try to find *any* existing window containing *any* Terminator-managed tab. Prioritize windows with more Terminator tabs.
+                    1.  If `project_path` is provided by AI (which it will be, as it's mandatory): Try to find an existing window associated with this *exact* `project_path` (matched by project hash). If found, use it. If multiple, prefer one with more Terminator tabs.
+                    2.  Else (no `project_path` or no existing window specifically for it - this case should not occur due to mandatory `project_path`): Try to find *any* existing window containing *any* Terminator-managed tab. Prioritize windows with more Terminator tabs.
                     3.  Else (no Terminator-managed tabs found anywhere): Create a new window.
             5.  `DEFAULT_LINES`: Integer. Default number of output lines to capture and return. Default: `100`. Must be >= 0.
             6.  `BACKGROUND_STARTUP_SECONDS`: Integer. Default timeout in seconds for `execution-mode: background` to wait for initial output. Default: `5`. Must be >= 1.
@@ -228,7 +229,7 @@ Terminator consists of two main components:
     *   **3.2.4. Session Identification and Naming (Swift CLI Internal Rules):**
         *   A session is uniquely identified internally by a combination of a `projectHash` (SHA256 hash of the canonical `effectiveProjectPath`, or a fixed string like `"NO_PROJECT"` if no path) and the `resolvedTag`.
         *   **Tab Title Pattern:** Tabs managed by `terminator` will have their titles set to a strict, machine-readable format:
-            `::TERMINATOR_SESSION::PROJECT_HASH=<SHA256_of_projectPath_or_NO_PROJECT>::TAG=<resolvedTag_urlEncoded>::TTY_PATH=<ttyDevicePath_urlEncoded>::PID=<process_id_of_terminator_cli_that_created_it>::`
+            `::TERMINATOR_SESSION::PROJECT_HASH=<SHA256_of_effectiveProjectPath_or_NO_PROJECT>::TAG=<resolvedTag_urlEncoded>::TTY_PATH=<ttyDevicePath_urlEncoded>::PID=<process_id_of_terminator_cli_that_created_it>::`
             *   The `resolvedTag` will be URL-encoded to handle special characters safely within the title.
             *   `TTY_PATH` and `PID` are for diagnostic purposes and potential future recovery, not primary identification.
             *   `terminator` expects to *own* these titles. If a tab's title matches this pattern but its content has been manually altered, `terminator` may still try to manage it, potentially overwriting user changes.
@@ -238,8 +239,8 @@ Terminator consists of two main components:
     *   **3.2.5. Subcommands & Behavior (Swift CLI):**
         *   All subcommands accept global options like `--terminal-app`, `--log-level`, etc.
         *   Common parameters for session-targeting subcommands:
-            *   `--project-path <path>`: Optional. Absolute path to the project.
-            *   `--tag <tag_string>`: Required (unless `project-path` is used to derive it implicitly by Node.js wrapper and then passed explicitly). The actual tag string to use/find.
+            *   `--project-path <path>`: Optional. Absolute path to the project. (This is the Swift CLI flag, remains kebab-case)
+            *   `--tag <tag_string>`: Required (unless `--project-path` is used to derive it implicitly by Node.js wrapper and then passed explicitly). The actual tag string to use/find.
         *   **`execute [--project-path <path>] --tag <tag_string> [--command <string...>] [--execution-mode <background|foreground>] [--lines <N>] [--timeout-seconds <seconds>] [--focus-mode <force-focus|no-focus|default-behavior>]`**
             *   `--tag`: This is the resolved, sanitized tag passed by the Node wrapper.
             *   `--command <string...>`: The command and its arguments to execute. If empty, session is prepared, cleared, focused (if applicable).
@@ -248,7 +249,7 @@ Terminator consists of two main components:
             *   `--timeout-seconds`: Overrides default timeouts.
             *   `--focus-mode`: Controls terminal focus. `default-behavior` respects `TERMINATOR_DEFAULT_FOCUS_ON_ACTION`. `force-focus` and `no-focus` override it.
             *   **Pre-execution Steps:**
-                1.  Resolve target session (find existing or create new) based on `project-path` (for its hash), `tag`, and `TERMINATOR_WINDOW_GROUPING`.
+                1.  Resolve target session (find existing or create new) based on `project_path` (for its hash, via `effectiveProjectPath`), `tag`, and `TERMINATOR_WINDOW_GROUPING`.
                 2.  Determine TTY of the session tab. Check if session is "busy": uses `ps -t <tty> -o stat=,pgid=,comm=` to find any non-shell foreground process (e.g., status not 'S', 'Ss', 'Zs'; command not matching known shells like `bash`, `zsh`, `fish`).
                 3.  If busy: Attempt to `stop` the foreground process group by sending `SIGINT` via `killpg()`. Wait for a fixed internal timeout (e.g., **3 seconds, non-configurable for V1**). If process still exists after timeout, `execute` fails with error code 4 ("Failed to stop busy process before execution.").
                 4.  **Screen Clearing:** Always clear the terminal screen.
@@ -268,7 +269,7 @@ Terminator consists of two main components:
         *   **`list [--project-path <path>] [--json]`**
             *   Scans all tabs of all windows of `TERMINATOR_APP` via AppleScript. Parses tab titles matching the `::TERMINATOR_SESSION::` pattern.
             *   For each matched tab, determines TTY and uses `ps` to check if `is_busy`.
-            *   If `--json`, outputs a JSON array: `[{ "sessionIdentifier": "display_name", "projectPath": "/abs/path/or_null", "tag": "actual_tag", "fullTabTitle": "...", "tty": "/dev/tty...", "isBusy": true/false, "windowIdentifier": "apple_script_id", "tabIdentifier": "apple_script_id" }, ...]`.
+            *   If `--json`, outputs a JSON array: `[{ "sessionIdentifier": "display_name", "project_path": "/abs/path/or_null", "tag": "actual_tag", "fullTabTitle": "...", "tty": "/dev/tty...", "isBusy": true/false, "windowIdentifier": "apple_script_id", "tabIdentifier": "apple_script_id" }, ...]`.
             *   If not `--json`, human-readable list.
         *   **`info [--json]`**
             *   Outputs `terminator` CLI version.
@@ -355,7 +356,7 @@ Terminator consists of two main components:
     *   **AI Tool Usage (`terminator.execute`):**
         *   Explanation of the `action` parameter (and its default to `execute`).
         *   Table listing each `action` value (`execute`, `read`, `list`, `info`, `focus`, `kill`).
-        *   For each action, list applicable `options` (`projectPath`, `tag`, `command`, `background`, `lines`, `timeout`, `focus`).
+        *   For each action, list applicable `options` (`project_path`, `tag`, `command`, `background`, `lines`, `timeout`, `focus`).
         *   Clear examples of AI invoking the tool for common scenarios.
     *   **Troubleshooting:**
         *   Common errors:
