@@ -33,13 +33,22 @@ struct TerminatorCLI: ParsableCommand {
         @Flag(name: [.short, .long], help: "Verbose logging (alias for --log-level debug).")
         var verbose: Bool = false
 
-        @Option(name: .long, help: "Default focus behavior for kill actions (true, false). Env: TERMINATOR_DEFAULT_FOCUS_ON_KILL")
+        @Option(
+            name: .long,
+            help: "Default focus behavior for kill actions (true, false). Env: TERMINATOR_DEFAULT_FOCUS_ON_KILL"
+        )
         var defaultFocusOnKill: Bool?
 
-        @Option(name: .long, help: "Seconds to wait for SIGINT to gracefully kill a process. Env: TERMINATOR_SIGINT_WAIT_SECONDS")
+        @Option(
+            name: .long,
+            help: "Seconds to wait for SIGINT to gracefully kill a process. Env: TERMINATOR_SIGINT_WAIT_SECONDS"
+        )
         var sigintWaitSeconds: Int?
 
-        @Option(name: .long, help: "Seconds to wait for SIGTERM after SIGINT before sending SIGKILL. Env: TERMINATOR_SIGTERM_WAIT_SECONDS")
+        @Option(
+            name: .long,
+            help: "Seconds to wait for SIGTERM after SIGINT before sending SIGKILL. Env: TERMINATOR_SIGTERM_WAIT_SECONDS"
+        )
         var sigtermWaitSeconds: Int?
     }
 
@@ -67,8 +76,10 @@ struct TerminatorCLI: ParsableCommand {
 
         // Configure the logger now that AppConfig is available.
         // Assuming Logger has a static configure method.
-        Logger.configure(level: TerminatorCLI.currentConfig.logLevel,
-                         directory: TerminatorCLI.currentConfig.logDir)
+        Logger.configure(
+            level: TerminatorCLI.currentConfig.logLevel,
+            directory: TerminatorCLI.currentConfig.logDir
+        )
 
         Logger.log(level: .debug, "Global options validated. Config loaded. Logger configured.")
         Logger.log(level: .debug, "Using Swift version: \(swiftVersion())")
@@ -79,9 +90,14 @@ struct TerminatorCLI: ParsableCommand {
         if TerminatorCLI.currentConfig.terminalApp == "INVALID_GHOSTY_CONFIGURATION" ||
             (TerminatorCLI.currentConfig.terminalAppEnum == .unknown &&
                 (globals.terminalApp?.lowercased() == "ghosty" ||
-                    ProcessInfo.processInfo.environment["TERMINATOR_APP"]?.lowercased() == "ghosty"))
-        {
-            let errorMsg = "Configuration Error: TERMINATOR_APP is set to Ghosty, but Ghosty is not installed, not scriptable, or failed validation. Please check your Ghosty installation and macOS Automation Permissions."
+                    ProcessInfo.processInfo.environment["TERMINATOR_APP"]?.lowercased() == "ghosty"
+                )
+            ) {
+            let errorMsg = """
+            Configuration Error: TERMINATOR_APP is set to Ghosty, but Ghosty is not installed, \
+            not scriptable, or failed validation. Please check your Ghosty installation and \
+            macOS Automation Permissions.
+            """
             fputs("Error: \(errorMsg)\n", stderr)
             Logger.log(level: .error, errorMsg)
             throw ExitCode(ErrorCodes.configurationError)

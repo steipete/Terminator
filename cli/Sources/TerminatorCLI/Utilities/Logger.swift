@@ -3,7 +3,8 @@ import Foundation
 // MARK: - Global Logger (SDD 3.2.7)
 
 enum Logger {
-    private static var currentLogLevel: AppConfig.LogLevel = .info // Assuming AppConfig.LogLevel is accessible or moved too
+    private static var currentLogLevel: AppConfig
+        .LogLevel = .info // Assuming AppConfig.LogLevel is accessible or moved too
     private static var logFileURL: URL?
     private static let fileHandleQueue = DispatchQueue(label: "com.steipete.terminator.logFileQueue")
     private static var fileHandle: FileHandle?
@@ -21,7 +22,10 @@ enum Logger {
                     fileHandle = try FileHandle(forWritingTo: logFileURL!)
                     fileHandle?.seekToEndOfFile() // Append to existing log
                 } catch {
-                    fputs("Error: Could not open log file \(path) for writing. Error: \(error.localizedDescription)\n", stderr)
+                    fputs(
+                        "Error: Could not open log file \(path) for writing. Error: \(error.localizedDescription)\n",
+                        stderr
+                    )
                     fileHandle = nil // Ensure it's nil if open failed
                 }
             } else {
@@ -31,14 +35,18 @@ enum Logger {
         // Avoid logging from within configure itself if it depends on AppConfig being fully set up,
         // or ensure this specific log call is safe.
         // Logger.log(level: .info, "Logger configured. Level: \(level.rawValue), Path: \(logFileURL?.path ?? "N/A")")
-        // This initial log can be done after AppConfig is fully initialized and Logger.configure is called from outside.
+        // This initial log can be done after AppConfig is fully initialized and Logger.configure is called from
+        // outside.
     }
 
     static func shutdown() {
         // Log shutdown initiation if possible (might be tricky if logger itself is what's shutting down)
         // Logger.log(level: .debug, "Logger shutting down. Closing file handle.")
         // Consider fputs for this specific message if regular log path is compromised during shutdown
-        fputs("[\(timestamp()) DEBUG] Logger shutting down. Closing file handle.\n", stderr) // Changed from stdout to stderr
+        fputs(
+            "[\(timestamp()) DEBUG] Logger shutting down. Closing file handle.\n",
+            stderr
+        ) // Changed from stdout to stderr
 
         fileHandleQueue.sync { // Ensure all pending writes are done
             do {
@@ -51,7 +59,13 @@ enum Logger {
         }
     }
 
-    static func log(level: AppConfig.LogLevel, _ messageToLog: @autoclosure () -> String, file: String = #file, line: Int = #line, function: String = #function) {
+    static func log(
+        level: AppConfig.LogLevel,
+        _ messageToLog: @autoclosure () -> String,
+        file: String = #file,
+        line: Int = #line,
+        function: String = #function
+    ) {
         guard level.intValue >= currentLogLevel.intValue else { return }
 
         let message = messageToLog() // Evaluate the autoclosure only if log level is met
@@ -71,7 +85,10 @@ enum Logger {
                     try handle.write(contentsOf: data)
                 } catch {
                     // Avoid recursive logging
-                    fputs("Critical Error: Could not write to log file. Error: \(error.localizedDescription). Original message: \(logEntry)", stderr)
+                    fputs(
+                        "Critical Error: Could not write to log file. Error: \(error.localizedDescription). Original message: \(logEntry)",
+                        stderr
+                    )
                 }
             } else if logFileURL != nil, fileHandle == nil {
                 // Log file was intended but not opened (e.g. permissions)
@@ -83,7 +100,8 @@ enum Logger {
 
     private static func timestamp() -> String {
         let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds] // Match common log formats like Zerolog
+        formatter
+            .formatOptions = [.withInternetDateTime, .withFractionalSeconds] // Match common log formats like Zerolog
         return formatter.string(from: Date())
     }
 }

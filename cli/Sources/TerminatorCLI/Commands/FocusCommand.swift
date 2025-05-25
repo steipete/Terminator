@@ -2,7 +2,8 @@ import ArgumentParser
 import Foundation
 
 struct Focus: ParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "Focus a specific session (bring its terminal window and tab to front).")
+    static let configuration =
+        CommandConfiguration(abstract: "Focus a specific session (bring its terminal window and tab to front).")
 
     @OptionGroup var globals: TerminatorCLI.GlobalOptions
 
@@ -30,7 +31,10 @@ struct Focus: ParsableCommand {
             iTermProfileNameOption: nil
         )
         let config = TerminatorCLI.currentConfig!
-        Logger.log(level: .info, "Executing 'focus' command for tag: \(tag)" + (projectPath != nil ? " in project: \(projectPath!)" : ""))
+        Logger.log(
+            level: .info,
+            "Executing 'focus' command for tag: \(tag)" + (projectPath != nil ? " in project: \(projectPath!)" : "")
+        )
 
         // Focus always implies force-focus for the purpose of the `focus` command itself.
         // The `focusMode` CLI flag is for actions like `execute` or `read` to control ancillary focus.

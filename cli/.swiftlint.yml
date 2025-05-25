@@ -1,3 +1,13 @@
+# Paths
+included:
+  - Sources
+  - Tests
+
+excluded:
+  - .build
+  - Package.swift
+  - .swiftpm
+
 disabled_rules:
   - todo # Or other rules you want to disable globally
 

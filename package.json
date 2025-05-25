@@ -9,14 +9,18 @@
     "terminator-mcp-swift": "bin/terminator"
   },
   "scripts": {
-    "build:swift": "(cd cli && ./build-release.sh)",
+    "build:swift": "./scripts/build-swift-universal.sh",
     "build:ts": "tsc",
     "build": "npm run build:ts && npm run build:swift",
     "prepublishOnly": "npm run clean && npm run build",
     "start": "node dist/index.js",
     "dev": "tsc-watch --onSuccess \"npm start\"",
     "clean": "rm -rf dist bin",
-    "postinstall": "chmod +x bin/terminator"
+    "postinstall": "chmod +x bin/terminator 2>/dev/null || true",
+    "prepare-release": "node ./scripts/prepare-release.js",
+    "format:swift": "cd cli && swiftformat .",
+    "lint:swift": "cd cli && swiftlint",
+    "test:swift": "cd cli && swift test"
   },
   "author": "@steipete",
   "license": "MIT",
@@ -41,5 +45,24 @@
     "bin",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "keywords": [
+    "mcp",
+    "terminal",
+    "macos",
+    "terminal-management",
+    "iterm2",
+    "apple-terminal"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/steipete/terminator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/steipete/terminator/issues"
+  },
+  "homepage": "https://github.com/steipete/terminator#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

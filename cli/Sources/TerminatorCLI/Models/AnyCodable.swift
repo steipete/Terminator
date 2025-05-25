@@ -4,7 +4,7 @@ import Foundation
 struct AnyCodable: Codable {
     private let value: Any
 
-    init<T>(_ value: T?) {
+    init(_ value: (some Any)?) {
         self.value = value ?? ()
     }
 
@@ -45,11 +45,14 @@ struct AnyCodable: Codable {
         } else if let string = try? container.decode(String.self) {
             value = string
         } else if let array = try? container.decode([AnyCodable].self) {
-            value = array.map { $0.value }
+            value = array.map(\.value)
         } else if let dictionary = try? container.decode([String: AnyCodable].self) {
             value = dictionary.mapValues { $0.value }
         } else {
-            throw DecodingError.dataCorruptedError(in: container, debugDescription: "AnyCodable value cannot be decoded")
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "AnyCodable value cannot be decoded"
+            )
         }
     }
 }

@@ -26,12 +26,12 @@ struct AppConfig {
         // To allow comparison, e.g., level.rawValue >= currentLogLevel.rawValue
         var intValue: Int {
             switch self {
-            case .debug: return 0
-            case .info: return 1
-            case .warn: return 2
-            case .error: return 3
-            case .fatal: return 4
-            case .none: return 5
+            case .debug: 0
+            case .info: 1
+            case .warn: 2
+            case .error: 3
+            case .fatal: 4
+            case .none: 5
             }
         }
     }
@@ -52,18 +52,19 @@ struct AppConfig {
     var terminalAppEnum: TerminalAppType {
         switch terminalApp.lowercased() {
         case "terminal", "appleterminal", "apple terminal":
-            return .appleTerminal
+            .appleTerminal
         case "iterm", "iterm2", "iterm.app":
-            return .iterm
+            .iterm
         case "ghosty", "ghosty.app":
-            return .ghosty
+            .ghosty
         default:
-            return .unknown
+            .unknown
         }
     }
 
     // As per SDD 3.2.5 for --focus-mode
-    enum FocusCLIArgument: String, CaseIterable, ExpressibleByArgument { // Made ExpressibleByArgument if used directly in ArgumentParser options for subcommands
+    enum FocusCLIArgument: String, CaseIterable,
+        ExpressibleByArgument { // Made ExpressibleByArgument if used directly in ArgumentParser options for subcommands
         case forceFocus = "force-focus"
         case noFocus = "no-focus"
         case autoBehavior = "auto-behavior"
@@ -86,33 +87,9 @@ struct AppConfig {
         reuseBusySessionsOption: Bool?,
         iTermProfileNameOption: String?
     ) {
-        let resolvedTerminalApp = AppConfig.resolve(
-            cli: terminalAppOption,
-            env: ProcessInfo.processInfo.environment["TERMINATOR_APP"],
-            default: "Terminal"
+        terminalApp = AppConfig.resolveAndValidateTerminalApp(
+            terminalAppOption: terminalAppOption
         )
-
-        // Validate Ghosty if selected (SDD 3.2.3)
-        var validatedTerminalApp = resolvedTerminalApp
-        if resolvedTerminalApp.lowercased() == "ghosty" || resolvedTerminalApp.lowercased() == "ghosty.app" {
-            let ghostyValidationScript = "tell application \"Ghosty\" to get version"
-            let result = AppleScriptBridge.runAppleScript(script: ghostyValidationScript)
-            switch result {
-            case let .success(versionInfo):
-                // Ghosty validation successful - will log after Logger is configured
-                _ = versionInfo
-            case let .failure(error):
-                fputs("Error: TERMINATOR_APP set to Ghosty, but Ghosty failed validation. Error: \(error.localizedDescription). Check if Ghosty is installed and scriptable.\n", stderr)
-                fputs("Terminator will proceed as if Ghosty is not correctly configured (which may lead to exit code 2).\n", stderr)
-                // Mark terminalApp as invalid so subsequent checks can handle it, potentially leading to exit code 2.
-                // A more robust solution might be to make AppConfig.init throwing or have a separate validation function.
-                validatedTerminalApp = "INVALID_GHOSTY_CONFIGURATION"
-                // The terminalAppEnum will now also return .unknown due to this change, which should be handled
-                // by TerminalAppController or TerminatorCLI.validate().
-            }
-        }
-
-        terminalApp = validatedTerminalApp
 
         let resolvedLogLevelString = AppConfig.resolve(
             cli: logLevelOption,
@@ -121,30 +98,7 @@ struct AppConfig {
         ).lowercased()
         logLevel = LogLevel(rawValue: resolvedLogLevelString) ?? .info
 
-        let logDirEnvValue = ProcessInfo.processInfo.environment["TERMINATOR_LOG_DIR"]
-        let logDirCliValue = logDirOption
-
-        var resolvedLogDirString: String
-        if let cliValue = logDirCliValue, !cliValue.isEmpty {
-            resolvedLogDirString = cliValue
-        } else if let envValue = logDirEnvValue, !envValue.isEmpty {
-            resolvedLogDirString = envValue
-        } else {
-            resolvedLogDirString = "~/Library/Logs/terminator-mcp/"
-        }
-
-        if resolvedLogDirString.uppercased() == "SYSTEM_TEMP" { // SDD 3.2.3 Log Dir Fallback
-            logDir = AppConfig.systemTempLogDir()
-        } else {
-            logDir = AppConfig.expandPath(resolvedLogDirString) ?? AppConfig.fallbackLogDir() // fallbackLogDir is the default if expandPath fails
-        }
-
-        // Ensure log directory exists - moved here so it's done once.
-        do {
-            try FileManager.default.createDirectory(at: logDir, withIntermediateDirectories: true, attributes: nil)
-        } catch {
-            fputs("Error: Could not create log directory at \(logDir.path). Error: \(error.localizedDescription)\n", stderr)
-        }
+        logDir = AppConfig.resolveLogDirectory(logDirOption: logDirOption)
 
         let resolvedGroupingString = AppConfig.resolve(
             cli: groupingOption,
@@ -285,7 +239,10 @@ struct AppConfig {
             return true
         } catch {
             // Use fputs for direct stderr output as logger might not be configured yet
-            fputs("Error: Could not create log directory at \(url.path). Error: \(error.localizedDescription)\n", stderr)
+            fputs(
+                "Error: Could not create log directory at \(url.path). Error: \(error.localizedDescription)\n",
+                stderr
+            )
             return false
         }
     }
@@ -306,8 +263,74 @@ struct AppConfig {
             "TERMINATOR_DEFAULT_BACKGROUND_EXECUTION": defaultBackgroundExecution,
             "TERMINATOR_PRE_KILL_SCRIPT_PATH": preKillScriptPath,
             "TERMINATOR_REUSE_BUSY_SESSIONS": reuseBusySessions,
-            "TERMINATOR_ITERM_PROFILE_NAME": iTermProfileName,
+            "TERMINATOR_ITERM_PROFILE_NAME": iTermProfileName
         ]
         return configDict.compactMapValues { $0 }
+    }
+
+    // MARK: - Private Helper Methods
+
+    private static func resolveAndValidateTerminalApp(terminalAppOption: String?) -> String {
+        let resolvedTerminalApp = AppConfig.resolve(
+            cli: terminalAppOption,
+            env: ProcessInfo.processInfo.environment["TERMINATOR_APP"],
+            default: "Terminal"
+        )
+
+        // Validate Ghosty if selected (SDD 3.2.3)
+        var validatedTerminalApp = resolvedTerminalApp
+        if resolvedTerminalApp.lowercased() == "ghosty" || resolvedTerminalApp.lowercased() == "ghosty.app" {
+            let ghostyValidationScript = "tell application \"Ghosty\" to get version"
+            let result = AppleScriptBridge.runAppleScript(script: ghostyValidationScript)
+            switch result {
+            case let .success(versionInfo):
+                // Ghosty validation successful - will log after Logger is configured
+                _ = versionInfo
+            case let .failure(error):
+                fputs(
+                    "Error: TERMINATOR_APP set to Ghosty, but Ghosty failed validation. Error: \(error.localizedDescription). Check if Ghosty is installed and scriptable.\n",
+                    stderr
+                )
+                fputs(
+                    "Terminator will proceed as if Ghosty is not correctly configured (which may lead to exit code 2).\n",
+                    stderr
+                )
+                // Mark terminalApp as invalid so subsequent checks can handle it
+                validatedTerminalApp = "INVALID_GHOSTY_CONFIGURATION"
+            }
+        }
+
+        return validatedTerminalApp
+    }
+
+    private static func resolveLogDirectory(logDirOption: String?) -> URL {
+        let logDirEnvValue = ProcessInfo.processInfo.environment["TERMINATOR_LOG_DIR"]
+        let logDirCliValue = logDirOption
+
+        let resolvedLogDirString: String = if let cliValue = logDirCliValue, !cliValue.isEmpty {
+            cliValue
+        } else if let envValue = logDirEnvValue, !envValue.isEmpty {
+            envValue
+        } else {
+            "~/Library/Logs/terminator-mcp/"
+        }
+
+        let logDir: URL = if resolvedLogDirString.uppercased() == "SYSTEM_TEMP" { // SDD 3.2.3 Log Dir Fallback
+            AppConfig.systemTempLogDir()
+        } else {
+            AppConfig.expandPath(resolvedLogDirString) ?? AppConfig.fallbackLogDir()
+        }
+
+        // Ensure log directory exists
+        do {
+            try FileManager.default.createDirectory(at: logDir, withIntermediateDirectories: true, attributes: nil)
+        } catch {
+            fputs(
+                "Error: Could not create log directory at \(logDir.path). Error: \(error.localizedDescription)\n",
+                stderr
+            )
+        }
+
+        return logDir
     }
 }

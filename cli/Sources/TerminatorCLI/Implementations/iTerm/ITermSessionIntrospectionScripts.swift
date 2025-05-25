@@ -2,7 +2,7 @@ import Foundation
 
 enum ITermSessionIntrospectionScripts {
     static func listSessionsScript(appName: String) -> String {
-        return """
+        """
         tell application "\(appName)"
             set session_list to {}
             try
@@ -92,7 +92,7 @@ enum ITermSessionIntrospectionScripts {
     }
 
     static func getCurrentWindowIDScript(appName: String) -> String {
-        return """
+        """
         tell application "\(appName)"
             try
                 if (count of windows) > 0 then
@@ -108,7 +108,7 @@ enum ITermSessionIntrospectionScripts {
     }
 
     static func listWindowsForGroupingScript(appName: String) -> String {
-        return """
+        """
         tell application "\(appName)"
             set window_details_list to {}
             try

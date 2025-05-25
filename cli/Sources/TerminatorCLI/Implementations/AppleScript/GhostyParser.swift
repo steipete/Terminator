@@ -16,7 +16,10 @@ enum GhostyParser {
         if let resStr = resultStringOrArray as? String, resStr == "GHOSTY_LIST_PLACEHOLDER" {
             Logger.log(level: .info, "[GhostyParser] Ghosty list placeholder confirmed. Returning empty session list.")
         } else {
-            Logger.log(level: .warn, "[GhostyParser] Unexpected output from Ghosty list script: \(resultStringOrArray). Returning empty list.")
+            Logger.log(
+                level: .warn,
+                "[GhostyParser] Unexpected output from Ghosty list script: \(resultStringOrArray). Returning empty list."
+            )
         }
         return []
     }
@@ -27,8 +30,11 @@ enum GhostyParser {
     // However, if a script *were* to return something like a TTY (highly speculative):
     static func parseCreateNewSessionGhostyOutput(_: String, projectPath: String?, tag: String) -> TerminalSessionInfo {
         // Default placeholder session info, as Ghosty is unlikely to return detailed creation data.
-        return TerminalSessionInfo(
-            sessionIdentifier: SessionUtilities.generateUserFriendlySessionIdentifier(projectPath: projectPath, tag: tag),
+        TerminalSessionInfo(
+            sessionIdentifier: SessionUtilities.generateUserFriendlySessionIdentifier(
+                projectPath: projectPath,
+                tag: tag
+            ),
             projectPath: projectPath,
             tag: tag,
             fullTabTitle: "Ghosty Session: \(tag)", // Placeholder title
@@ -41,6 +47,7 @@ enum GhostyParser {
         )
     }
 
+    // swiftlint:disable:next function_body_length
     static func parseExecuteCommandGhostyOutput(
         appleScriptResultData: Any,
         scriptContent _: String,
@@ -50,7 +57,10 @@ enum GhostyParser {
         linesToCapture: Int,
         commandTimeout: Int // Pass command specific timeout for tailing
     ) throws -> (status: String, output: String, pid: String?) {
-        Logger.log(level: .debug, "[GhostyParser] Parsing execute command output for Ghosty. Data: \(appleScriptResultData), Log: \(logFilePath)")
+        Logger.log(
+            level: .debug,
+            "[GhostyParser] Parsing execute command output for Ghosty. Data: \(appleScriptResultData), Log: \(logFilePath)"
+        )
 
         var status = "OK_SUBMITTED_UNKNOWN"
         var resultMessage = "Ghosty command submitted."
@@ -84,7 +94,10 @@ enum GhostyParser {
         if status == "ERROR" {
             outputText = resultMessage
         } else if isForeground {
-            Logger.log(level: .debug, "[GhostyParser] Foreground command for Ghosty. Tailing log \(logFilePath) for marker with timeout \(commandTimeout)s.")
+            Logger.log(
+                level: .debug,
+                "[GhostyParser] Foreground command for Ghosty. Tailing log \(logFilePath) for marker with timeout \(commandTimeout)s."
+            )
             let tailResult = ProcessUtilities.tailLogFileForMarker(
                 logFilePath: logFilePath,
                 marker: completionMarker,
@@ -97,7 +110,10 @@ enum GhostyParser {
             if tailResult.timedOut {
                 status = "TIMEOUT"
                 resultMessage = "Ghosty command timed out waiting for marker in log file: \(logFilePath)."
-                outputText = outputText.replacingOccurrences(of: "\n---[MARKER NOT FOUND, TIMEOUT OCURRED] ---", with: "") // Clean if present
+                outputText = outputText.replacingOccurrences(
+                    of: "\n---[MARKER NOT FOUND, TIMEOUT OCURRED] ---",
+                    with: ""
+                ) // Clean if present
                 outputText += "\n---[GHOSTY_CMD_TIMEOUT_MARKER_NOT_FOUND]---"
                 Logger.log(level: .warn, "[GhostyParser] \(resultMessage)")
             } else {
@@ -113,12 +129,17 @@ enum GhostyParser {
             // Capture initial output for background commands as per SDD best-effort
             let initialOutputTail = ProcessUtilities.tailLogFileForMarker(
                 logFilePath: logFilePath,
-                marker: "TERMINATOR_GHOSTY_BG_NON_EXISTENT_MARKER_\(UUID().uuidString)", // Marker not expected to be found
-                timeoutSeconds: commandTimeout > 0 ? commandTimeout : 2, // Use background startup timeout from params or default
+                marker: "TERMINATOR_GHOSTY_BG_NON_EXISTENT_MARKER_\(UUID().uuidString)",
+                // Marker not expected to be found
+                timeoutSeconds: commandTimeout > 0 ? commandTimeout : 2,
+                // Use background startup timeout from params or default
                 linesToCapture: linesToCapture,
                 controlIdentifier: "GhostyBGInitial"
             )
-            let initialOutput = initialOutputTail.output.replacingOccurrences(of: "\n---[MARKER NOT FOUND, TIMEOUT OCURRED] ---", with: "")
+            let initialOutput = initialOutputTail.output.replacingOccurrences(
+                of: "\n---[MARKER NOT FOUND, TIMEOUT OCURRED] ---",
+                with: ""
+            )
             if !initialOutput.isEmpty {
                 outputText = "Initial output (up to \(linesToCapture) lines):\n\(initialOutput)"
             } else {
@@ -144,7 +165,8 @@ enum GhostyParser {
         }
 
         guard let content = resultData as? String else {
-            let errorMsg = "Failed to read Ghosty session: AppleScript did not return a string as expected. Output: \(resultData)"
+            let errorMsg =
+                "Failed to read Ghosty session: AppleScript did not return a string as expected. Output: \(resultData)"
             Logger.log(level: .error, errorMsg)
             throw TerminalControllerError.appleScriptError(message: errorMsg, scriptContent: scriptContent)
         }
@@ -155,13 +177,20 @@ enum GhostyParser {
         }
         let processedOutput = lines.joined(separator: "\n")
 
-        Logger.log(level: .info, "[GhostyParser] Successfully read content from Ghosty. Length: \(processedOutput.count) chars, Lines: \(lines.count)")
+        Logger.log(
+            level: .info,
+            "[GhostyParser] Successfully read content from Ghosty. Length: \(processedOutput.count) chars, Lines: \(lines.count)"
+        )
         return ReadSessionResult(sessionInfo: sessionInfo, output: processedOutput)
     }
 
     // For focus, kill, clear - they might just return simple "OK" or error strings.
     // The parser might not need to do much other than pass through or check for "ERROR:".
-    static func parseSimpleGhostyOkErrorResponse(resultData: Any, scriptContent: String, actionName: String) throws -> String {
+    static func parseSimpleGhostyOkErrorResponse(
+        resultData: Any,
+        scriptContent: String,
+        actionName: String
+    ) throws -> String {
         if let errorStr = resultData as? String, errorStr.hasPrefix("ERROR:") {
             Logger.log(level: .error, "[GhostyParser] Ghosty \(actionName) script reported error: \(errorStr)")
             throw TerminalControllerError.appleScriptError(message: errorStr, scriptContent: scriptContent)

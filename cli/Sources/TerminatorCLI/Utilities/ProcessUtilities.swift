@@ -20,7 +20,8 @@ enum ProcessUtilities {
             process.waitUntilExit()
 
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            guard let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) else {
+            guard let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+            else {
                 Logger.log(level: .warn, "Failed to get output from ps for TTY \(ttyName)")
                 return nil
             }
@@ -46,7 +47,10 @@ enum ProcessUtilities {
                         Logger.log(level: .warn, "Failed to parse PGID or PID from ps output")
                         continue
                     }
-                    Logger.log(level: .info, "TTY \(ttyName) has foreground process: \(commandName) (PGID: \(pgid), PID: \(pid), State: \(state))")
+                    Logger.log(
+                        level: .info,
+                        "TTY \(ttyName) has foreground process: \(commandName) (PGID: \(pgid), PID: \(pid), State: \(state))"
+                    )
                     return (pgid: pgid, pid: pid, command: commandName)
                 }
             }
@@ -84,7 +88,10 @@ enum ProcessUtilities {
         do {
             try process.run()
             process.waitUntilExit()
-            Logger.log(level: .debug, "isProcessRunning check for PID \(pid): kill -0 exit code \(process.terminationStatus)")
+            Logger.log(
+                level: .debug,
+                "isProcessRunning check for PID \(pid): kill -0 exit code \(process.terminationStatus)"
+            )
             return process.terminationStatus == 0 // kill -0 returns 0 if process exists and signal can be sent
         } catch {
             Logger.log(level: .error, "Failed to run kill -0 for PID \(pid): \(error.localizedDescription)")
@@ -105,7 +112,10 @@ enum ProcessUtilities {
             return true
         } else {
             let errorNumber = errno
-            Logger.log(level: .error, "Failed to send signal \(signal) to PGID \(pgid). Errno: \(errorNumber) (\(String(cString: strerror(errorNumber))))")
+            Logger.log(
+                level: .error,
+                "Failed to send signal \(signal) to PGID \(pgid). Errno: \(errorNumber) (\(String(cString: strerror(errorNumber))))"
+            )
             return false
         }
     }
@@ -121,16 +131,26 @@ enum ProcessUtilities {
         // ESRCH means no process in the group could be found.
         // EPERM means a process exists but we don't have permission (treat as running for safety).
         if Darwin.killpg(pgid, 0) == 0 {
-            Logger.log(level: .debug, "isProcessGroupRunning check for PGID \(pgid): killpg(0) successful, group is running.")
+            Logger.log(
+                level: .debug,
+                "isProcessGroupRunning check for PGID \(pgid): killpg(0) successful, group is running."
+            )
             return true // Process group exists
         } else {
             let errorNumber = errno
             if errorNumber == ESRCH {
-                Logger.log(level: .debug, "isProcessGroupRunning check for PGID \(pgid): killpg(0) failed with ESRCH, group not running.")
+                Logger.log(
+                    level: .debug,
+                    "isProcessGroupRunning check for PGID \(pgid): killpg(0) failed with ESRCH, group not running."
+                )
                 return false // No such process group
             } else {
-                // For other errors (like EPERM), assume it might be running or in a state we can't fully determine as "not running".
-                Logger.log(level: .debug, "isProcessGroupRunning check for PGID \(pgid): killpg(0) failed with errno \(errorNumber) (\(String(cString: strerror(errorNumber)))). Assuming running or indeterminate.")
+                // For other errors (like EPERM), assume it might be running or in a state we can't fully determine as
+                // "not running".
+                Logger.log(
+                    level: .debug,
+                    "isProcessGroupRunning check for PGID \(pgid): killpg(0) failed with errno \(errorNumber) (\(String(cString: strerror(errorNumber)))). Assuming running or indeterminate."
+                )
                 return true
             }
         }
@@ -197,8 +217,17 @@ enum ProcessUtilities {
         return killSuccess
     }
 
-    static func tailLogFileForMarker(logFilePath: String, marker: String, timeoutSeconds: Int, linesToCapture: Int, controlIdentifier _: String = "LogTailing") -> (output: String, timedOut: Bool) {
-        Logger.log(level: .debug, "[\\(controlIdentifier)] Tailing \\\\(logFilePath) for marker '\\\\(marker)' with timeout \\\\(timeoutSeconds)s")
+    static func tailLogFileForMarker(
+        logFilePath: String,
+        marker: String,
+        timeoutSeconds: Int,
+        linesToCapture: Int,
+        controlIdentifier _: String = "LogTailing"
+    ) -> (output: String, timedOut: Bool) {
+        Logger.log(
+            level: .debug,
+            "[\\(controlIdentifier)] Tailing \\\\(logFilePath) for marker '\\\\(marker)' with timeout \\\\(timeoutSeconds)s"
+        )
         let startTime = Date()
         var capturedOutput = ""
 
@@ -212,7 +241,10 @@ enum ProcessUtilities {
             do {
                 let content = try String(contentsOfFile: logFilePath, encoding: .utf8)
                 if content.contains(marker) {
-                    Logger.log(level: .info, "[\\(controlIdentifier)] Marker '\\\\(marker)' found in \\\\(logFilePath).")
+                    Logger.log(
+                        level: .info,
+                        "[\\(controlIdentifier)] Marker '\\\\(marker)' found in \\\\(logFilePath)."
+                    )
                     var lines = content.components(separatedBy: .newlines)
                     if let markerIndex = lines.firstIndex(where: { $0.contains(marker) }) {
                         lines.remove(at: markerIndex) // Remove the marker line itself
@@ -225,11 +257,17 @@ enum ProcessUtilities {
                     return (capturedOutput, false)
                 }
             } catch {
-                Logger.log(level: .warn, "[\\(controlIdentifier)] Error reading log file \\\\(logFilePath): \\\\(error.localizedDescription)")
+                Logger.log(
+                    level: .warn,
+                    "[\\(controlIdentifier)] Error reading log file \\\\(logFilePath): \\\\(error.localizedDescription)"
+                )
             }
         }
 
-        Logger.log(level: .warn, "[\\(controlIdentifier)] Timeout waiting for marker '\\\\(marker)' in \\\\(logFilePath).")
+        Logger.log(
+            level: .warn,
+            "[\\(controlIdentifier)] Timeout waiting for marker '\\\\(marker)' in \\\\(logFilePath)."
+        )
         if FileManager.default.fileExists(atPath: logFilePath) {
             do {
                 let content = try String(contentsOfFile: logFilePath, encoding: .utf8)
@@ -241,7 +279,10 @@ enum ProcessUtilities {
                 }
                 capturedOutput += "\\n---[MARKER NOT FOUND, TIMEOUT OCURRED] ---" // Append timeout info
             } catch {
-                Logger.log(level: .error, "[\\(controlIdentifier)] Error reading log file \\\\(logFilePath) on timeout: \\\\(error.localizedDescription)")
+                Logger.log(
+                    level: .error,
+                    "[\\(controlIdentifier)] Error reading log file \\\\(logFilePath) on timeout: \\\\(error.localizedDescription)"
+                )
                 capturedOutput = "Error reading log file on timeout: \\\\(error.localizedDescription)"
             }
         } else {
@@ -256,7 +297,7 @@ enum ProcessUtilities {
     /// This typically involves wrapping it in single quotes and escaping any internal single quotes.
     static func escapePathForShell(_ path: String) -> String {
         // ' -> '\''
-        return "'" + path.replacingOccurrences(of: "'", with: "'\\''") + "'"
+        "'" + path.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 
     /// Escapes a command string for safe execution in a shell.
@@ -265,11 +306,12 @@ enum ProcessUtilities {
     /// For the current use case where the command is part of `( (CMD) > LOG 2>&1; echo MARKER >> LOG )`,
     /// we need to ensure the `CMD` part is safe, especially if it contains single quotes.
     static func escapeCommandForShell(_ command: String) -> String {
-        // This simple version escapes single quotes for when the command might be part of a larger single-quoted shell script block.
+        // This simple version escapes single quotes for when the command might be part of a larger single-quoted shell
+        // script block.
         // It assumes the command itself doesn't need complex internal quoting for its own arguments,
         // which should be handled by the caller if necessary before passing to this function.
         // Example: if command is `echo 'hello'`, it becomes `echo '\''hello'\''`
-        return command.replacingOccurrences(of: "'", with: "'\\''")
+        command.replacingOccurrences(of: "'", with: "'\\''")
     }
 }
 
@@ -300,7 +342,10 @@ extension ProcessUtilities {
 
         // 2. SIGKILL (if still not killed)
         if !killSuccess {
-            Logger.log(level: .warn, "Process group \(pgid) still running after SIGTERM (post-timeout). Sending SIGKILL.")
+            Logger.log(
+                level: .warn,
+                "Process group \(pgid) still running after SIGTERM (post-timeout). Sending SIGKILL."
+            )
             if killProcessGroup(pgid: pgid, signal: SIGKILL) {
                 message += " Sent SIGKILL to PGID \(pgid)."
                 Thread.sleep(forTimeInterval: 0.2) // Short delay for SIGKILL to take effect
@@ -310,7 +355,10 @@ extension ProcessUtilities {
                     Logger.log(level: .info, "Process group \(pgid) terminated after SIGKILL (post-timeout).")
                 } else {
                     message += " Process group still running after SIGKILL."
-                    Logger.log(level: .warn, "Process group \(pgid) did not terminate even after SIGKILL (post-timeout).")
+                    Logger.log(
+                        level: .warn,
+                        "Process group \(pgid) did not terminate even after SIGKILL (post-timeout)."
+                    )
                 }
             } else {
                 message += " Failed to send SIGKILL to PGID \(pgid) (post-timeout)."

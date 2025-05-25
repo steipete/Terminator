@@ -16,6 +16,17 @@ struct List: ParsableCommand {
     var json: Bool = false
 
     mutating func run() throws {
+        let config = setupConfig()
+        logCommand()
+
+        let sessions = try fetchSessions(config: config)
+        let filteredSessions = filterSessionsByProject(sessions)
+
+        outputResults(filteredSessions)
+        throw ExitCode(ErrorCodes.success)
+    }
+
+    private mutating func setupConfig() -> AppConfig {
         TerminatorCLI.currentConfig = AppConfig(
             terminalAppOption: globals.terminalApp,
             logLevelOption: globals.logLevel ?? (globals.verbose ? "debug" : nil),
@@ -32,91 +43,112 @@ struct List: ParsableCommand {
             reuseBusySessionsOption: nil,
             iTermProfileNameOption: nil
         )
-        let config = TerminatorCLI.currentConfig!
-        Logger.log(level: .info, "Executing 'list' command."
-            + (projectPath != nil ? " Filtering by project: \(projectPath!)" : "")
-            + (tag != nil ? " Filtering by tag: \(tag!)" : ""))
+        return TerminatorCLI.currentConfig!
+    }
 
-        let sessions: [TerminalSessionInfo]
+    private func logCommand() {
+        Logger.log(
+            level: .info,
+            "Executing 'list' command."
+                + (projectPath != nil ? " Filtering by project: \(projectPath!)" : "")
+                + (tag != nil ? " Filtering by tag: \(tag!)" : "")
+        )
+    }
 
-        // Wrap session listing in do-catch to handle errors gracefully
+    private func fetchSessions(config: AppConfig) throws -> [TerminalSessionInfo] {
         do {
             switch config.terminalAppEnum {
             case .appleTerminal:
                 let controller = AppleTerminalControl(config: config, appName: config.terminalApp)
-                sessions = try controller.listSessions(filterByTag: tag)
+                return try controller.listSessions(filterByTag: tag)
             case .iterm:
                 let controller = ITermControl(config: config, appName: config.terminalApp)
-                sessions = try controller.listSessions(filterByTag: tag)
+                return try controller.listSessions(filterByTag: tag)
             case .ghosty:
                 let controller = GhostyControl(config: config, appName: config.terminalApp)
-                sessions = try controller.listSessions(filterByTag: tag)
+                return try controller.listSessions(filterByTag: tag)
             case .unknown:
                 throw ExitCode(ErrorCodes.configurationError)
             }
         } catch {
-            // Handle listing errors gracefully
-            if json {
-                // In JSON mode: print empty array, no stderr warnings
-                print("[]")
-            } else {
-                // In default mode: print user-friendly message and warning to stderr
-                print("No active sessions found.")
-                fputs("Warning: Failed to list active sessions: \(error.localizedDescription)\n", stderr)
-            }
-            // Exit successfully as per requirements
+            handleListingError(error)
             throw ExitCode(ErrorCodes.success)
         }
+    }
 
-        // Filter sessions if needed
-        let filteredSessions: [TerminalSessionInfo]
-        if let projPath = projectPath {
-            let targetProjectHash = SessionUtilities.generateProjectHash(projectPath: projPath)
-            filteredSessions = sessions.filter { ($0.projectPath ?? "") == targetProjectHash }
-            Logger.log(level: .debug, "Post-filtering list by project path '\(projPath)' (hash: \(targetProjectHash)). Found \(filteredSessions.count) matches out of \(sessions.count) total (after tag filter).")
+    private func handleListingError(_ error: Error) {
+        if json {
+            print("[]")
         } else {
-            filteredSessions = sessions
+            print("No active sessions found.")
+            fputs("Warning: Failed to list active sessions: \(error.localizedDescription)\n", stderr)
         }
+    }
 
-        // Handle output based on format and whether sessions exist
-        if filteredSessions.isEmpty {
-            if json {
+    private func filterSessionsByProject(_ sessions: [TerminalSessionInfo]) -> [TerminalSessionInfo] {
+        guard let projPath = projectPath else { return sessions }
+
+        let targetProjectHash = SessionUtilities.generateProjectHash(projectPath: projPath)
+        let filtered = sessions.filter { ($0.projectPath ?? "") == targetProjectHash }
+
+        Logger.log(
+            level: .debug,
+            "Post-filtering list by project path '\(projPath)' (hash: \(targetProjectHash)). Found \(filtered.count) matches out of \(sessions.count) total (after tag filter)."
+        )
+
+        return filtered
+    }
+
+    private func outputResults(_ sessions: [TerminalSessionInfo]) {
+        if sessions.isEmpty {
+            outputEmpty()
+        } else if json {
+            outputJSON(sessions)
+        } else {
+            outputText(sessions)
+        }
+    }
+
+    private func outputEmpty() {
+        if json {
+            print("[]")
+        } else {
+            print("No active sessions found"
+                + (projectPath != nil ? " for project \(projectPath!)" : "")
+                + (tag != nil ? " with tag \(tag!)" : "")
+                + "."
+            )
+        }
+    }
+
+    private func outputJSON(_ sessions: [TerminalSessionInfo]) {
+        let codableSessions = sessions.map { InfoOutput.SessionInfo(from: $0) }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+
+        do {
+            let jsonData = try encoder.encode(codableSessions)
+            if let jsonString = String(data: jsonData, encoding: .utf8) {
+                print(jsonString)
+            } else {
                 print("[]")
-            } else {
-                print("No active sessions found"
-                    + (projectPath != nil ? " for project \(projectPath!)" : "")
-                    + (tag != nil ? " with tag \(tag!)" : "")
-                    + ".")
             }
-        } else {
-            if json {
-                let codableSessions = filteredSessions.map { InfoOutput.SessionInfo(from: $0) }
-                let encoder = JSONEncoder()
-                encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-                do {
-                    let jsonData = try encoder.encode(codableSessions)
-                    if let jsonString = String(data: jsonData, encoding: .utf8) {
-                        print(jsonString)
-                    } else {
-                        // If JSON encoding fails, print empty array
-                        print("[]")
-                    }
-                } catch {
-                    // If JSON encoding fails, print empty array
-                    print("[]")
-                }
-            } else {
-                print("Terminator: Found \(filteredSessions.count) session(s)"
-                    + (projectPath != nil ? " for project \(projectPath!)" : "")
-                    + (tag != nil ? " with tag \(tag!)" : "")
-                    + ":")
-                for (index, sessionInfo) in filteredSessions.enumerated() {
-                    print("  \(index + 1). ID: \(sessionInfo.sessionIdentifier), Tag: \(sessionInfo.tag), Project: \(sessionInfo.projectPath ?? "N/A"), TTY: \(sessionInfo.tty ?? "N/A"), Busy: \(sessionInfo.isBusy)")
-                }
-            }
+        } catch {
+            print("[]")
         }
+    }
 
-        // Always exit with success
-        throw ExitCode(ErrorCodes.success)
+    private func outputText(_ sessions: [TerminalSessionInfo]) {
+        print("Terminator: Found \(sessions.count) session(s)"
+            + (projectPath != nil ? " for project \(projectPath!)" : "")
+            + (tag != nil ? " with tag \(tag!)" : "")
+            + ":"
+        )
+
+        for (index, sessionInfo) in sessions.enumerated() {
+            print(
+                "  \(index + 1). ID: \(sessionInfo.sessionIdentifier), Tag: \(sessionInfo.tag), Project: \(sessionInfo.projectPath ?? "N/A"), TTY: \(sessionInfo.tty ?? "N/A"), Busy: \(sessionInfo.isBusy)"
+            )
+        }
     }
 }

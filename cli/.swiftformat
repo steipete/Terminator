@@ -1,0 +1,20 @@
+# SwiftFormat configuration
+
+# Rules
+--enable isEmpty
+--disable andOperator
+--disable wrapMultilineStatementBraces
+
+# Options
+--indent 4
+--indentcase false
+--trimwhitespace always
+--voidtype tuple
+--nospaceoperators ..<,...
+--wrapcollections before-first
+--wraparguments before-first
+--wrapparameters before-first
+--maxwidth 120
+
+# Exclude
+--exclude .build

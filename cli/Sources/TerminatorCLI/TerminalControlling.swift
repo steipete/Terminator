@@ -4,7 +4,8 @@ import Foundation
 
 protocol TerminalControlling {
     // Initializer for the specific controller.
-    // It needs AppConfig for settings and appName to confirm it's the right controller (or for minor variations if one controller handles multiple similar apps).
+    // It needs AppConfig for settings and appName to confirm it's the right controller (or for minor variations if one
+    // controller handles multiple similar apps).
     init(config: AppConfig, appName: String)
 
     func listSessions(filterByTag: String?) throws -> [TerminalSessionInfo]
@@ -41,21 +42,29 @@ struct TerminalAppController {
         // case "ghosty", "ghosty.app":
         //     self.specificController = GhostyControl(config: config, appName: self.appName)
         default:
-            let errorMsg = "TerminalAppController: No specific controller available for unsupported terminal application: \(appName). This should have been caught by AppConfig validation."
+            let errorMsg =
+                "TerminalAppController: No specific controller available for unsupported terminal application: \(appName). This should have been caught by AppConfig validation."
             Logger.log(level: .fatal, errorMsg) // Log as fatal as this is a critical setup error.
             // To allow compilation and testing up to this point, but clearly indicate a failure:
             // Throwing from init is complex with non-optional `specificController`.
             // A fatalError is clear during development if this state is reached.
-            // In a production build, this path might be guarded by earlier validation in AppConfig ensuring appName is always supported.
+            // In a production build, this path might be guarded by earlier validation in AppConfig ensuring appName is
+            // always supported.
             fatalError(errorMsg)
         }
-        Logger.log(level: .info, "TerminalAppController initialized for \(appName) using \(String(describing: type(of: specificController))).")
+        Logger.log(
+            level: .info,
+            "TerminalAppController initialized for \(appName) using \(String(describing: type(of: specificController)))."
+        )
     }
 
     // MARK: - Public API Methods (Forwarded to specificController)
 
     func listSessions(filterByTag: String? = nil) throws -> [TerminalSessionInfo] {
-        Logger.log(level: .info, "[Controller Facade] Listing sessions for \(appName) with filter: \(filterByTag ?? "none")")
+        Logger.log(
+            level: .info,
+            "[Controller Facade] Listing sessions for \(appName) with filter: \(filterByTag ?? "none")"
+        )
         return try specificController.listSessions(filterByTag: filterByTag)
     }
 

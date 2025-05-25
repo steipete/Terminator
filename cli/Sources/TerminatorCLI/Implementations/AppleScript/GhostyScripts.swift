@@ -9,7 +9,7 @@ enum GhostyScripts {
         // For V1, listing distinct sessions in Ghosty might not be feasible or reliable.
         // This script can just try to activate it to see if it's running.
         // The parser will likely return an empty list or a single placeholder.
-        return """
+        """
         tell application "\(appName)"
             if not running then error "Ghosty is not running."
             -- Ghosty may not have scriptable windows/tabs/sessions in a way we can list.
@@ -29,7 +29,8 @@ enum GhostyScripts {
     ) -> String {
         let quotedLogFilePathForShell = "'" + outputLogFilePath.replacingOccurrences(of: "'", with: "'\\\\''") + "'"
         // Escape completion marker for AppleScript string comparison (basic for Ghosty)
-        let escapedCompletionMarkerForAppleScript = completionMarker.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
+        let escapedCompletionMarkerForAppleScript = completionMarker.replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
 
         var shellCommandToExecute: String
 
@@ -37,7 +38,8 @@ enum GhostyScripts {
             shellCommandToExecute = ""
         } else if isForeground {
             let shellEscapedCommand = commandToRunRaw.replacingOccurrences(of: "'", with: "'\\\\''")
-            shellCommandToExecute = "((\(shellEscapedCommand)) > \(quotedLogFilePathForShell) 2>&1; echo '\(escapedCompletionMarkerForAppleScript)' >> \(quotedLogFilePathForShell))"
+            shellCommandToExecute =
+                "((\(shellEscapedCommand)) > \(quotedLogFilePathForShell) 2>&1; echo '\(escapedCompletionMarkerForAppleScript)' >> \(quotedLogFilePathForShell))"
         } else { // Background
             let shellEscapedCommand = commandToRunRaw.replacingOccurrences(of: "'", with: "'\\\\''")
             shellCommandToExecute = "((\(shellEscapedCommand)) > \(quotedLogFilePathForShell) 2>&1) & disown"
@@ -51,7 +53,7 @@ enum GhostyScripts {
         // It might not support `do script in specific_tab`.
         return """
         tell application "\(appName)"
-            if not running then 
+            if not running then
                 if \(shouldActivate) then
                     activate
                 else
@@ -97,7 +99,7 @@ enum GhostyScripts {
     }
 
     static func focusGhostyScript(appName: String) -> String {
-        return """
+        """
         tell application "\(appName)"
             activate
             return "OK_FOCUSED"
@@ -148,7 +150,7 @@ enum GhostyScripts {
 
     // Minimalistic get version script for validation
     static func getVersionScript(appName: String) -> String {
-        return """
+        """
         tell application "\(appName)"
             if not running then error "Ghosty application \"\(appName)\" is not running."
             try

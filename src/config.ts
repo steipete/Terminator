@@ -47,7 +47,7 @@ export function getEnvVarBool(key: string, defaultValue: boolean): boolean {
     return ['true', '1', 't', 'yes', 'on'].includes(val);
 }
 
-export const CURRENT_TERMINAL_APP = getEnvVar('TERMINATOR_APP', 'Terminal');
+export const CURRENT_TERMINAL_APP = getEnvVar('TERMINATOR_APP', 'iTerm');
 export const DEFAULT_BACKGROUND_STARTUP_SECONDS = getEnvVarInt('TERMINATOR_BACKGROUND_STARTUP_SECONDS', 5);
 export const DEFAULT_FOREGROUND_COMPLETION_SECONDS = getEnvVarInt('TERMINATOR_FOREGROUND_COMPLETION_SECONDS', 60);
 export const DEFAULT_LINES = getEnvVarInt('TERMINATOR_DEFAULT_LINES', 100);

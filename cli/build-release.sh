@@ -26,6 +26,21 @@ RELEASE_LINKER_FLAGS="-Xlinker -dead_strip"
 
 echo "🚀 Starting universal release build for ${PRODUCT_NAME}..."
 
+# Run linting checks first
+echo "🔍 Running SwiftLint..."
+if command -v swiftlint >/dev/null 2>&1; then
+    swiftlint --strict --quiet || echo "⚠️  SwiftLint found issues but continuing build..."
+else
+    echo "⚠️  SwiftLint not installed, skipping linting"
+fi
+
+echo "📐 Running SwiftFormat check..."
+if command -v swiftformat >/dev/null 2>&1; then
+    swiftformat --lint . || echo "⚠️  SwiftFormat found formatting issues but continuing build..."
+else
+    echo "⚠️  SwiftFormat not installed, skipping format check"
+fi
+
 # Clean previous release builds if they exist
 echo "🧹 Cleaning previous release builds..."
 rm -rf .build/arm64-apple-macosx/release

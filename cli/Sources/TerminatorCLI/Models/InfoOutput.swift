@@ -40,7 +40,7 @@ struct InfoOutput: Codable {
         // Helper to convert to [String: Any] for easier construction of [[String: AnyCodable]]
         // This is used before wrapping values with AnyCodable
         var asDictionary: [String: Any?] { // Changed to Any? to handle nil projectPath more directly
-            return [
+            [
                 "session_identifier": sessionIdentifier,
                 "project_path": projectPath as Any,
                 "tag": tag,
@@ -48,7 +48,7 @@ struct InfoOutput: Codable {
                 "tty": tty as Any,
                 "is_busy": isBusy,
                 "window_identifier": windowIdentifier as Any,
-                "tab_identifier": tabIdentifier as Any,
+                "tab_identifier": tabIdentifier as Any
             ].compactMapValues { $0 } // Removes keys with nil values if that's desired, or handle NSNull in AnyCodable
         }
     }

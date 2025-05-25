@@ -65,7 +65,8 @@ enum ITermCommandExecutionScripts {
                                         end repeat
                                         if exists (session id "\(sessionID)" of t_ref) then exit repeat
                                     end repeat
-                                    if exists (session id "\(sessionID)" of current tab of w_ref) then exit repeat -- A bit broad, but helps
+                                    if exists (session id "\(sessionID
+                                    )" of current tab of w_ref) then exit repeat -- A bit broad, but helps
                                 end repeat
         """ : ""
 
@@ -110,7 +111,8 @@ enum ITermCommandExecutionScripts {
 
     static func getPGIDAppleScript(ttyNameOnly: String) -> String {
         let shellCommand = findPgidScriptForKill(ttyNameOnly: ttyNameOnly)
-        let escapedShellCommand = shellCommand.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
+        let escapedShellCommand = shellCommand.replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
         return "do shell script \"\(escapedShellCommand)\""
     }
 
@@ -118,6 +120,6 @@ enum ITermCommandExecutionScripts {
     static func findPgidScriptForKill(ttyNameOnly: String) -> String {
         // Escaping for "do shell script" needs to be handled by the caller if this string is embedded.
         // This returns a raw shell command string.
-        return "ps -t \(ttyNameOnly) -o pgid=,stat=,pid=,command= | awk '$2 ~ /\\+/ {print $1 \" \" $3}' | head -n 1"
+        "ps -t \(ttyNameOnly) -o pgid=,stat=,pid=,command= | awk '$2 ~ /\\+/ {print $1 \" \" $3}' | head -n 1"
     }
 }

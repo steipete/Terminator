@@ -72,7 +72,10 @@ enum SessionUtilities {
             return nil
         }
 
-        Logger.log(level: .debug, "Parsed title - Project Hash: \(projectHash ?? "nil"), Tag: \(tag ?? "nil"), TTY: \(ttyPath ?? "nil"), PID: \(pid != nil ? String(pid!) : "nil")")
+        Logger.log(
+            level: .debug,
+            "Parsed title - Project Hash: \(projectHash ?? "nil"), Tag: \(tag ?? "nil"), TTY: \(ttyPath ?? "nil"), PID: \(pid != nil ? String(pid!) : "nil")"
+        )
         return ParsedTitleInfo(projectHash: projectHash, tag: tag, ttyPath: ttyPath, pid: pid)
     }
 
@@ -84,12 +87,22 @@ enum SessionUtilities {
             let hashed = SHA256.hash(data: data)
             return hashed.compactMap { String(format: "%02x", $0) }.joined()
         }
-        Logger.log(level: .warn, "Failed to generate SHA256 hash for project path: \(projPath). Using basename as fallback hash component.")
+        Logger.log(
+            level: .warn,
+            "Failed to generate SHA256 hash for project path: \(projPath). Using basename as fallback hash component."
+        )
         let basename = (projPath as NSString).lastPathComponent
-        return basename.isEmpty ? "PROJECT_HASH_GENERATION_FAILED" : "BASENAME_" + basename // Prefix to avoid collision with real hashes
+        return basename
+            .isEmpty ? "PROJECT_HASH_GENERATION_FAILED" : "BASENAME_" +
+            basename // Prefix to avoid collision with real hashes
     }
 
-    static func generateSessionTitle(projectPath: String?, tag: String, ttyDevicePath: String?, processId: pid_t?) -> String {
+    static func generateSessionTitle(
+        projectPath: String?,
+        tag: String,
+        ttyDevicePath: String?,
+        processId: pid_t?
+    ) -> String {
         let projectHashString = generateProjectHash(projectPath: projectPath)
         let projectHashComponent = "PROJECT_HASH=\(projectHashString)"
 
@@ -108,7 +121,8 @@ enum SessionUtilities {
             titleParts.append("PID=\(pid)")
         }
 
-        let title = titleParts.joined(separator: "::") + (titleParts.count > 1 ? "::" : "") // Ensure trailing :: if there are components
+        let title = titleParts
+            .joined(separator: "::") + (titleParts.count > 1 ? "::" : "") // Ensure trailing :: if there are components
 
         Logger.log(level: .debug, "Generated session title: \(title)")
         return title

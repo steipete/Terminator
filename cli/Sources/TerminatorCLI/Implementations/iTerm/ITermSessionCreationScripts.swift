@@ -114,7 +114,13 @@ enum ITermSessionCreationScripts {
         """
     }
 
-    static func createTabInWindowWithProfileScript(appName: String, windowID: String, profileName: String, shouldActivate: Bool, selectTab: Bool) -> String {
+    static func createTabInWindowWithProfileScript(
+        appName: String,
+        windowID: String,
+        profileName: String,
+        shouldActivate: Bool,
+        selectTab: Bool
+    ) -> String {
         let profileToUse = profileName.isEmpty ? "Default" : profileName
         var activationCommands = ""
         if shouldActivate {

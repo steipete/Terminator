@@ -13,11 +13,13 @@ enum TerminalControllerError: Error, LocalizedError {
     case processInteractionError(signal: String, pid: pid_t?, reason: String)
     case outputParsingError(details: String, rawOutput: String?)
     case fileIOError(path: String, operation: String, underlyingError: Error)
+    case missingCommandError
 
     var errorDescription: String? {
         switch self {
         case let .sessionNotFound(projectPath, tag):
-            return "Session for tag '\(tag)'" + (projectPath != nil ? " in project '\(projectPath!)'" : "") + " not found."
+            return "Session for tag '\(tag)'" + (projectPath != nil ? " in project '\(projectPath!)'" : "") +
+                " not found."
         case let .appleScriptError(message, _, _):
             return "AppleScript execution failed: \(message)"
         case let .busy(tty, processDescription):
@@ -40,40 +42,44 @@ enum TerminalControllerError: Error, LocalizedError {
             return "Failed to parse output: \(details)"
         case let .fileIOError(path, operation, underlyingError):
             return "File I/O error during '\(operation)' on path '\(path)': \(underlyingError.localizedDescription)"
+        case .missingCommandError:
+            return "No command provided for execution"
         }
     }
 
     var scriptContent: String? {
         switch self {
         case let .appleScriptError(_, scriptContent, _):
-            return scriptContent
+            scriptContent
         default:
-            return nil
+            nil
         }
     }
 
     var suggestedErrorCode: Int32 {
         switch self {
         case .sessionNotFound:
-            return ErrorCodes.sessionNotFound
+            ErrorCodes.sessionNotFound
         case .appleScriptError:
-            return ErrorCodes.appleScriptError
+            ErrorCodes.appleScriptError
         case .busy:
-            return ErrorCodes.sessionBusyError
+            ErrorCodes.sessionBusyError
         case .commandExecutionFailed:
-            return ErrorCodes.commandFailedError
+            ErrorCodes.commandFailedError
         case .timeout:
-            return ErrorCodes.timeoutError
+            ErrorCodes.timeoutError
         case .unsupportedTerminalApp:
-            return ErrorCodes.configurationError
+            ErrorCodes.configurationError
         case .internalError:
-            return ErrorCodes.internalError
+            ErrorCodes.internalError
         case .processInteractionError:
-            return ErrorCodes.generalError
+            ErrorCodes.generalError
         case .outputParsingError:
-            return ErrorCodes.internalError
+            ErrorCodes.internalError
         case .fileIOError:
-            return ErrorCodes.generalError
+            ErrorCodes.generalError
+        case .missingCommandError:
+            ErrorCodes.invalidArgumentsError
         }
     }
 }

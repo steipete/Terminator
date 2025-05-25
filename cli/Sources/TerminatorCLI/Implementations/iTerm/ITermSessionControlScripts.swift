@@ -7,7 +7,7 @@ enum ITermSessionControlScripts {
         tabID: String,
         sessionID: String
     ) -> String {
-        return """
+        """
         tell application "\(appName)"
             try
                 activate
@@ -124,7 +124,7 @@ enum ITermSessionControlScripts {
         sessionID: String,
         newTitle: String
     ) -> String {
-        return """
+        """
         tell application "\(appName)"
             try
                 -- Find session by ID
@@ -160,7 +160,8 @@ enum ITermSessionControlScripts {
     }
 
     static func setSessionNameScript(appName: String, sessionID: String, newName: String) -> String {
-        let escapedName = newName.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
+        let escapedName = newName.replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
         return """
         tell application "\(appName)"
             try
@@ -191,7 +192,8 @@ enum ITermSessionControlScripts {
     }
 
     static func setWindowNameScript(appName: String, windowID: String, newName: String) -> String {
-        let escapedName = newName.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
+        let escapedName = newName.replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
         return """
         tell application "\(appName)"
             try
@@ -215,13 +217,18 @@ enum ITermSessionControlScripts {
     }
 
     static func activateITermAppScript(appName: String) -> String {
-        return "tell application \"\(appName)\" to activate"
+        "tell application \"\(appName)\" to activate"
     }
 
-    static func selectSessionInITermScript(appName: String, windowID: String, tabID: String, sessionID _: String) -> String {
+    static func selectSessionInITermScript(
+        appName: String,
+        windowID: String,
+        tabID: String,
+        sessionID _: String
+    ) -> String {
         // This script ensures the window is front, tab is selected, and implies session is active.
         // iTerm selects the session when its tab is selected.
-        return """
+        """
         tell application "\(appName)"
             try
                 activate

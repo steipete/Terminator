@@ -6,10 +6,10 @@ import PackageDescription
 let package = Package(
     name: "TerminatorCLI",
     platforms: [
-        .macOS(.v14) // Updated from .v13
+        .macOS(.v14), // Updated from .v13
     ],
     products: [
-        .executable(name: "terminator", targets: ["TerminatorCLI"])
+        .executable(name: "terminator", targets: ["TerminatorCLI"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
@@ -26,6 +26,6 @@ let package = Package(
             name: "TerminatorCLITests",
             dependencies: ["TerminatorCLI"],
             path: "Tests/TerminatorCLITests"
-        )
+        ),
     ]
-) 
+)

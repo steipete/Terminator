@@ -40,11 +40,10 @@ struct Read: ParsableCommand {
         Logger.log(level: .info, "Reading output... Tag: \(tag), Project: \(projectPath ?? "N/A")")
         let resolvedLines = lines ?? config.defaultLines
 
-        let focusPreferenceString: String
-        if let fm = focusMode, !fm.isEmpty {
-            focusPreferenceString = fm
+        let focusPreferenceString: String = if let fm = focusMode, !fm.isEmpty {
+            fm
         } else {
-            focusPreferenceString = config.defaultFocusOnAction ? "auto-behavior" : "no-focus"
+            config.defaultFocusOnAction ? "auto-behavior" : "no-focus"
         }
         let resolvedFocusPreference = AppConfig.FocusCLIArgument(rawValue: focusPreferenceString) ?? .autoBehavior
 

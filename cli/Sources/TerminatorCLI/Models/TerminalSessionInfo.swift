@@ -3,7 +3,8 @@ import Foundation
 // SDD 3.2.5: Defines the structure for information about a terminal session.
 // This is used by various commands like list, info, and as part of results for exec, focus, kill.
 struct TerminalSessionInfo: Codable {
-    let sessionIdentifier: String // User-friendly display name, e.g., "ProjectName / task_tag" or "🤖💥 ProjectName / task_tag"
+    let sessionIdentifier: String // User-friendly display name, e.g., "ProjectName / task_tag" or "🤖💥 ProjectName /
+    // task_tag"
     let projectPath: String? // Absolute path to the project if applicable
     let tag: String // The specific tag for this session
     let fullTabTitle: String? // The complete, raw title of the tab/session as read from the terminal

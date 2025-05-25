@@ -12,25 +12,58 @@ struct Exec: ParsableCommand { // Changed from TerminatorSubcommand to ParsableC
     @Option(name: .long, help: "Absolute path to the project directory. Env: TERMINATOR_PROJECT_PATH")
     var projectPath: String?
 
-    @Option(name: .long, help: "The shell command to execute. If omitted, session is prepared (cleared, focused) but no command runs.")
+    @Option(
+        name: .long,
+        help: "The shell command to execute. If omitted, session is prepared (cleared, focused) but no command runs."
+    )
     var command: String?
 
     @Flag(name: .long, help: "Run command in background. Default: false.")
     var background: Bool = false
 
-    @Option(name: .long, help: "Maximum number of recent output lines to return for foreground commands. Env: TERMINATOR_DEFAULT_LINES")
+    @Option(
+        name: .long,
+        help: "Maximum number of recent output lines to return for foreground commands. Env: TERMINATOR_DEFAULT_LINES"
+    )
     var lines: Int?
 
-    @Option(name: .long, help: "Timeout in seconds for the command. Env: TERMINATOR_FOREGROUND_COMPLETION_SECONDS / TERMINATOR_BACKGROUND_STARTUP_SECONDS")
+    @Option(
+        name: .long,
+        help: "Timeout in seconds for the command. Env: TERMINATOR_FOREGROUND_COMPLETION_SECONDS / TERMINATOR_BACKGROUND_STARTUP_SECONDS"
+    )
     var timeout: Int?
 
-    @Option(name: .long, help: "Focus behavior (force-focus, no-focus, auto-behavior). Env: TERMINATOR_DEFAULT_FOCUS_ON_ACTION")
+    @Option(
+        name: .long,
+        help: "Focus behavior (force-focus, no-focus, auto-behavior). Env: TERMINATOR_DEFAULT_FOCUS_ON_ACTION"
+    )
     var focusMode: String?
 
     @Flag(name: .long, help: "Reuse busy sessions. Default: false.")
     var reuseBusySession: Bool = false
 
     mutating func run() throws {
+        let config = setupConfig()
+        logCommandExecution()
+
+        let params = prepareExecutionParams(config: config)
+
+        do {
+            let result = try executeCommand(config: config, params: params)
+            processResult(result, params: params)
+        } catch let error as TerminalControllerError {
+            fputs(
+                "Error executing command: \(error.localizedDescription)\nScript (if applicable):\n\(error.scriptContent ?? "N/A")\n",
+                stderr
+            )
+            throw ExitCode(error.suggestedErrorCode)
+        } catch {
+            fputs("An unexpected error occurred: \(error.localizedDescription)\n", stderr)
+            throw ExitCode(ErrorCodes.generalError)
+        }
+    }
+
+    private mutating func setupConfig() -> AppConfig {
         TerminatorCLI.currentConfig = AppConfig(
             terminalAppOption: globals.terminalApp,
             logLevelOption: globals.logLevel ?? (globals.verbose ? "debug" : nil),
@@ -47,24 +80,28 @@ struct Exec: ParsableCommand { // Changed from TerminatorSubcommand to ParsableC
             reuseBusySessionsOption: reuseBusySession,
             iTermProfileNameOption: nil
         )
-        let config = TerminatorCLI.currentConfig!
+        return TerminatorCLI.currentConfig!
+    }
 
+    private func logCommandExecution() {
         Logger.log(level: .info, "Executing command... Tag: \(tag), Project: \(projectPath ?? "N/A")")
         if let cmd = command, !cmd.isEmpty {
-            Logger.log(level: .debug, "  Command: \(cmd)") // Command logged at debug for PII
+            Logger.log(level: .debug, "  Command: \(cmd)")
         } else {
             Logger.log(level: .info, "  No command provided. Preparing session only.")
         }
         Logger.log(level: .debug, "  Background: \(background)")
+    }
 
+    private func prepareExecutionParams(config: AppConfig) -> ExecuteCommandParams {
         let resolvedLines = lines ?? config.defaultLines
-        let resolvedTimeout = timeout ?? (background ? config.backgroundStartupSeconds : config.foregroundCompletionSeconds)
+        let resolvedTimeout = timeout ??
+            (background ? config.backgroundStartupSeconds : config.foregroundCompletionSeconds)
 
-        let focusPreferenceString: String
-        if let fm = focusMode, !fm.isEmpty {
-            focusPreferenceString = fm
+        let focusPreferenceString: String = if let fm = focusMode, !fm.isEmpty {
+            fm
         } else {
-            focusPreferenceString = config.defaultFocusOnAction ? "auto-behavior" : "no-focus"
+            config.defaultFocusOnAction ? "auto-behavior" : "no-focus"
         }
         let resolvedFocusPreference = AppConfig.FocusCLIArgument(rawValue: focusPreferenceString) ?? .autoBehavior
 
@@ -72,7 +109,7 @@ struct Exec: ParsableCommand { // Changed from TerminatorSubcommand to ParsableC
         Logger.log(level: .debug, "  Timeout: \(resolvedTimeout)s")
         Logger.log(level: .debug, "  Focus Mode CLI: \(focusMode ?? "nil") -> \(resolvedFocusPreference.rawValue)")
 
-        let execParams = ExecuteCommandParams(
+        return ExecuteCommandParams(
             projectPath: projectPath,
             tag: tag,
             command: command,
@@ -81,50 +118,50 @@ struct Exec: ParsableCommand { // Changed from TerminatorSubcommand to ParsableC
             timeout: resolvedTimeout,
             focusPreference: resolvedFocusPreference
         )
+    }
 
-        do {
-            let result: ExecuteCommandResult
+    private func executeCommand(config: AppConfig, params: ExecuteCommandParams) throws -> ExecuteCommandResult {
+        switch config.terminalAppEnum {
+        case .appleTerminal:
+            let controller = AppleTerminalControl(config: config, appName: config.terminalApp)
+            return try controller.executeCommand(params: params)
+        case .iterm:
+            let controller = ITermControl(config: config, appName: config.terminalApp)
+            return try controller.executeCommand(params: params)
+        case .ghosty:
+            Logger.log(level: .error, "Ghosty terminal control not yet implemented")
+            throw TerminalControllerError.unsupportedTerminalApp(appName: config.terminalApp)
+        case .unknown:
+            Logger.log(level: .error, "Unsupported terminal application for exec: \(config.terminalApp)")
+            throw ExitCode(ErrorCodes.configurationError)
+        }
+    }
 
-            switch config.terminalAppEnum {
-            case .appleTerminal:
-                let appleTerminalController = AppleTerminalControl(config: config, appName: config.terminalApp)
-                result = try appleTerminalController.executeCommand(params: execParams)
-            case .iterm:
-                let iTermController = ITermControl(config: config, appName: config.terminalApp)
-                result = try iTermController.executeCommand(params: execParams)
-            case .ghosty:
-                // GhostyControl implementation pending
-                Logger.log(level: .error, "Ghosty terminal control not yet implemented")
-                throw TerminalControllerError.unsupportedTerminalApp(appName: config.terminalApp)
-            case .unknown:
-                Logger.log(level: .error, "Unsupported terminal application for exec: \(config.terminalApp)")
-                throw ExitCode(ErrorCodes.configurationError)
-            }
-            // Output from exec is now primarily handled by the Node.js wrapper based on success/failure.
-            // The Swift CLI will print essential info or errors to its stdout/stderr.
-            if result.wasKilledByTimeout {
-                fputs("Terminator: Command '\(command ?? "<session prep>")' for tag '\(tag)' timed out after \(resolvedTimeout) seconds.\nOutput (if any) captured before timeout:\n\(result.output ?? "<no output>")\n", stderr)
-                throw ExitCode(ErrorCodes.timeoutError) // Specific timeout error
-            } else {
-                // For successful foreground commands, print their output
-                if !background, let outputText = result.output, let cmd = command, !cmd.isEmpty {
-                    print(outputText)
-                }
-                // For background, a success message is usually handled by the wrapper.
-                // Here we just ensure clean exit.
-                if background, let cmd = command, !cmd.isEmpty {
-                    Logger.log(level: .info, "Background command '\(cmd)' submitted successfully for tag '\(tag)'. PID (if available): \(result.pid?.description ?? "N/A")")
-                } else if command == nil || command!.isEmpty {
-                    Logger.log(level: .info, "Session '\(tag)' prepared successfully.")
-                }
-                throw ExitCode(ErrorCodes.success) // Ensure success exit code
-            }
-        } catch let error as TerminalControllerError {
-            fputs("Error executing command: \(error.localizedDescription)\nScript (if applicable):\n\(error.scriptContent ?? "N/A")\n", stderr)
-            throw ExitCode(error.suggestedErrorCode)
-        } catch {
-            fputs("An unexpected error occurred: \(error.localizedDescription)\n", stderr)
-            throw ExitCode(ErrorCodes.generalError)
+    private func processResult(_ result: ExecuteCommandResult, params: ExecuteCommandParams) throws -> Never {
+        if result.wasKilledByTimeout {
+            fputs(
+                "Terminator: Command '\(command ?? "<session prep>")' for tag '\(tag)' timed out after \(params.timeout) seconds.\nOutput (if any) captured before timeout:\n\(result.output ?? "<no output>")\n",
+                stderr
+            )
+            throw ExitCode(ErrorCodes.timeoutError)
+        } else {
+            handleSuccessfulResult(result)
+            throw ExitCode(ErrorCodes.success)
+        }
+    }
+
+    private func handleSuccessfulResult(_ result: ExecuteCommandResult) {
+        if !background, let outputText = result.output, let cmd = command, !cmd.isEmpty {
+            print(outputText)
+        }
+
+        if background, let cmd = command, !cmd.isEmpty {
+            Logger.log(
+                level: .info,
+                "Background command '\(cmd)' submitted successfully for tag '\(tag)'. PID (if available): \(result.pid?.description ?? "N/A")"
+            )
+        } else if command == nil || command!.isEmpty {
+            Logger.log(level: .info, "Session '\(tag)' prepared successfully.")
         }
     }
 }

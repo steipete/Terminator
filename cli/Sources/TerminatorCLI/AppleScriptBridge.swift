@@ -29,7 +29,11 @@ enum AppleScriptBridge {
             // This case should ideally not happen if the script string is valid Swift-side.
             // If it does, it might be an internal NSAppleScript issue or a very malformed script.
             Logger.log(level: .error, "Failed to initialize NSAppleScript. This is unexpected.")
-            return .failure(.scriptCompilationFailed(errorInfo: ["NSAppleScriptErrorMessage": "Failed to initialize NSAppleScript object."]))
+            return .failure(
+                .scriptCompilationFailed(
+                    errorInfo: ["NSAppleScriptErrorMessage": "Failed to initialize NSAppleScript object."]
+                )
+            )
         }
 
         // Attempt to compile the script first (though NSAppleScript often does this implicitly on execution)
@@ -72,44 +76,68 @@ enum AppleScriptBridge {
             Logger.log(level: .debug, "AppleScript returned Null.")
             return .success("") // Or perhaps a specific representation for null, like NSNull() or a custom enum case
         case typeAEList:
-            Logger.log(level: .debug, "AppleScript returned a List.")
-            var swiftArray: [Any] = []
-            // NSAppleEventDescriptor lists are 1-indexed
-            for i in 1...eventResult.numberOfItems {
-                if let itemDescriptor = eventResult.atIndex(i) {
-                    // Recursively process list items to convert them to Swift types
-                    // This simple version tries to get stringValue; a more robust one would check itemDescriptor.descriptorType
-                    switch itemDescriptor.descriptorType {
-                    case typeText:
-                        swiftArray.append(itemDescriptor.stringValue ?? "")
-                    case typeBoolean:
-                        swiftArray.append(itemDescriptor.booleanValue)
-                    case typeInteger:
-                        swiftArray.append(itemDescriptor.int32Value)
-                    case typeNull: // Represent AppleScript null as NSNull or a custom type if needed
-                        swiftArray.append(NSNull()) // Example: using NSNull
-                    default:
-                        // For other types in list, attempt to get string value or log/handle error
-                        if let strVal = itemDescriptor.stringValue {
-                             swiftArray.append(strVal)
-                        } else {
-                            Logger.log(level: .warn, "List item at index \(i) is of unhandled type \(itemDescriptor.descriptorType.description) and not string convertible.")
-                            swiftArray.append("<Unsupported List Item Type: \(itemDescriptor.descriptorType.description)>")
-                        }
-                    }
-                }
-            }
-            Logger.log(level: .debug, "Converted AppleScript list to Swift array: \(swiftArray)")
-            return .success(swiftArray)
+            return processListDescriptor(eventResult)
         default:
             // Attempt to coerce to text as a final fallback, or fail if not appropriate
-            Logger.log(level: .warn, "AppleScript execution returned unhandled descriptor type: \(eventResult.descriptorType.description). Attempting to coerce to String.")
+            Logger.log(
+                level: .warn,
+                "AppleScript execution returned unhandled descriptor type: \(eventResult.descriptorType.description). Attempting to coerce to String."
+            )
             if let stringValue = eventResult.stringValue {
                 Logger.log(level: .debug, "AppleScript result (coerced from unhandled type): \(stringValue)")
                 return .success(stringValue)
             }
-            Logger.log(level: .error, "Result could not be coerced to String. Type was: \(eventResult.descriptorType.description)")
-            return .failure(.typeConversionError(message: "Result could not be coerced to expected Swift type. AppleScript type was: \(eventResult.descriptorType.description)"))
+            Logger.log(
+                level: .error,
+                "Result could not be coerced to String. Type was: \(eventResult.descriptorType.description)"
+            )
+            return .failure(
+                .typeConversionError(
+                    message: "Result could not be coerced to expected Swift type. AppleScript type was: \(eventResult.descriptorType.description)"
+                )
+            )
+        }
+    }
+
+    // MARK: - Private Helper Methods
+
+    private static func processListDescriptor(_ eventResult: NSAppleEventDescriptor) -> Result<Any, AppleScriptError> {
+        Logger.log(level: .debug, "AppleScript returned a List.")
+        var swiftArray: [Any] = []
+
+        // NSAppleEventDescriptor lists are 1-indexed
+        for index in 1...eventResult.numberOfItems {
+            if let itemDescriptor = eventResult.atIndex(index) {
+                let value = convertDescriptorToSwiftValue(itemDescriptor, index: index)
+                swiftArray.append(value)
+            }
+        }
+
+        Logger.log(level: .debug, "Converted AppleScript list to Swift array: \(swiftArray)")
+        return .success(swiftArray)
+    }
+
+    private static func convertDescriptorToSwiftValue(_ descriptor: NSAppleEventDescriptor, index: Int) -> Any {
+        switch descriptor.descriptorType {
+        case typeText:
+            return descriptor.stringValue ?? ""
+        case typeBoolean:
+            return descriptor.booleanValue
+        case typeInteger:
+            return descriptor.int32Value
+        case typeNull:
+            return NSNull()
+        default:
+            // For other types, attempt to get string value
+            if let strVal = descriptor.stringValue {
+                return strVal
+            } else {
+                Logger.log(
+                    level: .warn,
+                    "List item at index \(index) is of unhandled type \(descriptor.descriptorType.description) and not string convertible."
+                )
+                return "<Unsupported List Item Type: \(descriptor.descriptorType.description)>"
+            }
         }
     }
 }
