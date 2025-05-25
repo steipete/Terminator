@@ -34,7 +34,7 @@ enum ITermParserHelpers {
 
         var resultWindows: [(windowID: String, windowName: String)] = []
         for windowEntry in windowList {
-            guard windowEntry.count == 2 else { continue }
+            guard windowEntry.count >= 2 else { continue }
             let windowID = windowEntry[0]
             let windowName = windowEntry[1]
             resultWindows.append((windowID: windowID, windowName: windowName))
