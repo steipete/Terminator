@@ -249,21 +249,40 @@ function checkSwift() {
     return false;
   }
   
-  // Test info command
-  const infoOutput = exec('./bin/terminator info', { allowFailure: true });
+  // Test info command with JSON output
+  const infoOutput = exec('./bin/terminator info --json 2>/dev/null', { allowFailure: true });
   if (!infoOutput) {
     logError('Swift CLI info command failed');
     return false;
   }
   
   try {
-    const infoData = JSON.parse(infoOutput);
-    if (!infoData.app || !infoData.os) {
+    // Extract JSON from the output (may have log lines before it)
+    const lines = infoOutput.split('\n');
+    let jsonStartIndex = -1;
+    
+    // Find where JSON starts
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].trim().startsWith('{')) {
+        jsonStartIndex = i;
+        break;
+      }
+    }
+    
+    if (jsonStartIndex === -1) {
+      logError('No JSON output found from info command');
+      return false;
+    }
+    
+    const jsonOutput = lines.slice(jsonStartIndex).join('\n');
+    const infoData = JSON.parse(jsonOutput);
+    
+    if (!infoData.version || !infoData.configuration) {
       logError('Info command output missing required fields');
       return false;
     }
   } catch (e) {
-    logError('Swift CLI info command output is not valid JSON');
+    logError('Swift CLI info command output is not valid JSON: ' + e.message);
     return false;
   }
   
