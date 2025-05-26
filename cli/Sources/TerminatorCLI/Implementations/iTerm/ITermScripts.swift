@@ -184,11 +184,11 @@ enum ITermScripts {
     }
 
     // PGID fetching is now done via Swift ProcessUtilities
-    // static func getPGIDAppleScript(ttyNameOnly: String) -> String {
-    //     ITermCommandExecutionScripts.getPGIDAppleScript(ttyNameOnly: ttyNameOnly)
-    // }
+    static func getPGIDAppleScript(ttyNameOnly: String) -> String {
+        ITermCommandExecutionScripts.getPGIDAppleScript(ttyNameOnly: ttyNameOnly)
+    }
 
-    // static func findPgidScriptForKill(ttyNameOnly: String) -> String {
-    //     ITermCommandExecutionScripts.findPgidScriptForKill(ttyNameOnly: ttyNameOnly)
-    // }
+    static func findPgidScriptForKill(ttyNameOnly: String) -> String {
+        ITermCommandExecutionScripts.findPgidScriptForKill(ttyNameOnly: ttyNameOnly)
+    }
 }

@@ -27,12 +27,10 @@ extension AppleTerminalControl {
         let shouldActivateForCommand = shouldFocus(focusPreference: params.focusPreference)
 
         // Screen clearing as per SDD 3.2.5
-        Self.clearSessionScreen(
+        AppleTerminalControl.clearSessionScreen(
             appName: appName,
             windowID: windowID,
-            tabID: tabID,
-            tag: params.tag,
-            shouldActivate: shouldActivateForCommand
+            tabID: tabID
         )
 
         // Busy Check and Interruption as per SDD 3.2.5
@@ -61,8 +59,7 @@ extension AppleTerminalControl {
                 )
                 // SDD 3.2.5: "If process still exists after timeout, execute fails with error code 4"
                 // Throwing error here to adhere to spec.
-                throw TerminalControllerError
-                    .processControlError(
+                throw TerminalControllerError.internalError(
                         details: "Failed to stop busy process (PGID: \(foundPgid)) on TTY \(tty) before command execution."
                     )
             } else {
@@ -76,7 +73,7 @@ extension AppleTerminalControl {
         let commandToRun = params.command ?? ""
         let logFileName =
             "terminator_output_\(tty.replacingOccurrences(of: "/dev/", with: ""))_\(Int(Date().timeIntervalSince1970)).log"
-        let logFilePath = (config.logDir as NSString).appendingPathComponent(logFileName)
+        let logFilePath = config.logDir.appendingPathComponent(logFileName).path
         let completionMarker = "TERMINATOR_CMD_COMPLETE_MARKER_\(UUID().uuidString)"
 
         var shellCommandSegments: [String] = []
@@ -184,7 +181,8 @@ extension AppleTerminalControl {
                         // This is best-effort for foreground.
                         if let fgInfo = ProcessUtilities.getForegroundProcessInfo(forTTY: tty) {
                             // Check if it's a shell; if so, the command is done.
-                            if !ProcessUtilities.isShellProcess(commandPath: fgInfo.command) {
+                            let commonShells = ["bash", "zsh", "fish", "sh", "tcsh", "csh", "login", "script"]
+                            if !commonShells.contains(fgInfo.command.lowercased()) {
                                 pgidToReturn = fgInfo.pgid
                             }
                         }
@@ -214,7 +212,8 @@ extension AppleTerminalControl {
                     // Wait a brief moment for the process to establish itself.
                     Thread.sleep(forTimeInterval: 0.2)
                     if let fgInfo = ProcessUtilities.getForegroundProcessInfo(forTTY: tty) {
-                        if !ProcessUtilities.isShellProcess(commandPath: fgInfo.command) {
+                        let commonShells = ["bash", "zsh", "fish", "sh", "tcsh", "csh", "login", "script"]
+                        if !commonShells.contains(fgInfo.command.lowercased()) {
                             pgidToReturn = fgInfo.pgid
                         }
                     }
@@ -254,50 +253,6 @@ extension AppleTerminalControl {
         )
     }
 
-    func readSessionOutput(params: ReadSessionParams) throws -> ReadSessionResult {
-        Logger.log(level: .info, "[AppleTerminalControl] Reading session output for tag \(params.tag)")
-        let session = try findSession(projectPath: params.projectPath, tag: params.tag)
-
-        guard let windowID = session.windowIdentifier,
-              let tabID = session.tabIdentifier
-        else {
-            throw TerminalControllerError
-                .internalError(details: "Session for tag \(params.tag) is missing identifiers.")
-        }
-
-        // Reading from AppleScript 'history' aligns with spec for general scrollback.
-        // Log files are specific to 'execute' actions.
-
-        let script = AppleTerminalScripts.getTabHistoryScript(appName: appName, windowID: windowID, tabID: tabID)
-        let scriptResult = AppleScriptBridge.runAppleScript(script: script)
-
-        switch scriptResult {
-        case let .success(data):
-            guard let content = data as? String else {
-                throw TerminalControllerError.appleScriptError(
-                    message: "Failed to read Terminal.app session: AppleScript did not return a string. Output: \(data)",
-                    scriptContent: script
-                )
-            }
-            var lines = content.components(separatedBy: .newlines)
-            if params.linesToCapture > 0, lines.count > params.linesToCapture {
-                lines = Array(lines.suffix(params.linesToCapture))
-            }
-            let processedOutput = lines.joined(separator: "\n")
-            Logger.log(
-                level: .info,
-                "[AppleTerminalControl] Successfully read \(lines.count) lines from Terminal.app session \(params.tag)"
-            )
-            return ReadSessionResult(sessionInfo: session, output: processedOutput)
-
-        case let .failure(error):
-            throw TerminalControllerError.appleScriptError(
-                message: "Failed to read Terminal.app session history: \(error.localizedDescription)",
-                scriptContent: script,
-                underlyingError: error
-            )
-        }
-    }
 }
 
 extension String {

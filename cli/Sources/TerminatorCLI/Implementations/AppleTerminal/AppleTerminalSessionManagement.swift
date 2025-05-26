@@ -349,4 +349,28 @@ extension AppleTerminalControl {
             defaultFocusSetting
         }
     }
+    
+    static func clearSessionScreen(appName: String, windowID: String, tabID: String) {
+        let clearScript = """
+        tell application "\(appName)"
+            set targetWindow to window id \(windowID)
+            set targetTab to tab \(tabID) of targetWindow
+            
+            -- Send clear command to the tab
+            do script "clear" in targetTab
+            
+            return "OK"
+        end tell
+        """
+        
+        let clearScriptResult = AppleScriptBridge.runAppleScript(script: clearScript)
+        if case let .failure(error) = clearScriptResult {
+            Logger.log(
+                level: .warn,
+                "[AppleTerminalControl] Failed to clear Terminal session for window \(windowID), tab \(tabID): \(error.localizedDescription)",
+                file: #file,
+                function: #function
+            )
+        }
+    }
 }

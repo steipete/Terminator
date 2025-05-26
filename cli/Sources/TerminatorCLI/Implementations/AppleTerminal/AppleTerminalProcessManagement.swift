@@ -51,12 +51,10 @@ extension AppleTerminalControl {
 
         // Clear the screen after killing the process
         if killSuccess && shouldFocus(focusPreference: params.focusPreference) {
-            Self.clearSessionScreen(
+            AppleTerminalControl.clearSessionScreen(
                 appName: appName,
                 windowID: windowID,
-                tabID: tabID,
-                tag: params.tag,
-                shouldActivate: true
+                tabID: tabID
             )
         }
 
