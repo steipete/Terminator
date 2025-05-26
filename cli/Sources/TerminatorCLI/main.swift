@@ -1,7 +1,6 @@
 // AUTO-GENERATED VERSION - DO NOT EDIT
 let appVersion = "1.0.0-alpha.12"
 
-
 // Ensure logger is flushed and file closed on exit
 atexit_b { Logger.shutdown() }
 
