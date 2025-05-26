@@ -21,7 +21,7 @@ enum AppleTerminalScripts {
                                 set ttyPath to tty of t
                                 set customTitle to custom title of t
                                 if customTitle is missing value then set customTitle to ""
-                                
+
                                 set end of output_list to {"win_id:" & (w_id as string), "tab_id:" & (t_id as string), "tty:" & ttyPath, "title:" & customTitle}
                             on error tabErr
                                 -- Skip this tab if we can't access it
