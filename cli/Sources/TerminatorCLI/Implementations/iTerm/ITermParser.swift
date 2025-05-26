@@ -2,7 +2,6 @@ import Foundation
 
 // Parses AppleScript results for iTerm2 interactions.
 
-// swiftlint:disable:next type_body_length
 enum ITermParser {
     struct NewWindowResult {
         let winID: String

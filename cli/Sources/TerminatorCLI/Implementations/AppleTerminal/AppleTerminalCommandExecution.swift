@@ -127,7 +127,7 @@ extension AppleTerminalControl {
         )
 
         let scriptResult = AppleScriptBridge.runAppleScript(script: script)
-        var pgidToReturn: pid_t? = nil
+        var pgidToReturn: pid_t?
         var outputText: String?
         var timedOut = false
 

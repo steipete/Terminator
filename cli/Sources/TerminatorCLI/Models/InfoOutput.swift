@@ -48,7 +48,7 @@ struct InfoOutput: Codable {
                 "tty": tty as Any,
                 "is_busy": isBusy,
                 "window_identifier": windowIdentifier as Any,
-                "tab_identifier": tabIdentifier as Any,
+                "tab_identifier": tabIdentifier as Any
             ].compactMapValues { $0 } // Removes keys with nil values if that's desired, or handle NSNull in AnyCodable
         }
     }
