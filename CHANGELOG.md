@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Process spawn errors now provide specific, actionable error messages
   - Null exit codes are handled with detailed diagnostics instead of generic errors
 
+### Known Issues
+- Swift tests failing with Range bounds error on macOS 14.0 (investigating)
+
 ## [1.0.0-alpha.5] - 2025-01-26
 
 ### Fixed
