@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.12] - 2025-05-26
+
+### Changed
+- **iTerm Implementation**: Major refactoring to improve process management
+  - Simplified process ID handling to work directly with session IDs
+  - Removed unnecessary ProcessUtilities code and getProcessInfo functionality
+  - Updated AppleScript integration for more reliable command execution
+  - Improved error handling and reduced AppleScript usage
+
+### Fixed
+- **Process Management**: Fixed issues with iTerm process tracking and session management
+- **Code Cleanup**: Removed 130+ lines of unused code, improving maintainability
+
+### Added
+- **Enhanced Testing**: Added comprehensive test coverage and improved test infrastructure
+- **Better Error Messages**: More descriptive error handling throughout iTerm implementation
+
 ## [1.0.0-alpha.11] - 2025-05-26
 
 ### Fixed
