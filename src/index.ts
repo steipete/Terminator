@@ -22,12 +22,16 @@ import { SWIFT_CLI_PATH } from './swift-cli.js';
 import { terminatorTool } from './tool.js'; // Assuming terminatorTool.handler is adaptable
 import { TerminatorExecuteParams } from './types.js';
 
-// Read package version (optional, but good practice)
-// import { createRequire } from 'node:module';
-// const require = createRequire(import.meta.url);
-// const packageJson = require('../package.json');
-// const SERVER_VERSION = packageJson.version || '0.1.0';
-const SERVER_VERSION = '0.1.0'; // Hardcode for now to avoid json import complexities
+// Read package version dynamically
+import { readFileSync } from 'node:fs';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const packageJsonPath = path.resolve(__dirname, '..', 'package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+const SERVER_VERSION = packageJson.version || '1.0.0-alpha.4';
 
 async function main() {
     // Startup checks for Swift CLI binary

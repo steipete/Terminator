@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.5] - 2025-01-26
+
+### Fixed
+- **Dynamic Version Display**: Tool description now shows the correct version from package.json (including alpha/beta versions)
+- **Version Import**: Fixed version reading to dynamically load from package.json instead of hardcoded value
+
 ## [1.0.0-alpha.4] - 2025-01-26
 
 ### Fixed
