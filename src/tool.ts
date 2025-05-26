@@ -157,11 +157,40 @@ export const terminatorTool /*: McpTool<TerminatorExecuteParams, TerminatorResul
 
             if (result.exitCode === null) {
                 // Process crashed or was killed without proper exit
-                let errMsg = result.stderr.trim() || result.stdout.trim() || 'Swift CLI process terminated unexpectedly';
+                let errMsg = result.stderr.trim() || result.stdout.trim() || '';
+                
+                // Build a comprehensive error message
+                let errorDetails: string[] = [];
+                
+                // Check for common issues
                 if (errMsg.includes('Permission denied') || errMsg.includes('not authorized')) {
-                    errMsg += '. Please grant Terminal/iTerm automation permissions in System Settings > Privacy & Security > Automation';
+                    errorDetails.push('Missing automation permissions. Grant Terminal/iTerm control in System Settings → Privacy & Security → Automation');
+                } else if (errMsg.includes('command not found') || errMsg.includes('No such file')) {
+                    errorDetails.push('Swift CLI binary may be missing or corrupt. Try reinstalling the package');
+                } else if (errMsg.includes('Segmentation fault') || errMsg.includes('Illegal instruction')) {
+                    errorDetails.push('Swift CLI crashed. This may be due to architecture mismatch or corrupted binary');
+                } else if (errMsg === '') {
+                    errorDetails.push('Swift CLI terminated without output. Possible causes:');
+                    errorDetails.push('• Missing automation permissions (most common)');
+                    errorDetails.push('• First run permission prompt waiting for response');
+                    errorDetails.push('• Binary corruption or architecture mismatch');
+                    errorDetails.push('• Terminal app not installed or not running');
                 }
-                return { success: false, message: `Terminator Error: ${errMsg}` };
+                
+                // Add diagnostic info
+                errorDetails.push(`Terminal app: ${CURRENT_TERMINAL_APP}`);
+                errorDetails.push(`Action: ${action}, Tag: ${tag || 'auto-generated'}`);
+                if (commandOpt) errorDetails.push(`Command: ${commandOpt}`);
+                errorDetails.push(`Project: ${effectiveProjectPath}`);
+                
+                // Add troubleshooting steps
+                errorDetails.push('\nTroubleshooting:');
+                errorDetails.push('1. Check System Settings → Privacy & Security → Automation');
+                errorDetails.push('2. Try: tccutil reset AppleEvents com.apple.Terminal');
+                errorDetails.push('3. Check logs: ~/Library/Logs/terminator-mcp/');
+                
+                const fullError = errorDetails.join('\n');
+                return { success: false, message: `Terminator Error: Swift CLI process terminated unexpectedly\n\n${fullError}` };
             } else if (result.exitCode === 0) {
                 const message = formatCliOutputForAI(action, result, commandOpt, tag, background, timeoutOverride);
                 return { success: true, message };

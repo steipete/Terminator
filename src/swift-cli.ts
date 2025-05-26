@@ -78,10 +78,22 @@ export function invokeSwiftCLI(
             debugLog('Swift CLI stderr:', data.toString().trim());
         });
 
-        swiftProcess.on('error', (err) => {
+        swiftProcess.on('error', (err: any) => {
             if (mcpCancelled || internalTimeoutHit) return; 
             if (internalTimeoutId) clearTimeout(internalTimeoutId);
             debugLog('Failed to start Swift CLI.', err);
+            
+            // Add error details to stderr for better diagnostics
+            let errorInfo = `Process spawn error: ${err.message || err}`;
+            if (err.code === 'ENOENT') {
+                errorInfo = `Swift CLI binary not found at ${SWIFT_CLI_PATH}`;
+            } else if (err.code === 'EACCES') {
+                errorInfo = `Swift CLI binary not executable. Run: chmod +x ${SWIFT_CLI_PATH}`;
+            } else if (err.code === 'EPERM') {
+                errorInfo = `Permission denied executing Swift CLI`;
+            }
+            
+            stderrData += `\n${errorInfo}`;
             resolve({ stdout: stdoutData, stderr: stderrData, exitCode: null, cancelled: false, internalTimeoutHit });
         });
 
