@@ -15,6 +15,7 @@
 --wraparguments before-first
 --wrapparameters before-first
 --maxwidth 120
+--commas inline
 
 # Exclude
 --exclude .build
