@@ -1,6 +1,6 @@
 # Terminator MCP: I'll be back... with your terminal output! 🤖
 
-![Terminator Logo](https://raw.githubusercontent.com/steipete/terminator/main/assets/logo.png)
+![Terminator Logo](https://raw.githubusercontent.com/steipete/Terminator/main/assets/logo.png)
 
 [![npm version](https://badge.fury.io/js/%40steipete%2Fterminator-mcp.svg)](https://www.npmjs.com/package/@steipete/terminator-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
