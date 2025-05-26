@@ -53,9 +53,9 @@ final class ListCommandTests: BaseTerminatorTests {
         XCTAssertTrue(result.output.contains("No active sessions found."))
         // Expect a warning on stderr because session listing will fail in test env
         XCTAssertTrue(
-            result.errorOutput.contains("Warning:") || 
-            result.errorOutput.isEmpty ||
-            result.errorOutput.contains("Logger shutting down"),
+            result.errorOutput.contains("Warning:") ||
+                result.errorOutput.isEmpty ||
+                result.errorOutput.contains("Logger shutting down"),
             "Stderr should contain warning, be empty, or just have logger messages. Got: \(result.errorOutput)"
         )
     }

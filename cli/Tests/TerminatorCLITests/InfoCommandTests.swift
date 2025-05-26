@@ -30,9 +30,9 @@ final class InfoCommandTests: BaseTerminatorTests {
         XCTAssertTrue(result.output.contains("TERMINATOR_APP:"))
         XCTAssertTrue(result.output.contains("--- Managed Sessions ---"))
         XCTAssertTrue(
-            result.errorOutput.contains("Warning:") || 
-            result.errorOutput.isEmpty ||
-            result.errorOutput.contains("Logger shutting down"),
+            result.errorOutput.contains("Warning:") ||
+                result.errorOutput.isEmpty ||
+                result.errorOutput.contains("Logger shutting down"),
             "Stderr should contain warning, be empty, or just have logger messages. Got: \(result.errorOutput)"
         )
     }
