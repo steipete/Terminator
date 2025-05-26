@@ -9,15 +9,41 @@ VERSION=$(node -p "require('./package.json').version")
 # Path to Swift main file
 SWIFT_MAIN="cli/Sources/TerminatorCLI/main.swift"
 
-# Create temporary file with version injection
-echo "// AUTO-GENERATED VERSION - DO NOT EDIT" > "${SWIFT_MAIN}.tmp"
-echo "let appVersion = \"${VERSION}\"" >> "${SWIFT_MAIN}.tmp"
-echo "" >> "${SWIFT_MAIN}.tmp"
+# Create a temporary file
+TEMP_FILE="${SWIFT_MAIN}.tmp"
 
-# Append the rest of the file, skipping existing version lines
-tail -n +7 "${SWIFT_MAIN}" | sed "s/version: \"[^\"]*\"/version: \"${VERSION}\"/g" >> "${SWIFT_MAIN}.tmp"
+# Check if file has AUTO-GENERATED marker
+if grep -q "^// AUTO-GENERATED VERSION - DO NOT EDIT" "${SWIFT_MAIN}"; then
+    # File already has version injection
+    # Update the version in the existing file
+    sed -E "s/let appVersion = \"[^\"]*\"/let appVersion = \"${VERSION}\"/g" "${SWIFT_MAIN}" | \
+    sed -E "s/version: \"[^\"]*\"/version: \"${VERSION}\"/g" > "${TEMP_FILE}"
+else
+    # File doesn't have version injection yet
+    # Process the file line by line
+    > "${TEMP_FILE}"  # Clear temp file
+    
+    # Flag to track if we've added the version yet
+    VERSION_ADDED=false
+    
+    while IFS= read -r line; do
+        echo "$line" >> "${TEMP_FILE}"
+        
+        # After the last import or Foundation import, add version
+        if [[ ! "$VERSION_ADDED" == true ]] && [[ "$line" =~ ^import\ Foundation ]]; then
+            echo "" >> "${TEMP_FILE}"
+            echo "// AUTO-GENERATED VERSION - DO NOT EDIT" >> "${TEMP_FILE}"
+            echo "let appVersion = \"${VERSION}\"" >> "${TEMP_FILE}"
+            VERSION_ADDED=true
+        fi
+    done < "${SWIFT_MAIN}"
+    
+    # Update version references in the file
+    sed -i.bak -E "s/version: \"[^\"]*\"/version: \"${VERSION}\"/g" "${TEMP_FILE}"
+    rm "${TEMP_FILE}.bak"
+fi
 
 # Replace original file
-mv "${SWIFT_MAIN}.tmp" "${SWIFT_MAIN}"
+mv "${TEMP_FILE}" "${SWIFT_MAIN}"
 
 echo "✅ Injected version ${VERSION} into Swift CLI"

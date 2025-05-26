@@ -1,3 +1,6 @@
+import ArgumentParser
+import Foundation
+
 // AUTO-GENERATED VERSION - DO NOT EDIT
 let appVersion = "1.0.0-alpha.12"
 
