@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.8] - 2025-05-26
+
+### Changed
+- **Refactored Swift CLI invocation**: Replaced manual spawn handling with `execa` library
+  - Cleaner, more maintainable code with better error handling
+  - Automatic error code mapping using `errno` for friendly error messages
+  - Simplified timeout and cancellation logic with AbortController
+  - Better TypeScript types and error handling
+
+### Added
+- **Dependencies**: Added `execa` and `errno` for improved process management
+- **Type definitions**: Added custom TypeScript definitions for errno module
+
 ## [1.0.0-alpha.7] - 2025-05-26
 
 ### Added

@@ -1,6 +1,6 @@
 {
   "name": "@steipete/terminator-mcp",
-  "version": "1.0.0-alpha.7",
+  "version": "1.0.0-alpha.8",
   "description": "MCP plugin to manage macOS terminal sessions.",
   "type": "module",
   "main": "dist/index.js",
@@ -29,6 +29,8 @@
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "latest",
+    "errno": "^1.0.0",
+    "execa": "^9.5.3",
     "node-pty": "latest"
   },
   "devDependencies": {
