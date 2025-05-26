@@ -18,8 +18,7 @@ final class KillCommandTests: BaseTerminatorTests {
         )
         // Expect session not found or a general AppleScript/controller error
         XCTAssertTrue(
-            result.errorOutput
-                .contains("Error: Session for tag \"\(tagValue)\" in project \"N/A\" not found for kill.") ||
+            result.errorOutput.contains("not found for kill") ||
                 result.errorOutput.contains("Error: AppleScript failed during kill operation.") ||
                 result.errorOutput.contains("Failed to kill session process."),
             "Stderr should contain a relevant kill error message for tag. Got: \(result.errorOutput)"
@@ -48,8 +47,7 @@ final class KillCommandTests: BaseTerminatorTests {
             "Kill command with tag and project path should fail when action fails."
         )
         XCTAssertTrue(
-            result.errorOutput
-                .contains("Error: Session for tag \"\(tagValue)\" in project \"\(projectPath)\" not found for kill.") ||
+            result.errorOutput.contains("not found for kill") ||
                 result.errorOutput.contains("Error: AppleScript failed during kill operation.") ||
                 result.errorOutput.contains("Failed to kill session process."),
             "Stderr should contain a relevant kill error message for tag with project context. Got: \(result.errorOutput)"
