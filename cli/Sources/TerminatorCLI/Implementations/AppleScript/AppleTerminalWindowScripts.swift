@@ -23,7 +23,7 @@ enum AppleTerminalWindowScripts {
                     set waitCount to waitCount + 1
                 end repeat
             end if
-            
+
             -- Try to get windows with error handling
             try
                 if (count of windows) > 0 then
@@ -76,7 +76,7 @@ enum AppleTerminalWindowScripts {
                 end repeat
             end if
             \(activateCommand)
-            
+
             -- If Terminal just started and has a window, use it
             if not wasRunning and (count of windows) > 0 then
                 set windowID to id of window 1

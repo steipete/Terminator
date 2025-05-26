@@ -34,7 +34,7 @@ extension AppleTerminalControl {
             tag: params.tag,
             shouldActivate: shouldActivateForCommand
         )
-        
+
         // Busy Check and Interruption as per SDD 3.2.5
         if let processInfo = ProcessUtilities.getForegroundProcessInfo(forTTY: tty) {
             let foundPgid = processInfo.pgid
@@ -42,26 +42,40 @@ extension AppleTerminalControl {
                 level: .info,
                 "[AppleTerminalControl] Session TTY \(tty) for tag \(params.tag) is busy with command '\(processInfo.command)' (PGID: \(foundPgid)). Attempting to interrupt."
             )
-            // SDD 3.2.5: "Attempt to stop the foreground process group by sending SIGINT via killpg(). Wait for a fixed internal timeout (e.g., 3 seconds, non-configurable for V1)."
-            // Using config.sigintWaitSeconds as per previous logic, which is 2s by default. Spec mentions 3s as example.
+            // SDD 3.2.5: "Attempt to stop the foreground process group by sending SIGINT via killpg(). Wait for a fixed
+            // internal timeout (e.g., 3 seconds, non-configurable for V1)."
+            // Using config.sigintWaitSeconds as per previous logic, which is 2s by default. Spec mentions 3s as
+            // example.
             // Let's stick to config.sigintWaitSeconds for now.
             _ = ProcessUtilities.killProcessGroup(pgid: foundPgid, signal: SIGINT)
-            Logger.log(level: .debug, "[AppleTerminalControl] Sent SIGINT to PGID \(foundPgid) on TTY \(tty). Waiting \(config.sigintWaitSeconds)s.")
+            Logger.log(
+                level: .debug,
+                "[AppleTerminalControl] Sent SIGINT to PGID \(foundPgid) on TTY \(tty). Waiting \(config.sigintWaitSeconds)s."
+            )
             Thread.sleep(forTimeInterval: Double(config.sigintWaitSeconds))
 
             if ProcessUtilities.isProcessGroupRunning(pgid: foundPgid) {
-                 Logger.log(level: .warn, "[AppleTerminalControl] Busy process with PGID \(foundPgid) did not terminate after SIGINT and wait. Command execution might fail or be delayed.")
-                 // SDD 3.2.5: "If process still exists after timeout, execute fails with error code 4"
-                 // Throwing error here to adhere to spec.
-                 throw TerminalControllerError.processControlError(details: "Failed to stop busy process (PGID: \(foundPgid)) on TTY \(tty) before command execution.")
+                Logger.log(
+                    level: .warn,
+                    "[AppleTerminalControl] Busy process with PGID \(foundPgid) did not terminate after SIGINT and wait. Command execution might fail or be delayed."
+                )
+                // SDD 3.2.5: "If process still exists after timeout, execute fails with error code 4"
+                // Throwing error here to adhere to spec.
+                throw TerminalControllerError
+                    .processControlError(
+                        details: "Failed to stop busy process (PGID: \(foundPgid)) on TTY \(tty) before command execution."
+                    )
             } else {
-                Logger.log(level: .info, "[AppleTerminalControl] Busy process with PGID \(foundPgid) terminated successfully.")
+                Logger.log(
+                    level: .info,
+                    "[AppleTerminalControl] Busy process with PGID \(foundPgid) terminated successfully."
+                )
             }
         }
 
-
         let commandToRun = params.command ?? ""
-        let logFileName = "terminator_output_\(tty.replacingOccurrences(of: "/dev/", with: ""))_\(Int(Date().timeIntervalSince1970)).log"
+        let logFileName =
+            "terminator_output_\(tty.replacingOccurrences(of: "/dev/", with: ""))_\(Int(Date().timeIntervalSince1970)).log"
         let logFilePath = (config.logDir as NSString).appendingPathComponent(logFileName)
         let completionMarker = "TERMINATOR_CMD_COMPLETE_MARKER_\(UUID().uuidString)"
 
@@ -71,38 +85,41 @@ extension AppleTerminalControl {
             shellCommandSegments.append("cd '\(projectPath.escapingSingleQuotes())'")
             shellCommandSegments.append("clear") // As per SDD, clear after cd
         } else if commandToRun.isEmpty {
-             shellCommandSegments.append("clear")
+            shellCommandSegments.append("clear")
         }
-
 
         if !commandToRun.isEmpty {
             shellCommandSegments.append(commandToRun)
         }
-        
+
         let coreCommand = shellCommandSegments.joined(separator: " && ")
 
         let shellCommandToExecuteWithRedirection: String
         let quotedLogFilePathForShell = "'\\(logFilePath.escapingSingleQuotes())'"
         let escapedCompletionMarkerForShell = completionMarker.escapingSingleQuotes()
 
-
         if params.executionMode == .foreground {
             if coreCommand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                 // If only cd/clear, no marker needed, but still log output.
+                // If only cd/clear, no marker needed, but still log output.
                 shellCommandToExecuteWithRedirection = "( (\(coreCommand)) > \(quotedLogFilePathForShell) 2>&1 )"
             } else {
-                shellCommandToExecuteWithRedirection = "( (\(coreCommand)) > \(quotedLogFilePathForShell) 2>&1; echo '\(escapedCompletionMarkerForShell)' >> \(quotedLogFilePathForShell) )"
+                shellCommandToExecuteWithRedirection =
+                    "( (\(coreCommand)) > \(quotedLogFilePathForShell) 2>&1; echo '\(escapedCompletionMarkerForShell)' >> \(quotedLogFilePathForShell) )"
             }
         } else { // Background
             if coreCommand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                shellCommandToExecuteWithRedirection = "( (\(coreCommand)) > \(quotedLogFilePathForShell) 2>&1 )" // No disown if empty
+                shellCommandToExecuteWithRedirection =
+                    "( (\(coreCommand)) > \(quotedLogFilePathForShell) 2>&1 )" // No disown if empty
             } else {
-                shellCommandToExecuteWithRedirection = "( (\(coreCommand)) > \(quotedLogFilePathForShell) 2>&1 ) & disown"
+                shellCommandToExecuteWithRedirection =
+                    "( (\(coreCommand)) > \(quotedLogFilePathForShell) 2>&1 ) & disown"
             }
         }
-        
-        Logger.log(level: .debug, "[AppleTerminalControl] Prepared shell command for AppleScript: \(shellCommandToExecuteWithRedirection)")
 
+        Logger.log(
+            level: .debug,
+            "[AppleTerminalControl] Prepared shell command for AppleScript: \(shellCommandToExecuteWithRedirection)"
+        )
 
         let script = AppleTerminalCommandScripts.executeCommandWithRedirectionScript(
             appName: appName,
@@ -120,17 +137,26 @@ extension AppleTerminalControl {
         switch scriptResult {
         case let .success(appleScriptOutput):
             guard let responseString = appleScriptOutput as? String else {
-                throw TerminalControllerError.appleScriptError(message: "AppleScript execution did not return a string. Output: \(appleScriptOutput)", scriptContent: script)
+                throw TerminalControllerError.appleScriptError(
+                    message: "AppleScript execution did not return a string. Output: \(appleScriptOutput)",
+                    scriptContent: script
+                )
             }
 
             if responseString.hasPrefix("ERROR:") {
                 Logger.log(level: .error, "[AppleTerminalControl] AppleScript reported error: \(responseString)")
                 throw TerminalControllerError.appleScriptError(message: responseString, scriptContent: script)
             } else if responseString == "OK_COMMAND_SUBMITTED" {
-                Logger.log(level: .info, "[AppleTerminalControl] Command submitted successfully to Apple Terminal. Log: \(logFilePath)")
+                Logger.log(
+                    level: .info,
+                    "[AppleTerminalControl] Command submitted successfully to Apple Terminal. Log: \(logFilePath)"
+                )
 
                 if params.executionMode == .foreground {
-                    Logger.log(level: .debug, "[AppleTerminalControl] Foreground command. Tailing log \(logFilePath) for marker with timeout \(params.timeout)s.")
+                    Logger.log(
+                        level: .debug,
+                        "[AppleTerminalControl] Foreground command. Tailing log \(logFilePath) for marker with timeout \(params.timeout)s."
+                    )
                     let tailResult = ProcessUtilities.tailLogFileForMarker(
                         logFilePath: logFilePath,
                         marker: completionMarker,
@@ -140,13 +166,16 @@ extension AppleTerminalControl {
                     )
                     outputText = tailResult.output
                     timedOut = tailResult.timedOut
-                    
+
                     if timedOut {
-                        Logger.log(level: .warn, "[AppleTerminalControl] Foreground command timed out waiting for marker in \(logFilePath).")
+                        Logger.log(
+                            level: .warn,
+                            "[AppleTerminalControl] Foreground command timed out waiting for marker in \(logFilePath)."
+                        )
                         outputText = (outputText ?? "") + "\n---[APPLE_TERMINAL_CMD_TIMEOUT_MARKER_NOT_FOUND]---"
                         // Attempt to find PGID even on timeout for potential kill by wrapper
                         if let fgInfo = ProcessUtilities.getForegroundProcessInfo(forTTY: tty) {
-                             pgidToReturn = fgInfo.pgid
+                            pgidToReturn = fgInfo.pgid
                         }
                     } else {
                         Logger.log(level: .info, "[AppleTerminalControl] Foreground command completed (marker found).")
@@ -161,15 +190,21 @@ extension AppleTerminalControl {
                         }
                     }
                 } else { // Background
-                    Logger.log(level: .debug, "[AppleTerminalControl] Background command. Capturing initial output from \(logFilePath) with timeout \(config.backgroundStartupSeconds)s.")
-                     let initialOutputTail = ProcessUtilities.tailLogFileForMarker(
+                    Logger.log(
+                        level: .debug,
+                        "[AppleTerminalControl] Background command. Capturing initial output from \(logFilePath) with timeout \(config.backgroundStartupSeconds)s."
+                    )
+                    let initialOutputTail = ProcessUtilities.tailLogFileForMarker(
                         logFilePath: logFilePath,
                         marker: "TERMINATOR_APPLE_TERMINAL_BG_NON_EXISTENT_MARKER_\(UUID().uuidString)",
                         timeoutSeconds: config.backgroundStartupSeconds,
                         linesToCapture: params.linesToCapture,
                         controlIdentifier: "AppleTerminalBG_\(params.tag)"
                     )
-                    let initialOutput = initialOutputTail.output.replacingOccurrences(of: "\n---[MARKER NOT FOUND, TIMEOUT OCURRED] ---", with: "")
+                    let initialOutput = initialOutputTail.output.replacingOccurrences(
+                        of: "\n---[MARKER NOT FOUND, TIMEOUT OCURRED] ---",
+                        with: ""
+                    )
                     if !initialOutput.isEmpty {
                         outputText = "Initial output (up to \(params.linesToCapture) lines):\n\(initialOutput)"
                     } else {
@@ -179,25 +214,34 @@ extension AppleTerminalControl {
                     // Wait a brief moment for the process to establish itself.
                     Thread.sleep(forTimeInterval: 0.2)
                     if let fgInfo = ProcessUtilities.getForegroundProcessInfo(forTTY: tty) {
-                         if !ProcessUtilities.isShellProcess(commandPath: fgInfo.command) {
+                        if !ProcessUtilities.isShellProcess(commandPath: fgInfo.command) {
                             pgidToReturn = fgInfo.pgid
-                         }
+                        }
                     }
-                    Logger.log(level: .info, "[AppleTerminalControl] Background command submitted. PGID identified: \(pgidToReturn ?? -1)")
+                    Logger.log(
+                        level: .info,
+                        "[AppleTerminalControl] Background command submitted. PGID identified: \(pgidToReturn ?? -1)"
+                    )
                 }
             } else {
-                throw TerminalControllerError.appleScriptError(message: "AppleScript execution returned unexpected success response: \(responseString)", scriptContent: script)
+                throw TerminalControllerError.appleScriptError(
+                    message: "AppleScript execution returned unexpected success response: \(responseString)",
+                    scriptContent: script
+                )
             }
 
         case let .failure(error):
-            Logger.log(level: .error, "[AppleTerminalControl] Failed to execute command via AppleScript: \(error.localizedDescription)")
+            Logger.log(
+                level: .error,
+                "[AppleTerminalControl] Failed to execute command via AppleScript: \(error.localizedDescription)"
+            )
             throw TerminalControllerError.appleScriptError(
                 message: "Command execution failed: \(error.localizedDescription)",
                 scriptContent: script,
                 underlyingError: error
             )
         }
-        
+
         // Clean up log file if foreground and completed without timeout and not preserving logs
         // For V1, logs are not aggressively deleted to aid debugging. Future enhancement.
 
@@ -217,9 +261,10 @@ extension AppleTerminalControl {
         guard let windowID = session.windowIdentifier,
               let tabID = session.tabIdentifier
         else {
-            throw TerminalControllerError.internalError(details: "Session for tag \(params.tag) is missing identifiers.")
+            throw TerminalControllerError
+                .internalError(details: "Session for tag \(params.tag) is missing identifiers.")
         }
-        
+
         // Reading from AppleScript 'history' aligns with spec for general scrollback.
         // Log files are specific to 'execute' actions.
 
@@ -239,7 +284,10 @@ extension AppleTerminalControl {
                 lines = Array(lines.suffix(params.linesToCapture))
             }
             let processedOutput = lines.joined(separator: "\n")
-            Logger.log(level: .info, "[AppleTerminalControl] Successfully read \(lines.count) lines from Terminal.app session \(params.tag)")
+            Logger.log(
+                level: .info,
+                "[AppleTerminalControl] Successfully read \(lines.count) lines from Terminal.app session \(params.tag)"
+            )
             return ReadSessionResult(sessionInfo: session, output: processedOutput)
 
         case let .failure(error):
@@ -254,6 +302,6 @@ extension AppleTerminalControl {
 
 extension String {
     func escapingSingleQuotes() -> String {
-        self.replacingOccurrences(of: "'", with: "'\\\\''")
+        replacingOccurrences(of: "'", with: "'\\\\''")
     }
 }

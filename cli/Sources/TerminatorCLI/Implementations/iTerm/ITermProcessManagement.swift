@@ -148,7 +148,7 @@ extension ITermControl {
             return PGIDResult(
                 pgid: nil,
                 message: message,
-                shouldReturnEarly: true, 
+                shouldReturnEarly: true,
                 error: nil // Not an AppleScript error, but a failure to find PGID via ps.
             )
         }

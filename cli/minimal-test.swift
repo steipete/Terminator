@@ -15,7 +15,7 @@ let appleScript = NSAppleScript(source: script)
 var error: NSDictionary?
 let result = appleScript?.executeAndReturnError(&error)
 
-if let error = error {
+if let error {
     print("Error: \(error)")
 } else {
     print("Result: \(String(describing: result))")

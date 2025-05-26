@@ -291,7 +291,7 @@ extension AppleTerminalControl {
                 Logger.log(level: .warn, "[AppleTerminalControl] Skipping invalid window entry: \(windowEntry)")
                 continue
             }
-            
+
             // Window ID can be either String or Int
             let windowID: String
             if let winIDStr = windowEntry[0] as? String {
@@ -301,7 +301,10 @@ extension AppleTerminalControl {
             } else if let winIDInt32 = windowEntry[0] as? Int32 {
                 windowID = String(winIDInt32)
             } else {
-                Logger.log(level: .warn, "[AppleTerminalControl] Skipping window with invalid ID type: \(type(of: windowEntry[0])) value: \(windowEntry[0])")
+                Logger.log(
+                    level: .warn,
+                    "[AppleTerminalControl] Skipping window with invalid ID type: \(type(of: windowEntry[0])) value: \(windowEntry[0])"
+                )
                 continue
             }
 
@@ -314,7 +317,7 @@ extension AppleTerminalControl {
                     )
                     continue
                 }
-                
+
                 // Tab ID can be either String or Int
                 let tabID: String
                 if let tidStr = tabEntry[0] as? String {
@@ -325,7 +328,7 @@ extension AppleTerminalControl {
                     Logger.log(level: .warn, "[AppleTerminalControl] Skipping tab with invalid ID type: \(tabEntry[0])")
                     continue
                 }
-                
+
                 let tabTitle = (tabEntry[1] as? String) ?? ""
                 tabs.append(AppleTerminalTabInfo(id: tabID, title: tabTitle))
             }

@@ -55,10 +55,10 @@ enum AppleTerminalSessionScripts {
     ) -> String {
         let activateCommand = shouldActivateTerminal ? "activate\n" : ""
         let keystrokeCommand = shouldActivateTerminal ? """
-            tell application \"System Events\"
-                keystroke \"k\" using command down
-            end tell
-            """ : ""
+        tell application \"System Events\"
+            keystroke \"k\" using command down
+        end tell
+        """ : ""
 
         return """
         tell application \"\(appName)\"\n            \(activateCommand)set targetWindow to window id \(windowID)
