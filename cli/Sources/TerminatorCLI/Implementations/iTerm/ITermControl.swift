@@ -73,7 +73,6 @@ struct ITermControl: TerminalControlling {
         )
     }
 
-    /// Wrapper for findOrCreateSession that matches the expected method name in extensions
     func findOrCreateSessionForITerm(
         projectPath: String?,
         tag: String,

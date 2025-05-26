@@ -26,8 +26,6 @@ struct Info: ParsableCommand {
         }
     }
 
-    // MARK: - Private Helper Methods
-
     private func setupConfiguration() throws -> AppConfig {
         TerminatorCLI.currentConfig = AppConfig(
             terminalAppOption: globals.terminalApp,

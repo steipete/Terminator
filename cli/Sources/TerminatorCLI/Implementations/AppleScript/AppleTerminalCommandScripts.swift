@@ -109,6 +109,34 @@ enum AppleTerminalCommandScripts {
         return executeCommandScript(params: params)
     }
 
+    static func executeCommandWithRedirectionScript(
+        appName: String,
+        windowID: String,
+        tabID: String,
+        shellCommandToExecuteWithRedirection: String, // This includes cd, clear, redirection, and marker
+        shouldActivateTerminal: Bool
+    ) -> String {
+        let activateCommand = shouldActivateTerminal ? "activate\n" : ""
+        // The shellCommandToExecuteWithRedirection is already escaped for shell, needs escaping for AppleScript string
+        let appleScriptSafeCommand = shellCommandToExecuteWithRedirection
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+
+        return """
+        tell application "\(appName)"
+            set targetWindow to window id \(windowID)
+            set targetTab to tab \(tabID) of targetWindow
+            \(activateCommand)
+            try
+                do script "\(appleScriptSafeCommand)" in targetTab
+                return "OK_COMMAND_SUBMITTED"
+            on error errMsg number errNum
+                return "ERROR: AppleTerminal execute failed: " & errMsg & " (Number: " & (errNum as string) & ")"
+            end try
+        end tell
+        """
+    }
+
     static func readSessionOutputScript(
         appName: String,
         windowID: String,

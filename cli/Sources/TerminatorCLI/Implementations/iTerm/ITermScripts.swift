@@ -187,7 +187,6 @@ enum ITermScripts {
         ITermCommandExecutionScripts.getPGIDAppleScript(ttyNameOnly: ttyNameOnly)
     }
 
-    // Helper function from AppleTerminalScripts for use by iTerm's getPGIDAppleScript
     static func findPgidScriptForKill(ttyNameOnly: String) -> String {
         ITermCommandExecutionScripts.findPgidScriptForKill(ttyNameOnly: ttyNameOnly)
     }

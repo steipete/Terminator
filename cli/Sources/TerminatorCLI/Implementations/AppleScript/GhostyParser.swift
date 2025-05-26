@@ -1,6 +1,5 @@
 import Foundation
 
-// GhostyParser.swift
 // This struct will be responsible for parsing the results of AppleScript commands
 // executed against the Ghosty terminal application.
 

@@ -222,11 +222,11 @@ enum ProcessUtilities {
         marker: String,
         timeoutSeconds: Int,
         linesToCapture: Int,
-        controlIdentifier _: String = "LogTailing"
+        controlIdentifier: String = "LogTailing"
     ) -> (output: String, timedOut: Bool) {
         Logger.log(
             level: .debug,
-            "[\\(controlIdentifier)] Tailing \\\\(logFilePath) for marker '\\\\(marker)' with timeout \\\\(timeoutSeconds)s"
+            "[\(controlIdentifier)] Tailing \(logFilePath) for marker '\(marker)' with timeout \(timeoutSeconds)s"
         )
         let startTime = Date()
         var capturedOutput = ""
@@ -243,50 +243,50 @@ enum ProcessUtilities {
                 if content.contains(marker) {
                     Logger.log(
                         level: .info,
-                        "[\\(controlIdentifier)] Marker '\\\\(marker)' found in \\\\(logFilePath)."
+                        "[\(controlIdentifier)] Marker '\(marker)' found in \(logFilePath)."
                     )
                     var lines = content.components(separatedBy: .newlines)
                     if let markerIndex = lines.firstIndex(where: { $0.contains(marker) }) {
                         lines.remove(at: markerIndex) // Remove the marker line itself
                     }
                     if linesToCapture > 0 && lines.count > linesToCapture {
-                        capturedOutput = lines.suffix(linesToCapture).joined(separator: "\\n")
+                        capturedOutput = lines.suffix(linesToCapture).joined(separator: "\n")
                     } else {
-                        capturedOutput = lines.joined(separator: "\\n")
+                        capturedOutput = lines.joined(separator: "\n")
                     }
                     return (capturedOutput, false)
                 }
             } catch {
                 Logger.log(
                     level: .warn,
-                    "[\\(controlIdentifier)] Error reading log file \\\\(logFilePath): \\\\(error.localizedDescription)"
+                    "[\(controlIdentifier)] Error reading log file \(logFilePath): \(error.localizedDescription)"
                 )
             }
         }
 
         Logger.log(
             level: .warn,
-            "[\\(controlIdentifier)] Timeout waiting for marker '\\\\(marker)' in \\\\(logFilePath)."
+            "[\(controlIdentifier)] Timeout waiting for marker '\(marker)' in \(logFilePath)."
         )
         if FileManager.default.fileExists(atPath: logFilePath) {
             do {
                 let content = try String(contentsOfFile: logFilePath, encoding: .utf8)
                 let lines = content.components(separatedBy: .newlines)
                 if linesToCapture > 0, lines.count > linesToCapture {
-                    capturedOutput = lines.suffix(linesToCapture).joined(separator: "\\n")
+                    capturedOutput = lines.suffix(linesToCapture).joined(separator: "\n")
                 } else {
-                    capturedOutput = lines.joined(separator: "\\n")
+                    capturedOutput = lines.joined(separator: "\n")
                 }
-                capturedOutput += "\\n---[MARKER NOT FOUND, TIMEOUT OCURRED] ---" // Append timeout info
+                capturedOutput += "\n---[MARKER NOT FOUND, TIMEOUT OCURRED] ---" // Append timeout info
             } catch {
                 Logger.log(
                     level: .error,
-                    "[\\(controlIdentifier)] Error reading log file \\\\(logFilePath) on timeout: \\\\(error.localizedDescription)"
+                    "[\(controlIdentifier)] Error reading log file \(logFilePath) on timeout: \(error.localizedDescription)"
                 )
-                capturedOutput = "Error reading log file on timeout: \\\\(error.localizedDescription)"
+                capturedOutput = "Error reading log file on timeout: \(error.localizedDescription)"
             }
         } else {
-            capturedOutput = "Log file \\\\(logFilePath) not found or empty after timeout."
+            capturedOutput = "Log file \(logFilePath) not found or empty after timeout."
         }
         return (capturedOutput, true)
     }
@@ -312,6 +312,72 @@ enum ProcessUtilities {
         // which should be handled by the caller if necessary before passing to this function.
         // Example: if command is `echo 'hello'`, it becomes `echo '\''hello'\''`
         command.replacingOccurrences(of: "'", with: "'\\''")
+    }
+
+    public static func getForegroundProcessGroupID(forTTY ttyBasename: String) -> pid_t? {
+        let command = "ps -t \(ttyBasename) -o pgid=,stat=,pid=,command="
+        let task = Process()
+        task.launchPath = "/bin/sh" // Or directly /bin/ps
+        task.arguments = ["-c", command]
+
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        let errorPipe = Pipe()
+        task.standardError = errorPipe // Capture stderr
+
+        do {
+            try task.run()
+            task.waitUntilExit()
+
+            if task.terminationStatus == 0 {
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                if let output = String(data: data, encoding: .utf8) {
+                    Logger.log(level: .debug, "[ProcessUtilities] ps output for TTY \(ttyBasename):\n\(output)")
+                    // SDD 3.2.5: ps -t <tty_basename> -o pgid=,sess=,stat=,command=
+                    // We need to find the line with '+' in the status column
+                    // Example line: "  1234 S+    5678 /bin/bash"
+                    // PGID is the first field.
+                    let lines = output.split(separator: "\n")
+                    for line in lines {
+                        let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+                        
+                        var pgidStr: String?
+                        var statStr: String?
+
+                        // Using a simple whitespace split. More robust parsing might be needed
+                        // if commands themselves have unpredictable spacing and ps output varies significantly.
+                        // For "pgid=,stat=,pid=,command=", the first component is pgid, second is stat.
+                        let components = trimmedLine.split(separator: " ", maxSplits: 1).map(String.init)
+                        if components.count >= 1 {
+                            pgidStr = components[0]
+                        }
+                        if components.count >= 2 {
+                             // The second part of the split might contain the rest of the line,
+                             // so we need to isolate 'stat' from it.
+                             let restOfLine = String(components[1])
+                             statStr = String(restOfLine.split(separator: " ", maxSplits: 1).map(String.init)[0])
+                        }
+
+                        if let stat = statStr, stat.contains("+") {
+                            if let pgidComponent = pgidStr, let pgid = pid_t(pgidComponent.trimmingCharacters(in: .whitespaces)) {
+                                Logger.log(level: .info, "[ProcessUtilities] Found foreground PGID \(pgid) for TTY \(ttyBasename).")
+                                return pgid
+                            }
+                        }
+                    }
+                    Logger.log(level: .debug, "[ProcessUtilities] No foreground process group found with '+' in stat for TTY \(ttyBasename). Output:\n\(output)")
+                } else {
+                    Logger.log(level: .warn, "[ProcessUtilities] Failed to decode ps output for TTY \(ttyBasename).")
+                }
+            } else {
+                let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+                let errorOutput = String(data: errorData, encoding: .utf8) ?? "Unknown error"
+                Logger.log(level: .warn, "[ProcessUtilities] 'ps' command failed for TTY \(ttyBasename) with status \(task.terminationStatus). Stderr: \(errorOutput)")
+            }
+        } catch {
+            Logger.log(level: .error, "[ProcessUtilities] Failed to run 'ps' command for TTY \(ttyBasename): \(error.localizedDescription)")
+        }
+        return nil
     }
 }
 

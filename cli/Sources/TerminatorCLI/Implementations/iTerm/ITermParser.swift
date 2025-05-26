@@ -1,6 +1,5 @@
 import Foundation
 
-// ITermParser.swift
 // Parses AppleScript results for iTerm2 interactions.
 
 // swiftlint:disable:next type_body_length

@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Terminator}/cli",
+            "name": "Debug terminator (cli)",
+            "program": "${workspaceFolder:Terminator}/cli/.build/debug/terminator",
+            "preLaunchTask": "swift: Build Debug terminator (cli)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Terminator}/cli",
+            "name": "Release terminator (cli)",
+            "program": "${workspaceFolder:Terminator}/cli/.build/release/terminator",
+            "preLaunchTask": "swift: Build Release terminator (cli)"
+        }
+    ]
+}

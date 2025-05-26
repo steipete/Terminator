@@ -54,11 +54,18 @@ enum AppleTerminalSessionScripts {
         shouldActivateTerminal: Bool
     ) -> String {
         let activateCommand = shouldActivateTerminal ? "activate\n" : ""
+        let keystrokeCommand = shouldActivateTerminal ? """
+            tell application \"System Events\"
+                keystroke \"k\" using command down
+            end tell
+            """ : ""
+
         return """
-        tell application "\(appName)"
-            set targetWindow to window id \(windowID)
+        tell application \"\(appName)\"\n            \(activateCommand)set targetWindow to window id \(windowID)
             set targetTab to tab \(tabID) of targetWindow
-            \(activateCommand)do script "clear" in targetTab
+            do script \"clear && clear\" in targetTab
+            delay 0.1 -- Allow clear to process before keystroke
+            \(keystrokeCommand)
         end tell
         """
     }

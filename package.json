@@ -1,6 +1,6 @@
 {
   "name": "@steipete/terminator-mcp",
-  "version": "1.0.0-alpha.11",
+  "version": "1.0.0-alpha.12",
   "description": "MCP plugin to manage macOS terminal sessions.",
   "type": "module",
   "main": "dist/index.js",
@@ -23,7 +23,11 @@
     "lint:swift": "cd cli && swiftlint",
     "test:swift": "cd cli && swift test",
     "test:applescript": "cd cli/Tests/AppleScriptTests && bash bin/run_apple_terminal_tests.sh",
-    "verify:applescript": "node ./scripts/verify-applescript-consistency.js"
+    "verify:applescript": "node ./scripts/verify-applescript-consistency.js",
+    "test:e2e": "vitest run tests/e2e",
+    "test": "npm run test:e2e",
+    "test:watch": "vitest tests/e2e",
+    "test:coverage": "vitest run --coverage"
   },
   "author": "@steipete",
   "license": "MIT",
@@ -35,6 +39,8 @@
   },
   "devDependencies": {
     "@types/node": "latest",
+    "@vitest/coverage-v8": "^1.6.0",
+    "vitest": "^1.6.0",
     "tsc-watch": "latest",
     "typescript": "latest"
   },

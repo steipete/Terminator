@@ -5,7 +5,9 @@ extension AppleTerminalControl {
         Logger.log(level: .info, "[AppleTerminalControl] Listing sessions, filter: \(filterByTag ?? "none")")
 
         let script = AppleTerminalScripts.listSessionsScript(appName: appName)
+        Logger.log(level: .debug, "[AppleTerminalControl] About to run AppleScript for listing sessions")
         let appleScriptResult = AppleScriptBridge.runAppleScript(script: script)
+        Logger.log(level: .debug, "[AppleTerminalControl] AppleScript execution completed")
 
         switch appleScriptResult {
         case let .success(resultData):
@@ -74,29 +76,8 @@ extension AppleTerminalControl {
 
             let outputToReturn = fullHistory
 
-            // TODO: Implement file logging
-            // Log the read action if file logging is enabled
-            // if config.logToFile {
-            //     let logManager = FileLogManager(sessionInfo: session, config: config)
-            //     if logManager.shouldLogToFile {
-            //         do {
-            //             try logManager.logEntry(
-            //                 type: .output,
-            //                 content: outputToReturn,
-            //                 metadata: [
-            //                     "tag": params.tag,
-            //                     "windowID": windowID,
-            //                     "tabID": tabID
-            //                 ]
-            //             )
-            //         } catch {
-            //             Logger.log(
-            //                 level: .error,
-            //                 "[AppleTerminalControl] Failed to log output: \(error.localizedDescription)"
-            //             )
-            //         }
-            //     }
-            // }
+            // File logging is not applicable to the read action itself.
+            // Command execution logging is handled within the executeCommand flow.
 
             return ReadSessionResult(
                 sessionInfo: session,

@@ -1,6 +1,5 @@
 import Foundation
 
-// GhostyScripts.swift
 // Contains AppleScript snippets for interacting with the Ghosty terminal application.
 // As per SDD, Ghosty support is "best-effort" for V1, so scripts are minimal.
 

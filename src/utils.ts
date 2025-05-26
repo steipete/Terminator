@@ -1,7 +1,6 @@
 // Provides utility functions for the Terminator MCP tool, including tag sanitization,
 // project path resolution, default tag generation, and formatting Swift CLI output for the AI.
 import * as fs from 'node:fs';
-// import { McpContext } from '@modelcontextprotocol/sdk/types.js'; 
 import { SwiftCLIResult } from './swift-cli.js'; // For SwiftCLIResult
 import { debugLog, DEFAULT_BACKGROUND_STARTUP_SECONDS, DEFAULT_FOREGROUND_COMPLETION_SECONDS } from './config.js'; // For logging and defaults
 import * as path from 'node:path'; // For path.basename, path.sep, path.isAbsolute
@@ -13,37 +12,32 @@ export function sanitizeTag(rawTag: string): string {
     return rawTag.replace(/[^a-zA-Z0-9_\-]/g, '_').substring(0, 64);
 }
 
-export function resolveEffectiveProjectPath(currentPath: string | undefined, requestMeta: RequestContextMeta | undefined): string | undefined {
-    let effectivePath = currentPath;
-    if (!effectivePath && requestMeta?.roots && requestMeta.roots.length > 0) {
-        const firstFileRoot = requestMeta.roots.find((r) => r?.uri?.scheme === 'file' && r.uri.path && r.uri.path.length > 0);
-        if (firstFileRoot?.uri?.path) {
-            effectivePath = firstFileRoot.uri.path;
-            debugLog(`[Utils] Resolved effectiveProjectPath from MCP context: ${effectivePath}`);
+export function resolveEffectiveProjectPath(currentPath: string | undefined, _requestMeta: RequestContextMeta | undefined): string | undefined {
+    // According to spec.md section 3.1.2, `currentPath` (derived from AI's `project_path`) is mandatory and the sole source.
+    // It must be an absolute path.
+    if (!currentPath) {
+        debugLog('[Utils] effectiveProjectPath error: currentPath (from AI project_path) is undefined.');
+        return undefined; // This should be caught by the caller in tool.ts
+    }
+
+    if (!path.isAbsolute(currentPath)) {
+        debugLog(`[Utils] effectiveProjectPath error: currentPath '${currentPath}' is not an absolute path.`);
+        return undefined; // Caller in tool.ts will return an error message.
+    }
+
+    try {
+        const stats = fs.statSync(currentPath);
+        if (!stats.isDirectory()) {
+            debugLog(`[Utils] effectiveProjectPath error: currentPath '${currentPath}' is not a directory.`);
+            return undefined; // Caller in tool.ts will return an error message.
         }
+    } catch (e:any) {
+        debugLog(`[Utils] effectiveProjectPath error: fs.statSync failed for '${currentPath}'. Error: ${e.message}`);
+        return undefined; // Caller in tool.ts will return an error message.
     }
-    if (!effectivePath) {
-        const envProjectPaths = ['CURSOR_ACTIVE_PROJECT_ROOT', 'VSCODE_PROJECT_ROOT', 'TERMINATOR_MCP_PROJECT_ROOT'];
-        for (const envVar of envProjectPaths) {
-            const envPathValue = process.env[envVar];
-            if (envPathValue && envPathValue.trim() !== '') {
-                if (path.isAbsolute(envPathValue)) {
-                    try {
-                        const stats = fs.statSync(envPathValue);
-                        if (stats.isDirectory()) {
-                            effectivePath = envPathValue;
-                            debugLog(`[Utils] Resolved effectiveProjectPath from ENV var ${envVar}: ${effectivePath}`);
-                            break;
-                        }
-                    } catch (e:any) { /* ignore */ }
-                }
-            }
-        }
-    }
-    if (!effectivePath) {
-        debugLog('[Utils] No effectiveProjectPath could be determined.');
-    }
-    return effectivePath;
+
+    debugLog(`[Utils] Validated effectiveProjectPath: ${currentPath}`);
+    return currentPath;
 }
 
 export function resolveDefaultTag(currentTag: string | undefined, projectPath: string | undefined): string | undefined {

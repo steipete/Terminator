@@ -3,16 +3,18 @@ import Foundation
 // This enum provides backward compatibility by delegating to the new specialized script structs
 // while maintaining the original API for existing code
 enum AppleTerminalScripts {
-    // MARK: - Session Management (Delegated)
-
     static func listSessionsScript(appName: String) -> String {
         // Complex listing logic for sessions with error handling
         """
         set output_list to {}
         tell application "\(appName)"
-            if not running then error "Terminal application \(appName) is not running."
+            if not running then
+                run
+                delay 1.5
+            end if
             try
-                repeat with w in windows
+                if (count of windows) > 0 then
+                    repeat with w in windows
                     try
                         set w_id to id of w
                         repeat with t in tabs of w
@@ -31,6 +33,7 @@ enum AppleTerminalScripts {
                         -- Skip this window if we can't access it
                     end try
                 end repeat
+                end if
             on error errMsg number errNum
                 error "AppleScript Error (Code " & (errNum as string) & "): " & errMsg
             end try
@@ -67,24 +70,30 @@ enum AppleTerminalScripts {
 
         return """
         tell application "\(appName)"
+            if not running then
+                run
+                delay 1.0
+            end if
             \(activateCommand)-- First, look for an existing session with the tag
             set foundSession to false
             set targetWindow to missing value
             set selectedTab to missing value
 
-            repeat with aWindow in windows
-                set windowID to id of aWindow
-                repeat with aTab in tabs of aWindow
-                    set tabTitle to custom title of aTab
-                    if tabTitle contains "[\(tag)]" then
-                        set foundSession to true
-                        set targetWindow to aWindow
-                        set selectedTab to aTab
-                        exit repeat
-                    end if
+            if (count of windows) > 0 then
+                repeat with aWindow in windows
+                    set windowID to id of aWindow
+                    repeat with aTab in tabs of aWindow
+                        set tabTitle to custom title of aTab
+                        if tabTitle contains "[\(tag)]" then
+                            set foundSession to true
+                            set targetWindow to aWindow
+                            set selectedTab to aTab
+                            exit repeat
+                        end if
+                    end repeat
+                    if foundSession then exit repeat
                 end repeat
-                if foundSession then exit repeat
-            end repeat
+            end if
 
             if not foundSession then
                 -- No existing session found, create a new tab
@@ -116,8 +125,6 @@ enum AppleTerminalScripts {
         """
     }
 
-    // MARK: - Delegate to Session Scripts
-
     static func focusExistingSessionScript(appName: String, windowID: String, tabID: String) -> String {
         AppleTerminalSessionScripts.focusExistingSessionScript(appName: appName, windowID: windowID, tabID: tabID)
     }
@@ -143,8 +150,6 @@ enum AppleTerminalScripts {
     static func getTabHistoryScript(appName: String, windowID: String, tabID: String) -> String {
         AppleTerminalSessionScripts.getTabHistoryScript(appName: appName, windowID: windowID, tabID: tabID)
     }
-
-    // MARK: - Delegate to Command Scripts
 
     // swiftlint:disable:next function_parameter_count
     static func executeCommandScript(
@@ -217,8 +222,6 @@ enum AppleTerminalScripts {
         )
     }
 
-    // MARK: - Delegate to Window Scripts
-
     static func listWindowsAndTabsWithTitlesScript(appName: String) -> String {
         AppleTerminalWindowScripts.listWindowsAndTabsWithTitlesScript(appName: appName)
     }
@@ -248,8 +251,6 @@ enum AppleTerminalScripts {
     static func setSelectedTabScript(appName: String, windowID: String, tabID: String) -> String {
         AppleTerminalWindowScripts.setSelectedTabScript(appName: appName, windowID: windowID, tabID: tabID)
     }
-
-    // MARK: - Delegate to Process Scripts
 
     static func findPgidScriptForKill(ttyNameOnly: String) -> String {
         AppleTerminalProcessScripts.findPgidScriptForKill(ttyNameOnly: ttyNameOnly)

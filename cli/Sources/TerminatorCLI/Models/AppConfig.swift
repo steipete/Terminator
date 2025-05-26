@@ -1,8 +1,6 @@
 import ArgumentParser
 import Foundation
 
-// MARK: - Configuration Management (SDD 3.2.3)
-
 struct AppConfig {
     let terminalApp: String
     let logLevel: LogLevel

@@ -122,8 +122,4 @@ struct TerminatorCLI: ParsableCommand {
     }
 }
 
-// MARK: - Subcommands
-
-// MARK: - Command Definitions (SDD 3.2.5)
-
 TerminatorCLI.main() // Explicitly call main

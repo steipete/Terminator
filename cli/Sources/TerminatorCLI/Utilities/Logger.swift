@@ -1,7 +1,5 @@
 import Foundation
 
-// MARK: - Global Logger (SDD 3.2.7)
-
 enum Logger {
     private static var currentLogLevel: AppConfig
         .LogLevel = .info // Assuming AppConfig.LogLevel is accessible or moved too

@@ -13,6 +13,10 @@ enum ITermSessionCreationScripts {
 
         return """
         tell application "\(appName)"
+            if not running then
+                run
+                delay 0.5
+            end if
             try
                 \(activationScript)
 
@@ -64,6 +68,10 @@ enum ITermSessionCreationScripts {
 
         return """
         tell application "\(appName)"
+            if not running then
+                run
+                delay 0.5
+            end if
             try
                 \(activationScript)
 
@@ -96,6 +104,10 @@ enum ITermSessionCreationScripts {
         let activation = shouldActivate ? "activate" : ""
         return """
         tell application "\(appName)"
+            if not running then
+                run
+                delay 0.5
+            end if
             \(activation)
             try
                 set new_window to (create window with profile "\(profileToUse)")

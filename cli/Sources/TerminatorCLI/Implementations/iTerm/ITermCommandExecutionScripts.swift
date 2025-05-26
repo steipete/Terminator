@@ -10,6 +10,10 @@ enum ITermCommandExecutionScripts {
 
         return """
         tell application "\(appName)"
+            if not running then
+                run
+                delay 0.5
+            end if
             try
                 \(activationScript)
 
@@ -72,6 +76,10 @@ enum ITermCommandExecutionScripts {
 
         return """
         tell application "\(appName)"
+            if not running then
+                run
+                delay 0.5
+            end if
             try
                 set found_session to false
                 set target_session_ref to missing value
@@ -116,7 +124,6 @@ enum ITermCommandExecutionScripts {
         return "do shell script \"\(escapedShellCommand)\""
     }
 
-    // Helper function from AppleTerminalScripts for use by iTerm's getPGIDAppleScript
     static func findPgidScriptForKill(ttyNameOnly: String) -> String {
         // Escaping for "do shell script" needs to be handled by the caller if this string is embedded.
         // This returns a raw shell command string.

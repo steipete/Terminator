@@ -4,6 +4,10 @@ enum ITermSessionIntrospectionScripts {
     static func listSessionsScript(appName: String) -> String {
         """
         tell application "\(appName)"
+            if not running then
+                run
+                delay 0.5
+            end if
             set session_list to {}
             try
                 repeat with w in windows

@@ -1,6 +1,5 @@
 // Defines the main MCP tool, 'terminator.execute', including its schema,
 // description, and the central handler function that orchestrates calls to other modules.
-// import { McpTool, McpContext } from '@modelcontextprotocol/sdk/types.js';
 import { TerminatorOptions, TerminatorExecuteParams, TerminatorResult, SdkCallContext } from './types.js'; 
 import {
     CURRENT_TERMINAL_APP, 
@@ -19,7 +18,7 @@ import {
     formatCliOutputForAI
 } from './utils.js';
 
-export const terminatorTool /*: McpTool<TerminatorExecuteParams, TerminatorResult>*/ = {
+export const terminatorTool = {
     name: 'execute',
     description: `Manages macOS terminal sessions using the ${CURRENT_TERMINAL_APP} application. Ideal for running commands that might be long-running or could hang, as it isolates them to protect your workflow and allows for faster interaction. The session screen is automatically cleared before executing a new command or after a process is killed. Use this to execute shell commands, retrieve output, and manage terminal processes.`,
     inputSchema: {
@@ -57,7 +56,7 @@ export const terminatorTool /*: McpTool<TerminatorExecuteParams, TerminatorResul
 
         debugLog(`Canonical options after processing:`, options);
 
-        const effectiveProjectPath = resolveEffectiveProjectPath(params.project_path, undefined /* TODO: pass requestContext if available */);
+        const effectiveProjectPath = resolveEffectiveProjectPath(params.project_path, undefined);
         if (!effectiveProjectPath) {
             return { success: false, message: `Error: project_path '${params.project_path}' could not be resolved or is invalid.` };
         }

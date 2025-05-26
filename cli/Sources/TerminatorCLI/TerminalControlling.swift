@@ -1,7 +1,5 @@
 import Foundation
 
-// MARK: - Protocols
-
 protocol TerminalControlling {
     // Initializer for the specific controller.
     // It needs AppConfig for settings and appName to confirm it's the right controller (or for minor variations if one
@@ -18,8 +16,6 @@ protocol TerminalControlling {
 
     func killProcessInSession(params: KillSessionParams) throws -> KillSessionResult
 }
-
-// MARK: - Main Controller (Facade)
 
 struct TerminalAppController {
     let appName: String // Resolved application name (e.g., "Terminal", "iTerm")
@@ -58,8 +54,6 @@ struct TerminalAppController {
         )
     }
 
-    // MARK: - Public API Methods (Forwarded to specificController)
-
     func listSessions(filterByTag: String? = nil) throws -> [TerminalSessionInfo] {
         Logger.log(
             level: .info,
@@ -88,11 +82,3 @@ struct TerminalAppController {
         return try specificController.killProcessInSession(params: params)
     }
 }
-
-// The following structs and enums are now moved to their respective files in the Models/ directory.
-// Ensure they are removed from here after confirming the move.
-
-// MOVED: TerminalSessionInfo (to Models/TerminalSessionInfo.swift)
-// MOVED: TerminalControllerError (to Models/TerminalAppControllerError.swift)
-// MOVED: ExecuteCommandParams, ReadSessionParams etc. (to Models/CommandParams.swift)
-// MOVED: ExecuteCommandResult, ReadSessionResult etc. (to Models/CommandResults.swift)

@@ -15,6 +15,4 @@ enum ErrorCodes {
     static let timeoutError: Int32 = 10 // Command execution timed out
     static let commandFailedError: Int32 = 11 // A command sent to a session failed
     static let invalidArgumentsError: Int32 = 12 // Invalid arguments provided
-
-    // Add more specific error codes as needed
 }

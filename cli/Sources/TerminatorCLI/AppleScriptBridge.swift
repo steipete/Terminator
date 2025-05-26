@@ -36,17 +36,6 @@ enum AppleScriptBridge {
             )
         }
 
-        // Attempt to compile the script first (though NSAppleScript often does this implicitly on execution)
-        // Disabling explicit compile as it can report errors that execute still handles or provides better info for.
-        // if !appleScript.compileAndReturnError(&errorInfo) {
-        //     Logger.log(level: .error, "AppleScript compilation failed.")
-        //     if let info = errorInfo as? [String: Any] {
-        //         Logger.log(level: .debug, "Compilation error details: \(info)")
-        //         return .failure(.scriptCompilationFailed(errorInfo: info))
-        //     }
-        //     return .failure(.scriptCompilationFailed(errorInfo: [:]))
-        // }
-
         let eventResult = appleScript.executeAndReturnError(&errorInfo)
 
         if let errorDict = errorInfo as? [String: Any] {
@@ -106,10 +95,13 @@ enum AppleScriptBridge {
         var swiftArray: [Any] = []
 
         // NSAppleEventDescriptor lists are 1-indexed
-        for index in 1...eventResult.numberOfItems {
-            if let itemDescriptor = eventResult.atIndex(index) {
-                let value = convertDescriptorToSwiftValue(itemDescriptor, index: index)
-                swiftArray.append(value)
+        let itemCount = eventResult.numberOfItems
+        if itemCount > 0 {
+            for index in 1...itemCount {
+                if let itemDescriptor = eventResult.atIndex(index) {
+                    let value = convertDescriptorToSwiftValue(itemDescriptor, index: index)
+                    swiftArray.append(value)
+                }
             }
         }
 
@@ -130,10 +122,13 @@ enum AppleScriptBridge {
         case typeAEList:
             // Handle nested lists recursively
             var nestedArray: [Any] = []
-            for nestedIndex in 1...descriptor.numberOfItems {
-                if let nestedDescriptor = descriptor.atIndex(nestedIndex) {
-                    let nestedValue = convertDescriptorToSwiftValue(nestedDescriptor, index: nestedIndex)
-                    nestedArray.append(nestedValue)
+            let nestedItemCount = descriptor.numberOfItems
+            if nestedItemCount > 0 {
+                for nestedIndex in 1...nestedItemCount {
+                    if let nestedDescriptor = descriptor.atIndex(nestedIndex) {
+                        let nestedValue = convertDescriptorToSwiftValue(nestedDescriptor, index: nestedIndex)
+                        nestedArray.append(nestedValue)
+                    }
                 }
             }
             return nestedArray
