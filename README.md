@@ -277,10 +277,18 @@ You should see your configured terminal application open/focus, execute the echo
 
 ## Troubleshooting
 
-*   **Permissions Issues:** The most common issue. Double-check **System Settings -> Privacy & Security -> Automation**. Ensure the calling application has permission to control the `TERMINATOR_APP`.
+*   **"Swift CLI Code null" or Process Crashes:** This usually indicates:
+    *   **Missing Automation Permissions:** The most common cause. Grant automation permissions in **System Settings → Privacy & Security → Automation**. Look for Claude Desktop (or your MCP client) and ensure it can control Terminal/iTerm.
+    *   **First Run:** The first time you use Terminator, macOS will prompt for automation permissions. You must click "OK" to allow.
+    *   **Terminal Window Issues:** If you see AppleScript errors about window IDs, try closing all Terminal windows and letting Terminator create fresh ones.
+    
+*   **Permissions Issues:** Double-check **System Settings → Privacy & Security → Automation**. Ensure the calling application (Claude Desktop, VS Code, etc.) has permission to control the `TERMINATOR_APP`.
+
 *   **`TERMINATOR_APP` not found/supported:** Ensure the application specified in `TERMINATOR_APP` is installed and is one of the supported terminals (Apple Terminal, iTerm2, Ghosty). The CLI will error if it cannot interact with the specified app.
+
 *   **Log Files:** The Swift CLI component logs to files located by default in `~/Library/Logs/terminator-mcp/`. Check these logs for detailed error messages or debug information (set `TERMINATOR_LOG_LEVEL="debug"` for more verbosity).
-*   **Swift CLI not executable:** The `postinstall` script for this NPM package attempts to `chmod +x swift-bin/terminator`. If this failed, you might need to do it manually.
+
+*   **Swift CLI not executable:** The `postinstall` script for this NPM package attempts to `chmod +x bin/terminator`. If this failed, you might need to do it manually.
 
 ## Privacy and Security
 

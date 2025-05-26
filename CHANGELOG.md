@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.4] - 2025-01-26
+
+### Fixed
+- **Error Handling**: Improved handling of null exit codes from Swift CLI (typically permission issues)
+- **Error Messages**: Added helpful guidance for automation permission issues
+- **Documentation**: Enhanced troubleshooting section with common "Swift CLI Code null" error solutions
+- **README**: Fixed broken logo image URL (capital T in repository name)
+
 ## [1.0.0-alpha.3] - 2025-01-26
 
 ### Fixed

@@ -155,7 +155,14 @@ export const terminatorTool /*: McpTool<TerminatorExecuteParams, TerminatorResul
                 return { success: false, message: 'Terminator Swift CLI unresponsive and was terminated by the wrapper.' };
             }
 
-            if (result.exitCode === 0) {
+            if (result.exitCode === null) {
+                // Process crashed or was killed without proper exit
+                let errMsg = result.stderr.trim() || result.stdout.trim() || 'Swift CLI process terminated unexpectedly';
+                if (errMsg.includes('Permission denied') || errMsg.includes('not authorized')) {
+                    errMsg += '. Please grant Terminal/iTerm automation permissions in System Settings > Privacy & Security > Automation';
+                }
+                return { success: false, message: `Terminator Error: ${errMsg}` };
+            } else if (result.exitCode === 0) {
                 const message = formatCliOutputForAI(action, result, commandOpt, tag, background, timeoutOverride);
                 return { success: true, message };
             } else {
