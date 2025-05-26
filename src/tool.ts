@@ -108,7 +108,11 @@ export const terminatorTool /*: McpTool<TerminatorExecuteParams, TerminatorResul
             cliArgs.push('--project-path', effectiveProjectPath);
         }
         if (commandOpt !== undefined && action === 'exec') { 
-            cliArgs.push('--command', commandOpt);
+            // Only add --command if there's actually a command to execute
+            // Empty string means "prepare session only" and shouldn't have --command flag
+            if (commandOpt !== '') {
+                cliArgs.push('--command', commandOpt);
+            }
         }
         
         if (action === 'exec' || action === 'read') {

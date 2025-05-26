@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.11] - 2025-05-26
+
+### Fixed
+- **Empty Command Handling**: Fixed issue where empty command strings were incorrectly passed as `--command ""` to Swift CLI
+  - Empty commands now properly omit the `--command` flag entirely
+  - This allows "prepare session" functionality to work correctly (clear terminal, focus window)
+  - Both empty string (`""`) and undefined commands are handled correctly
+
+### Added
+- **Test Coverage Planning**: Created comprehensive E2E and unit test templates for future testing
+  - Covers edge cases like empty commands, special characters, invalid parameters
+  - Tests for all actions (exec, read, list, info, focus, kill)
+  - Parameter validation and CLI argument generation tests
+
 ## [1.0.0-alpha.10] - 2025-05-26
 
 ### Fixed
