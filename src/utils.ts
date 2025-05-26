@@ -12,39 +12,51 @@ export function sanitizeTag(rawTag: string): string {
     return rawTag.replace(/[^a-zA-Z0-9_\-]/g, '_').substring(0, 64);
 }
 
-export function resolveEffectiveProjectPath(currentPath: string | undefined, _requestMeta: RequestContextMeta | undefined): string | undefined {
-    // According to spec.md section 3.1.2, `currentPath` (derived from AI's `project_path`) is mandatory and the sole source.
-    // It must be an absolute path.
-    if (!currentPath) {
-        debugLog('[Utils] effectiveProjectPath error: currentPath (from AI project_path) is undefined.');
-        return undefined; // This should be caught by the caller in tool.ts
+export function resolveEffectiveProjectPath(currentPath: string | undefined, fallbackPath?: string | undefined): string | null {
+    // Use the provided path or fallback
+    const pathToCheck = currentPath || fallbackPath;
+    
+    if (!pathToCheck) {
+        debugLog('[Utils] effectiveProjectPath error: no path provided.');
+        return null;
     }
 
-    if (!path.isAbsolute(currentPath)) {
-        debugLog(`[Utils] effectiveProjectPath error: currentPath '${currentPath}' is not an absolute path.`);
-        return undefined; // Caller in tool.ts will return an error message.
+    // Handle relative paths
+    const absolutePath = path.isAbsolute(pathToCheck) ? pathToCheck : path.resolve(pathToCheck);
+
+    // Check if path exists and is a directory
+    if (!fs.existsSync(absolutePath)) {
+        debugLog(`[Utils] effectiveProjectPath error: path '${absolutePath}' does not exist.`);
+        return null;
     }
 
     try {
-        const stats = fs.statSync(currentPath);
+        const stats = fs.lstatSync(absolutePath);
         if (!stats.isDirectory()) {
-            debugLog(`[Utils] effectiveProjectPath error: currentPath '${currentPath}' is not a directory.`);
-            return undefined; // Caller in tool.ts will return an error message.
+            debugLog(`[Utils] effectiveProjectPath error: path '${absolutePath}' is not a directory.`);
+            return null;
         }
     } catch (e:any) {
-        debugLog(`[Utils] effectiveProjectPath error: fs.statSync failed for '${currentPath}'. Error: ${e.message}`);
-        return undefined; // Caller in tool.ts will return an error message.
+        debugLog(`[Utils] effectiveProjectPath error: fs.lstatSync failed for '${absolutePath}'. Error: ${e.message}`);
+        return null;
     }
 
-    debugLog(`[Utils] Validated effectiveProjectPath: ${currentPath}`);
-    return currentPath;
+    debugLog(`[Utils] Validated effectiveProjectPath: ${absolutePath}`);
+    return absolutePath;
 }
 
-export function resolveDefaultTag(currentTag: string | undefined, projectPath: string | undefined): string | undefined {
-    let resolvedTag = currentTag;
-    if (typeof resolvedTag === 'string' && resolvedTag.trim() === '') { // Treat empty string tag as undefined
+export function resolveDefaultTag(currentTag: string | number | undefined, projectPath: string | undefined): string | null {
+    // Handle various tag types
+    let resolvedTag: string | undefined;
+    
+    if (typeof currentTag === 'number') {
+        resolvedTag = currentTag.toString();
+    } else if (typeof currentTag === 'string') {
+        resolvedTag = currentTag.trim() === '' ? undefined : currentTag;
+    } else {
         resolvedTag = undefined;
     }
+    
     if (!resolvedTag && projectPath) {
         let base = path.basename(projectPath);
         if (base === '/' || base === '') {
@@ -57,7 +69,22 @@ export function resolveDefaultTag(currentTag: string | undefined, projectPath: s
         }
         debugLog(`[Utils] Derived tag '${resolvedTag}' from projectPath '${projectPath}'`);
     }
-    return resolvedTag;
+    
+    return resolvedTag || null;
+}
+
+export function extractOutputForAction(action: string, jsonData: any): string | null {
+    switch (action) {
+        case 'read':
+            return jsonData.readOutput || null;
+        case 'exec':
+            return jsonData.execResult?.output || null;
+        case 'list':
+        case 'info':
+            return JSON.stringify(jsonData, null, 2);
+        default:
+            return null;
+    }
 }
 
 export function formatCliOutputForAI(

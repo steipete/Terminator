@@ -26,6 +26,14 @@ RELEASE_LINKER_FLAGS="-Xlinker -dead_strip"
 
 echo "🚀 Starting universal release build for ${PRODUCT_NAME}..."
 
+# Inject version from package.json
+echo "📝 Injecting version from package.json..."
+if [ -f "../scripts/inject-version.sh" ]; then
+    (cd .. && ./scripts/inject-version.sh)
+else
+    echo "⚠️  Version injection script not found, using hardcoded version"
+fi
+
 # Run linting checks first
 echo "🔍 Running SwiftLint..."
 if command -v swiftlint >/dev/null 2>&1; then

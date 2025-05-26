@@ -172,6 +172,50 @@ function checkTypeScript() {
   return true;
 }
 
+function checkFileSize() {
+  logStep('File Size Check');
+
+  log('Checking for files exceeding 500 LOC...', colors.cyan);
+  
+  // Get all TypeScript and Swift files
+  const tsFiles = exec(`find "${projectRoot}/src" -name "*.ts" -type f`).split('\n').filter(f => f.trim());
+  const swiftFiles = exec(`find "${projectRoot}/cli/Sources" -name "*.swift" -type f`).split('\n').filter(f => f.trim());
+  
+  let oversizedFiles = [];
+  
+  // Check TypeScript files
+  for (const file of tsFiles) {
+    if (!file.trim()) continue;
+    const lineCount = exec(`wc -l < "${file}"`).trim();
+    const lines = parseInt(lineCount, 10);
+    if (lines > 500) {
+      oversizedFiles.push({ file: file.replace(projectRoot + '/', ''), lines });
+    }
+  }
+  
+  // Check Swift files
+  for (const file of swiftFiles) {
+    if (!file.trim()) continue;
+    const lineCount = exec(`wc -l < "${file}"`).trim();
+    const lines = parseInt(lineCount, 10);
+    if (lines > 500) {
+      oversizedFiles.push({ file: file.replace(projectRoot + '/', ''), lines });
+    }
+  }
+  
+  if (oversizedFiles.length > 0) {
+    logError(`Found ${oversizedFiles.length} files exceeding 500 lines:`);
+    oversizedFiles.forEach(({ file, lines }) => {
+      logError(`  ${file}: ${lines} lines`);
+    });
+    logError('Consider refactoring these files to be under 500 lines (ideally under 300)');
+    return false;
+  }
+  
+  logSuccess('All files are within the 500 line limit');
+  return true;
+}
+
 function checkSwift() {
   logStep('Swift Checks');
 
@@ -463,6 +507,95 @@ function checkTypeScriptDeclarations() {
   return true;
 }
 
+function checkLoggerConfiguration() {
+  logStep('Logger Configuration Check');
+
+  // Check if pino is installed
+  log('Checking pino dependency...', colors.cyan);
+  const packageJson = JSON.parse(readFileSync(join(projectRoot, 'package.json'), 'utf8'));
+  
+  if (!packageJson.dependencies || !packageJson.dependencies.pino) {
+    logError('pino is not listed as a dependency');
+    return false;
+  }
+  
+  if (!packageJson.dependencies['pino-pretty']) {
+    logError('pino-pretty is not listed as a dependency');
+    return false;
+  }
+  
+  logSuccess('Logger dependencies found');
+  
+  // Check if logger module exists
+  const loggerPath = join(projectRoot, 'src', 'logger.ts');
+  if (!existsSync(loggerPath)) {
+    logError('Logger module (src/logger.ts) not found');
+    return false;
+  }
+  
+  // Check logger exports
+  const loggerContent = readFileSync(loggerPath, 'utf8');
+  const requiredExports = ['logger', 'flushLogger', 'getLoggerConfig'];
+  const missingExports = requiredExports.filter(exp => !loggerContent.includes(`export ${exp}`) && !loggerContent.includes(`export function ${exp}`) && !loggerContent.includes(`export const ${exp}`));
+  
+  if (missingExports.length > 0) {
+    logError(`Logger module missing required exports: ${missingExports.join(', ')}`);
+    return false;
+  }
+  
+  logSuccess('Logger module structure verified');
+  
+  // Test logger with environment variables
+  log('Testing logger environment variables...', colors.cyan);
+  
+  const testEnv = {
+    ...process.env,
+    TERMINATOR_LOG_FILE: '/tmp/test-terminator.log',
+    TERMINATOR_LOG_LEVEL: 'debug',
+    TERMINATOR_CONSOLE_LOGGING: 'false'
+  };
+  
+  // Run a simple test to ensure logger initializes without errors
+  const testResult = exec(`node -e "import('./dist/logger.js').then(m => console.log('Logger initialized'))"`, {
+    env: testEnv,
+    allowFailure: true
+  });
+  
+  if (!testResult || !testResult.includes('Logger initialized')) {
+    logWarning('Logger initialization test failed - this may be OK if not built yet');
+  } else {
+    logSuccess('Logger initialization test passed');
+  }
+  
+  // Check for info command logger output
+  log('Checking info command includes logger configuration...', colors.cyan);
+  
+  const infoOutput = exec('./bin/terminator info --json 2>/dev/null', { allowFailure: true });
+  if (infoOutput) {
+    try {
+      const lines = infoOutput.split('\n').filter(line => line.trim());
+      const jsonStartIndex = lines.findIndex(line => line.trim().startsWith('{'));
+      
+      if (jsonStartIndex !== -1) {
+        const jsonOutput = lines.slice(jsonStartIndex).join('\n');
+        const infoData = JSON.parse(jsonOutput);
+        
+        if (!infoData.logger) {
+          logWarning('Info command does not include logger configuration');
+        } else if (!infoData.logger.logFile || !infoData.logger.logLevel) {
+          logWarning('Info command logger configuration incomplete');
+        } else {
+          logSuccess('Info command includes complete logger configuration');
+        }
+      }
+    } catch (e) {
+      logWarning('Could not parse info command output for logger check');
+    }
+  }
+  
+  return true;
+}
+
 function checkMCPServerSmoke() {
   logStep('MCP Server Smoke Test');
 
@@ -719,8 +852,10 @@ async function main() {
     checkVersionAvailability,
     checkVersionConsistency,
     checkChangelog,
+    checkFileSize,
     checkTypeScript,
     checkTypeScriptDeclarations,
+    checkLoggerConfiguration,
     checkSwift,
     buildAndVerifyPackage,
     checkPackageSize,

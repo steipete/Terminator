@@ -12,6 +12,14 @@ X86_64_BINARY_TEMP="$PROJECT_ROOT/bin/${FINAL_BINARY_NAME}-x86_64"
 # Ensure bin directory exists
 mkdir -p "$PROJECT_ROOT/bin"
 
+# Inject version from package.json
+echo "📝 Injecting version from package.json..."
+if [ -f "$PROJECT_ROOT/scripts/inject-version.sh" ]; then
+    (cd "$PROJECT_ROOT" && ./scripts/inject-version.sh)
+else
+    echo "⚠️  Version injection script not found, using hardcoded version"
+fi
+
 # Swift compiler flags for size optimization
 # -Osize: Optimize for binary size.
 # -wmo: Whole Module Optimization, allows more aggressive optimizations.

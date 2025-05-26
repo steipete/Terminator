@@ -21,23 +21,26 @@ import {
 } from './config.js';
 import { SWIFT_CLI_PATH } from './swift-cli.js';
 import { terminatorTool } from './tool.js'; // Assuming terminatorTool.handler is adaptable
-import { TerminatorExecuteParams } from './types.js';
+import { TerminatorExecuteParams, SdkCallContext } from './types.js';
+import { logger, flushLogger } from './logger.js';
 
 async function main() {
     // Startup checks for Swift CLI binary
     if (!fs.existsSync(SWIFT_CLI_PATH)) {
-        console.error(`FATAL: Swift CLI binary not found at expected path: ${SWIFT_CLI_PATH}`);
+        logger.fatal(`Swift CLI binary not found at expected path: ${SWIFT_CLI_PATH}`);
+        await flushLogger();
         process.exit(1);
     }
     try {
         fs.accessSync(SWIFT_CLI_PATH, fs.constants.X_OK);
     } catch (err) {
-        console.error(`FATAL: Swift CLI binary at ${SWIFT_CLI_PATH} is not executable. Please run 'chmod +x ${SWIFT_CLI_PATH}'.`);
+        logger.fatal(`Swift CLI binary at ${SWIFT_CLI_PATH} is not executable. Please run 'chmod +x ${SWIFT_CLI_PATH}'.`);
+        await flushLogger();
         process.exit(1);
     }
 
     if (!process.env.MCP_PORT && !process.env.MCP_SERVER_VIA_STDIO) { // StdioServerTransport doesn't use MCP_PORT
-        console.warn('MCP_PORT or MCP_SERVER_VIA_STDIO environment variable is not set. This plugin is meant to be run by an MCP host over stdio.');
+        logger.warn('MCP_PORT or MCP_SERVER_VIA_STDIO environment variable is not set. This plugin is meant to be run by an MCP host over stdio.');
         // return; // Allow to run for local testing if needed
     }
 
@@ -99,7 +102,7 @@ async function main() {
         const toolParams = receivedArgs as unknown as TerminatorExecuteParams;
 
         try {
-            const result = await terminatorTool.handler(toolParams, call); 
+            const result = await terminatorTool.handler(toolParams, { abortSignal: call.signal } as SdkCallContext); 
             return { content: [{ type: 'text', text: result.message }] }; // Adapt result to ServerResult
         } catch (error: any) {
             debugLog('[MainServer] Error executing tool:', error);
@@ -112,26 +115,30 @@ async function main() {
 
 
     server.onerror = (error) => {
-        console.error('[TerminatorMCP Server Error]', error);
+        logger.error({ error }, 'TerminatorMCP Server Error');
         // Optionally, send a diagnostic error to the client if possible/appropriate
     };
     process.on('SIGINT', async () => {
+        logger.info('Received SIGINT, shutting down gracefully');
         await server.close();
+        await flushLogger();
         process.exit(0);
     });
     
     try {
         const transport = new StdioServerTransport();
         await server.connect(transport);
-        console.error(`Terminator MCP server v${SERVER_VERSION} running via stdio, connected to host.`);
+        logger.info(`Terminator MCP server v${SERVER_VERSION} running via stdio, connected to host.`);
     } catch (error) {
-        console.error('Failed to start or connect Terminator MCP server:', error);
+        logger.error({ error }, 'Failed to start or connect Terminator MCP server');
+        await flushLogger();
         process.exit(1);
     }
 }
 
-main().catch(err => {
-    console.error("Terminator MCP plugin failed to run (uncaught error in main):", err);
+main().catch(async err => {
+    logger.fatal({ error: err }, "Terminator MCP plugin failed to run (uncaught error in main)");
+    await flushLogger();
     process.exit(1);
 });
 

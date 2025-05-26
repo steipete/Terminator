@@ -11,14 +11,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const SWIFT_CLI_NAME = 'terminator';
-export const SWIFT_CLI_PATH = path.resolve(__dirname, '..', 'bin', SWIFT_CLI_NAME);
+export const SWIFT_CLI_PATH = process.env.TERMINATOR_CLI_PATH || path.resolve(__dirname, '..', 'bin', SWIFT_CLI_NAME);
 
 export interface SwiftCLIResult {
     stdout: string;
     stderr: string;
     exitCode: number | null;
-    cancelled?: boolean;
-    internalTimeoutHit?: boolean;
+    cancelled: boolean;
+    internalTimeoutHit: boolean;
 }
 
 export async function invokeSwiftCLI(
@@ -40,11 +40,11 @@ export async function invokeSwiftCLI(
         controller.abort();
     };
     
-    if (mcpContext.signal) {
-        if (mcpContext.signal.aborted) {
-            return { stdout: '', stderr: '', exitCode: null, cancelled: true };
+    if (mcpContext.abortSignal) {
+        if (mcpContext.abortSignal.aborted) {
+            return { stdout: '', stderr: '', exitCode: null, cancelled: true, internalTimeoutHit: false };
         }
-        mcpContext.signal.addEventListener('abort', mcpCancellationListener);
+        mcpContext.abortSignal.addEventListener('abort', mcpCancellationListener);
     }
     
     // Set up internal timeout
@@ -103,7 +103,7 @@ export async function invokeSwiftCLI(
         // Handle aborted processes
         if (controller.signal.aborted) {
             if (mcpCancelled) {
-                return { stdout: '', stderr: '', exitCode: null, cancelled: true };
+                return { stdout: '', stderr: '', exitCode: null, cancelled: true, internalTimeoutHit: false };
             } else if (internalTimeoutHit) {
                 return { stdout: '', stderr: '', exitCode: null, cancelled: false, internalTimeoutHit: true };
             }
@@ -172,9 +172,9 @@ export async function invokeSwiftCLI(
         
     } finally {
         // Clean up event listener
-        if (mcpContext.signal && mcpCancellationListener) {
+        if (mcpContext.abortSignal && mcpCancellationListener) {
             try {
-                mcpContext.signal.removeEventListener('abort', mcpCancellationListener);
+                mcpContext.abortSignal.removeEventListener('abort', mcpCancellationListener);
             } catch (e) {
                 debugLog("Minor error removing abort listener:", e);
             }

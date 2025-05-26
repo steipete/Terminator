@@ -27,7 +27,8 @@
     "test:e2e": "vitest run tests/e2e",
     "test": "npm run test:e2e",
     "test:watch": "vitest tests/e2e",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "inspector": "npx @modelcontextprotocol/inspector node dist/index.js"
   },
   "author": "@steipete",
   "license": "MIT",
@@ -35,14 +36,16 @@
     "@modelcontextprotocol/sdk": "latest",
     "errno": "^1.0.0",
     "execa": "^9.5.3",
-    "node-pty": "latest"
+    "node-pty": "latest",
+    "pino": "^9.7.0",
+    "pino-pretty": "^13.0.0"
   },
   "devDependencies": {
     "@types/node": "latest",
     "@vitest/coverage-v8": "^1.6.0",
-    "vitest": "^1.6.0",
     "tsc-watch": "latest",
-    "typescript": "latest"
+    "typescript": "latest",
+    "vitest": "^1.6.0"
   },
   "os": [
     "darwin"

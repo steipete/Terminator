@@ -10,7 +10,7 @@ export interface TerminatorOptions {
 }
 
 export interface TerminatorExecuteParams {
-    action: 'exec' | 'read' | 'list' | 'info' | 'focus' | 'kill';
+    action?: 'execute' | 'read' | 'list' | 'info' | 'focus' | 'kill';
     project_path: string;
     tag?: string;
     command?: string;
@@ -26,11 +26,26 @@ export interface TerminatorResult {
 }
 
 export interface SdkCallContext {
-    signal?: AbortSignal;
+    abortSignal?: AbortSignal;
     // progress?: (update: any) => void; // Define ProgressUpdate if needed
+    logger?: {
+        debug: (message: string, ...args: any[]) => void;
+        info: (message: string, ...args: any[]) => void;
+        warn: (message: string, ...args: any[]) => void;
+        error: (message: string, ...args: any[]) => void;
+    };
 }
 
 export interface RequestContextMeta {
     roots?: { uri?: { scheme?: string; path?: string } }[];
     // Add other relevant properties from requestContext if needed
+}
+
+export interface SwiftCLIResult {
+    stdout: string;
+    stderr: string;
+    exitCode: number | null;
+    cancelled: boolean;
+    internalTimeoutHit: boolean;
+    // Add other fields if your Swift CLI might return them
 } 

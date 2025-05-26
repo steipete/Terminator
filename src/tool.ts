@@ -11,12 +11,16 @@ import {
     getCanonicalOptions,
     debugLog
 } from './config.js';
-import { invokeSwiftCLI, SwiftCLIResult } from './swift-cli.js'; 
+import { invokeSwiftCLI, SwiftCLIResult, SWIFT_CLI_PATH } from './swift-cli.js';
+import * as fs from 'node:fs'; 
 import {
     resolveEffectiveProjectPath,
     resolveDefaultTag,
     formatCliOutputForAI
 } from './utils.js';
+import { logger, getLoggerConfig } from './logger.js';
+import { validateExecuteParams, validateEnvironmentVariables } from './validation.js';
+import { SERVER_VERSION } from './config.js';
 
 export const terminatorTool = {
     name: 'execute',
@@ -24,16 +28,48 @@ export const terminatorTool = {
     inputSchema: {
         type: 'object',
         properties: {
-            action: { type: 'string', enum: ['exec', 'read', 'list', 'info', 'focus', 'kill'], description: "Optional. The operation to perform: 'execute', 'read', 'list', 'info', 'focus', or 'kill'. Defaults to 'execute'." },
-            project_path: { type: 'string', description: "Absolute path to the project directory. This is a mandatory field." },
-            tag: { type: 'string', description: "Optional. A unique identifier for the session (e.g., \"ui-build\", \"api-server\"). If omitted, a tag will be derived from the project_path." },
-            command: { type: 'string', description: "Optional, primarily for action: 'execute'. The shell command to execute. If action is 'execute' and command is empty or omitted, the session will be prepared (cleared, focused if applicable), but no new command is run." },
-            background: { type: 'boolean', default: DEFAULT_BACKGROUND_EXECUTION, description: `If true, command is long-running (default: ${DEFAULT_BACKGROUND_EXECUTION}).` }, 
-            lines: { type: 'number', default: DEFAULT_LINES, description: `Max recent output lines (default: ${DEFAULT_LINES}).` },
-            timeout: { type: 'number', description: `Timeout in seconds. Defaults depend on background flag (FG: ${DEFAULT_FOREGROUND_COMPLETION_SECONDS}s, BG: ${DEFAULT_BACKGROUND_STARTUP_SECONDS}s).` },
-            focus: { type: 'boolean', default: DEFAULT_FOCUS_ON_ACTION, description: `Bring terminal to front (default: ${DEFAULT_FOCUS_ON_ACTION}).` },
+            action: {
+                type: 'string',
+                description: "Optional. The operation to perform: 'execute', 'read', 'list', 'info', 'focus', or 'kill'. Defaults to 'execute'.",
+                enum: ['execute', 'read', 'list', 'info', 'focus', 'kill'],
+                default: 'execute'
+            },
+            project_path: { type: 'string', description: 'Absolute path to the project directory. This is a mandatory field.' },
+            tag: {
+                type: 'string',
+                description: 'Optional. A unique identifier for the session (e.g., "ui-build", "api-server"). If omitted, a tag will be derived from the project_path.',
+                optional: true
+            },
+            command: {
+                type: 'string',
+                description: "Optional, primarily for action: 'execute'. The shell command to execute. If action is 'execute' and command is empty or omitted, the session will be prepared (cleared, focused if applicable), but no new command is run.",
+                optional: true
+            },
+            background: {
+                type: 'boolean',
+                description: 'If true, command is long-running (default: false).',
+                optional: true,
+                default: false
+            },
+            lines: {
+                type: 'number',
+                description: 'Max recent output lines (default: 100).',
+                optional: true,
+                default: 100
+            },
+            timeout: {
+                type: 'number',
+                description: 'Timeout in seconds. Defaults depend on background flag (FG: 60s, BG: 5s).',
+                optional: true
+            },
+            focus: {
+                type: 'boolean',
+                description: 'Bring terminal to front (default: true).',
+                optional: true,
+                default: true
+            },
         },
-        required: ['action', 'project_path'],
+        required: ['project_path'],
         additionalProperties: true,
     },
     outputSchema: {
@@ -46,10 +82,23 @@ export const terminatorTool = {
     },
     async handler(params: TerminatorExecuteParams, context: SdkCallContext): Promise<TerminatorResult> {
         debugLog(`Received raw params:`, params);
+        
+        // Validate parameters
+        const validation = validateExecuteParams(params);
+        if (!validation.valid) {
+            return { 
+                success: false, 
+                message: `Parameter validation failed:\n${validation.errors.join('\n')}` 
+            };
+        }
 
-        const action = params.action;
-        if (![ 'exec', 'read', 'list', 'info', 'focus', 'kill'].includes(action)) {
-            return { success: false, message: `Error: Invalid action '${action}'. Must be one of exec, read, list, info, focus, kill.` };
+        const action = params.action || 'execute';
+        
+        // Map 'execute' to 'exec' for internal use
+        const internalAction = action === 'execute' ? 'exec' : action;
+        
+        if (!['exec', 'execute', 'read', 'list', 'info', 'focus', 'kill'].includes(action)) {
+            return { success: false, message: `Error: Invalid action '${action}'. Must be one of execute, read, list, info, focus, kill.` };
         }
         
         const options = getCanonicalOptions(params as any);
@@ -62,7 +111,7 @@ export const terminatorTool = {
         }
 
         let commandOpt: string | undefined = typeof options.command === 'string' ? options.command : undefined;
-        if (action === 'exec' && options.command === undefined) commandOpt = '';
+        if (internalAction === 'exec' && options.command === undefined) commandOpt = '';
         
         let lines = typeof options.lines === 'number' ? options.lines : DEFAULT_LINES;
         if (typeof options.lines === 'string') lines = parseInt(options.lines, 10) || DEFAULT_LINES;
@@ -88,25 +137,25 @@ export const terminatorTool = {
 
         let tag = resolveDefaultTag(options.tag, effectiveProjectPath);
 
-        if (!tag && ['exec', 'read', 'kill', 'focus'].includes(action) && action !== 'list' && action !== 'info') {
+        if (!tag && ['exec', 'execute', 'read', 'kill', 'focus'].includes(action) && action !== 'list' && action !== 'info') {
             const errorMsg = 'Error: Could not determine a session tag even with a project_path. This indicates an internal issue.';
-            console.error(errorMsg, { tagVal: options.tag, projPath: effectiveProjectPath });
+            logger.error({ tagVal: options.tag, projPath: effectiveProjectPath }, errorMsg);
             return { success: false, message: errorMsg };
         }
         
-        const cliArgs: string[] = [action];
+        const cliArgs: string[] = [internalAction];
         if (tag) {
-            if (action === 'list' && options.tag) { 
+            if (internalAction === 'list' && options.tag) { 
                 /* Will be added as --tag option later */
-            } else if (action !== 'list' && action !== 'info') {
+            } else if (internalAction !== 'list' && internalAction !== 'info') {
                 cliArgs.push(tag);
             }
         }
 
-        if (effectiveProjectPath && action !== 'info') {
+        if (effectiveProjectPath && internalAction !== 'info') {
             cliArgs.push('--project-path', effectiveProjectPath);
         }
-        if (commandOpt !== undefined && action === 'exec') { 
+        if (commandOpt !== undefined && internalAction === 'exec') { 
             // Only add --command if there's actually a command to execute
             // Empty string means "prepare session only" and shouldn't have --command flag
             if (commandOpt !== '') {
@@ -114,16 +163,16 @@ export const terminatorTool = {
             }
         }
         
-        if (action === 'exec' || action === 'read') {
+        if (internalAction === 'exec' || internalAction === 'read') {
             cliArgs.push('--lines', lines.toString());
         }
         
         const focusModeCli = focus ? 'force-focus' : 'no-focus'; 
-        if (['exec', 'read', 'kill', 'focus'].includes(action)) {
+        if (['exec', 'read', 'kill', 'focus'].includes(internalAction)) {
             cliArgs.push('--focus-mode', focusModeCli);
         }
 
-        if (action === 'exec') {
+        if (internalAction === 'exec') {
             if (background) {
                 cliArgs.push('--background');
             }
@@ -132,10 +181,10 @@ export const terminatorTool = {
             }
         }
         
-        if (action === 'list' || action === 'info') {
+        if (internalAction === 'list' || internalAction === 'info' || internalAction === 'read') {
             cliArgs.push('--json');
         }
-        if (action === 'list' && tag && options.tag) { 
+        if (internalAction === 'list' && tag && options.tag) { 
             cliArgs.push('--tag', tag); 
         }
 
@@ -150,6 +199,46 @@ export const terminatorTool = {
 
         try {
             const result: SwiftCLIResult = await invokeSwiftCLI(cliArgs, terminatorEnv, context, internalWrapperTimeout);
+            
+            // Handle info action specially to add logger configuration
+            if (internalAction === 'info' && result.exitCode === 0) {
+                try {
+                    const infoData = JSON.parse(result.stdout);
+                    const loggerConfig = getLoggerConfig();
+                    
+                    // Add logger configuration to the info output
+                    const envIssues = validateEnvironmentVariables();
+                    infoData.logger = {
+                        logFile: loggerConfig.logFile,
+                        logLevel: loggerConfig.logLevel,
+                        consoleLogging: loggerConfig.consoleLogging,
+                        environmentVariables: {
+                            TERMINATOR_LOG_FILE: process.env.TERMINATOR_LOG_FILE || '(not set)',
+                            TERMINATOR_LOG_LEVEL: process.env.TERMINATOR_LOG_LEVEL || '(not set)',
+                            TERMINATOR_CONSOLE_LOGGING: process.env.TERMINATOR_CONSOLE_LOGGING || '(not set)'
+                        },
+                        configurationIssues: envIssues
+                    };
+                    
+                    // Verify Swift CLI binary
+                    infoData.swiftCLI = {
+                        path: SWIFT_CLI_PATH,
+                        exists: fs.existsSync(SWIFT_CLI_PATH),
+                        executable: (() => {
+                            try {
+                                fs.accessSync(SWIFT_CLI_PATH, fs.constants.X_OK);
+                                return true;
+                            } catch {
+                                return false;
+                            }
+                        })()
+                    };
+                    
+                    return { success: true, message: JSON.stringify(infoData, null, 2) };
+                } catch (e) {
+                    logger.error({ error: e }, 'Failed to parse info output');
+                }
+            }
 
             if (result.cancelled) {
                 return { success: false, message: 'Terminator action cancelled by request.' };
@@ -182,7 +271,7 @@ export const terminatorTool = {
                 
                 // Add diagnostic info
                 errorDetails.push(`Terminal app: ${CURRENT_TERMINAL_APP}`);
-                errorDetails.push(`Action: ${action}, Tag: ${tag || 'auto-generated'}`);
+                errorDetails.push(`Action: ${internalAction}, Tag: ${tag || 'auto-generated'}`);
                 if (commandOpt) errorDetails.push(`Command: ${commandOpt}`);
                 errorDetails.push(`Project: ${effectiveProjectPath}`);
                 
@@ -195,7 +284,7 @@ export const terminatorTool = {
                 const fullError = errorDetails.join('\n');
                 return { success: false, message: `Terminator Error: Swift CLI process terminated unexpectedly\n\n${fullError}` };
             } else if (result.exitCode === 0) {
-                const message = formatCliOutputForAI(action, result, commandOpt, tag, background, timeoutOverride);
+                const message = formatCliOutputForAI(internalAction, result, commandOpt, tag || undefined, background, timeoutOverride);
                 return { success: true, message };
             } else {
                 let errMsg = result.stderr.trim() || result.stdout.trim() || 'Unknown error from Swift CLI';
@@ -227,7 +316,7 @@ export const terminatorTool = {
                 return { success: false, message: `Terminator Error (Swift CLI Code ${result.exitCode}): ${errMsg}` };
             }
         } catch (error: any) {
-            debugLog('Error invoking or processing Swift CLI result:', error);
+            logger.error({ error }, 'Error invoking or processing Swift CLI result');
             return { success: false, message: `Terminator plugin internal error: ${error.message}` };
         }
     }

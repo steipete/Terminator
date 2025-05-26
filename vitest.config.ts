@@ -7,7 +7,7 @@ export default defineConfig({
     environment: 'node',
     testTimeout: 30000, // 30 seconds for e2e tests
     hookTimeout: 30000,
-    include: ['tests/**/*.test.ts'],
+    include: ['tests/**/*.test.ts', 'src/**/*.test.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

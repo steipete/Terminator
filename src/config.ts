@@ -5,6 +5,7 @@ import * as fs from 'node:fs'; // Import fs for file operations
 import * as path from 'node:path'; // Import path for joining
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { logger } from './logger.js';
 
 // Get version from package.json
 const __filename = fileURLToPath(import.meta.url);
@@ -15,27 +16,10 @@ export const SERVER_VERSION = packageJson.version || 'unknown';
 
 // --- Utility Functions ---
 
-// Use a known writable directory, like the one TERMINATOR_LOG_DIR points to.
-const nodejsDebugLogFilePath = '/Users/steipete/Library/Logs/terminator-mcp/terminator_nodejs_debug.log';
+// Logger is now handled by pino in logger.ts
 
 export function debugLog(message: string, ...args: any[]) {
-    // Basic debug logging, now appends to a file.
-    try {
-        const timestamp = new Date().toISOString();
-        const logMessage = `${timestamp} [TerminatorMCP v${SERVER_VERSION} NodeJS DEBUG] ${message} ${args.map(arg => {
-            try {
-                return JSON.stringify(arg, null, 2);
-            } catch (e) {
-                return '[UnserializableArg]'; // Handle potential circular structures or other errors
-            }
-        }).join(' ')}\\n`;
-        // Ensure the directory exists (optional, but good practice for robustness if it might not)
-        // For now, assuming /Users/steipete/Library/Logs/terminator-mcp/ exists as per Swift config.
-        fs.appendFileSync(nodejsDebugLogFilePath, logMessage);
-    } catch (e) {
-        console.error(`Failed to write to NodeJS debug log file '${nodejsDebugLogFilePath}':`, e);
-        console.debug(`Original NodeJS debug message: ${message}`, ...args);
-    }
+    logger.debug({ args }, message);
 }
 
 // --- Configuration Loading (as per SDD 3.1.2 for dynamic description) ---
