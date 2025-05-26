@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.6] - 2025-05-26
+
+### Added
+- **Enhanced Error Diagnostics**: Comprehensive error messages when Swift CLI terminates unexpectedly
+  - Specific handling for spawn errors (ENOENT, EACCES, EPERM)
+  - Detection of common issues like missing permissions or binary corruption
+  - Detailed diagnostic information including terminal app, action, command, and project path
+  - Clear troubleshooting steps for each error type
+  - Helpful guidance for automation permission issues
+
+### Changed
+- **Error Handling**: Improved error handling in both tool.ts and swift-cli.ts for better user experience
+  - Process spawn errors now provide specific, actionable error messages
+  - Null exit codes are handled with detailed diagnostics instead of generic errors
+
 ## [1.0.0-alpha.5] - 2025-01-26
 
 ### Fixed
