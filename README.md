@@ -1,13 +1,11 @@
-# @steipete/terminator-mcp
+# Terminator MCP: I'll be back... with your terminal output! 🤖
+
+![Terminator Logo](https://raw.githubusercontent.com/steipete/terminator/main/assets/logo.png)
 
 [![npm version](https://badge.fury.io/js/%40steipete%2Fterminator-mcp.svg)](https://www.npmjs.com/package/@steipete/terminator-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![macOS](https://img.shields.io/badge/macOS-14.0%2B-blue.svg)](https://www.apple.com/macos/)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
-
-**Version:** 1.0.0-alpha.2
-
-**MCP plugin to manage macOS terminal sessions.**
 
 Terminator is an `npx`-installable Model Context Protocol (MCP) plugin designed to provide AI agents with robust, simplified, and intelligent control over macOS terminal sessions. It uses a Swift-based command-line interface (CLI) internally to interact with terminal applications like Apple Terminal, iTerm2, and Ghosty.
 

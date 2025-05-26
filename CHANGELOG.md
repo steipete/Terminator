@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.3] - 2025-01-26
+
+### Fixed
+- **AppleScript Error Handling**: Fixed "Can't get index of every tab of window id" error when Terminal windows are closed
+- **Session Listing**: Made session listing more robust by handling inaccessible windows/tabs gracefully
+
 ## [1.0.0-alpha.2] - 2025-01-26
 
 ### Fixed

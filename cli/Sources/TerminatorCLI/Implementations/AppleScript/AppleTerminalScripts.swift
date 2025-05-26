@@ -12,22 +12,24 @@ enum AppleTerminalScripts {
         tell application "\(appName)"
             if not running then error "Terminal application \(appName) is not running."
             try
-                set window_indices to index of windows
-                repeat with i from 1 to count of window_indices
-                    set w_index to item i of window_indices
-                    set w to window id (id of window w_index)
-
-                    set tab_indices to index of tabs of w
-                    repeat with j from 1 to count of tab_indices
-                        set t_index to item j of tab_indices
-                        set t to tab id (id of tab t_index of w)
-
-                        set ttyPath to tty of t
-                        set customTitle to custom title of t
-                        if customTitle is missing value then set customTitle to ""
-
-                        set end of output_list to {"win_id:" & (id of w as string), "tab_id:" & (id of t as string), "tty:" & ttyPath, "title:" & customTitle}
-                    end repeat
+                repeat with w in windows
+                    try
+                        set w_id to id of w
+                        repeat with t in tabs of w
+                            try
+                                set t_id to id of t
+                                set ttyPath to tty of t
+                                set customTitle to custom title of t
+                                if customTitle is missing value then set customTitle to ""
+                                
+                                set end of output_list to {"win_id:" & (w_id as string), "tab_id:" & (t_id as string), "tty:" & ttyPath, "title:" & customTitle}
+                            on error tabErr
+                                -- Skip this tab if we can't access it
+                            end try
+                        end repeat
+                    on error winErr
+                        -- Skip this window if we can't access it
+                    end try
                 end repeat
             on error errMsg number errNum
                 error "AppleScript Error (Code " & (errNum as string) & "): " & errMsg
