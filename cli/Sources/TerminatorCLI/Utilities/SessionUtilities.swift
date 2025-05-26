@@ -33,10 +33,19 @@ enum SessionUtilities {
         var ttyPath: String?
         var pid: pid_t?
 
-        let trimmedTitle: String = if title.hasPrefix(sessionPrefix) && title.count >= sessionPrefix.count {
-            String(title.dropFirst(sessionPrefix.count))
+        // Safely remove the prefix from title
+        let trimmedTitle: String
+        if title.hasPrefix(sessionPrefix) {
+            let startIndex = title.index(title.startIndex, offsetBy: sessionPrefix.count)
+            // Ensure we don't go beyond the string bounds
+            if startIndex < title.endIndex {
+                trimmedTitle = String(title[startIndex...])
+            } else {
+                // Title is exactly the prefix or somehow invalid
+                trimmedTitle = ""
+            }
         } else {
-            title
+            trimmedTitle = title
         }
         let components = trimmedTitle.split(separator: "::").filter { !$0.isEmpty }
 

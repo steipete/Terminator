@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.7] - 2025-05-26
+
+### Added
+- **CLI Parameter Error Handling**: Added proper handling for exit code 64 (command line usage errors)
+  - Invalid parameters now show clear error messages with usage information
+  - Extracts and displays correct usage syntax when available
+
+### Fixed
+- **Info Command**: Fixed issue where `--project-path` was incorrectly passed to info command
+- **Error Message Clarity**: CLI parameter errors are now properly captured and displayed to users
+
 ## [1.0.0-alpha.6] - 2025-05-26
 
 ### Added

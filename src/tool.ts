@@ -104,7 +104,7 @@ export const terminatorTool /*: McpTool<TerminatorExecuteParams, TerminatorResul
             }
         }
 
-        if (effectiveProjectPath) {
+        if (effectiveProjectPath && action !== 'info') {
             cliArgs.push('--project-path', effectiveProjectPath);
         }
         if (commandOpt !== undefined && action === 'exec') { 
@@ -196,12 +196,31 @@ export const terminatorTool /*: McpTool<TerminatorExecuteParams, TerminatorResul
                 return { success: true, message };
             } else {
                 let errMsg = result.stderr.trim() || result.stdout.trim() || 'Unknown error from Swift CLI';
-                if (result.exitCode === 2) errMsg = `Configuration Error: ${errMsg}`;
-                else if (result.exitCode === 3) errMsg = `AppleScript Communication Error: ${errMsg}`;
-                else if (result.exitCode === 4) errMsg = `Process Control Error: ${errMsg}`;
-                else if (result.exitCode === 5) errMsg = `Invalid CLI Arguments/Usage: ${errMsg}`;
-                else if (result.exitCode === 6) errMsg = `Unsupported Operation for App: ${errMsg}`;
-                else if (result.exitCode === 7) errMsg = `File/IO Error: ${errMsg}`;
+                
+                // Handle specific exit codes
+                if (result.exitCode === 2) {
+                    errMsg = `Configuration Error: ${errMsg}`;
+                } else if (result.exitCode === 3) {
+                    errMsg = `AppleScript Communication Error: ${errMsg}`;
+                } else if (result.exitCode === 4) {
+                    errMsg = `Process Control Error: ${errMsg}`;
+                } else if (result.exitCode === 5) {
+                    errMsg = `Invalid CLI Arguments/Usage: ${errMsg}`;
+                } else if (result.exitCode === 6) {
+                    errMsg = `Unsupported Operation for App: ${errMsg}`;
+                } else if (result.exitCode === 7) {
+                    errMsg = `File/IO Error: ${errMsg}`;
+                } else if (result.exitCode === 64) {
+                    // Standard Unix exit code for command line usage error
+                    errMsg = `Invalid Command Line Usage: ${errMsg}`;
+                    
+                    // Extract usage information if present
+                    const usageMatch = errMsg.match(/Usage: (.+?)(?:\n|$)/);
+                    if (usageMatch) {
+                        errMsg += `\n\nCorrect usage: ${usageMatch[1]}`;
+                    }
+                }
+                
                 return { success: false, message: `Terminator Error (Swift CLI Code ${result.exitCode}): ${errMsg}` };
             }
         } catch (error: any) {
