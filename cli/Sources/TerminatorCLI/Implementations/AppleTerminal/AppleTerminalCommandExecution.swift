@@ -60,8 +60,8 @@ extension AppleTerminalControl {
                 // SDD 3.2.5: "If process still exists after timeout, execute fails with error code 4"
                 // Throwing error here to adhere to spec.
                 throw TerminalControllerError.internalError(
-                        details: "Failed to stop busy process (PGID: \(foundPgid)) on TTY \(tty) before command execution."
-                    )
+                    details: "Failed to stop busy process (PGID: \(foundPgid)) on TTY \(tty) before command execution."
+                )
             } else {
                 Logger.log(
                     level: .info,
@@ -252,7 +252,6 @@ extension AppleTerminalControl {
             wasKilledByTimeout: timedOut
         )
     }
-
 }
 
 extension String {
