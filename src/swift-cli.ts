@@ -60,7 +60,7 @@ export async function invokeSwiftCLI(
         const result = await execa(SWIFT_CLI_PATH, cliArgs, {
             env: { ...process.env, ...terminatorEnv },
             cwd: path.resolve(__dirname, '..'),
-            signal: controller.signal,
+            cancelSignal: controller.signal, // Changed from 'signal' to 'cancelSignal' in newer execa versions
             reject: false, // Don't throw on non-zero exit codes
             all: true, // Combine stdout and stderr for easier debugging
         });

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.10] - 2025-05-26
+
+### Fixed
+- **Execa Compatibility**: Fixed `signal` option renamed to `cancelSignal` in newer execa versions
+- **Debug Logging**: Added version number to all debug log entries (e.g., `[TerminatorMCP v1.0.0-alpha.10 NodeJS DEBUG]`)
+
+### Changed
+- **Version Management**: Centralized version reading in config module to avoid duplication
+- **Error Messages**: Swift CLI errors are now properly captured and passed to the client
+
 ## [1.0.0-alpha.9] - 2025-05-26
 
 ### Added

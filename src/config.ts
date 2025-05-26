@@ -3,6 +3,15 @@
 import { TerminatorOptions } from './types.js';
 import * as fs from 'node:fs'; // Import fs for file operations
 import * as path from 'node:path'; // Import path for joining
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+// Get version from package.json
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const packageJsonPath = path.resolve(__dirname, '..', 'package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+export const SERVER_VERSION = packageJson.version || 'unknown';
 
 // --- Utility Functions ---
 
@@ -13,7 +22,7 @@ export function debugLog(message: string, ...args: any[]) {
     // Basic debug logging, now appends to a file.
     try {
         const timestamp = new Date().toISOString();
-        const logMessage = `${timestamp} [TerminatorMCP NodeJS DEBUG] ${message} ${args.map(arg => {
+        const logMessage = `${timestamp} [TerminatorMCP v${SERVER_VERSION} NodeJS DEBUG] ${message} ${args.map(arg => {
             try {
                 return JSON.stringify(arg, null, 2);
             } catch (e) {
