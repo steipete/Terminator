@@ -153,6 +153,6 @@ enum SessionUtilities {
         } else {
             projectName = "Global"
         }
-        return "\(projectName): \(tag)"
+        return "🤖💥 \(projectName): \(tag)"
     }
 }
