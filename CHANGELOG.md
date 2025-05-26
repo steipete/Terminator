@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.9] - 2025-05-26
+
+### Added
+- **Enhanced Error Logging**: Added detailed error logging for Swift CLI execution failures
+  - Logs error code, exit code, signal, stdout/stderr snippets, and execution details
+  - Helps diagnose issues when Swift CLI crashes or fails to execute
+
+### Known Issues
+- Swift CLI crashing with Range bounds error on command execution (investigating)
+
 ## [1.0.0-alpha.8] - 2025-05-26
 
 ### Changed

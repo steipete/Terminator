@@ -136,7 +136,21 @@ export async function invokeSwiftCLI(
                 }
             }
             
-            debugLog('Failed to execute Swift CLI:', execaError);
+            // Log detailed error information
+            debugLog('Failed to execute Swift CLI:', {
+                message: execaError.message,
+                code: 'code' in execaError ? execaError.code : undefined,
+                exitCode: execaError.exitCode,
+                signal: execaError.signal,
+                signalDescription: execaError.signalDescription,
+                stdout: typeof execaError.stdout === 'string' ? execaError.stdout.substring(0, 200) : undefined,
+                stderr: typeof execaError.stderr === 'string' ? execaError.stderr.substring(0, 200) : undefined,
+                command: execaError.command,
+                escapedCommand: execaError.escapedCommand,
+                failed: execaError.failed,
+                timedOut: execaError.timedOut,
+                isCanceled: execaError.isCanceled
+            });
             
             return {
                 stdout: typeof execaError.stdout === 'string' ? execaError.stdout : '',
