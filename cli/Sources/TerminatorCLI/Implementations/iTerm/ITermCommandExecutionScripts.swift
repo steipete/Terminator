@@ -117,16 +117,17 @@ enum ITermCommandExecutionScripts {
         """
     }
 
-    static func getPGIDAppleScript(ttyNameOnly: String) -> String {
-        let shellCommand = findPgidScriptForKill(ttyNameOnly: ttyNameOnly)
-        let escapedShellCommand = shellCommand.replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "\"", with: "\\\"")
-        return "do shell script \"\(escapedShellCommand)\""
-    }
+    // PGID fetching is now done via Swift ProcessUtilities
+    // static func getPGIDAppleScript(ttyNameOnly: String) -> String {
+    //     let shellCommand = findPgidScriptForKill(ttyNameOnly: ttyNameOnly)
+    //     let escapedShellCommand = shellCommand.replacingOccurrences(of: "\\", with: "\\\\")
+    //         .replacingOccurrences(of: "\"", with: "\\\"")
+    //     return "do shell script \"\(escapedShellCommand)\""
+    // }
 
-    static func findPgidScriptForKill(ttyNameOnly: String) -> String {
-        // Escaping for "do shell script" needs to be handled by the caller if this string is embedded.
-        // This returns a raw shell command string.
-        "ps -t \(ttyNameOnly) -o pgid=,stat=,pid=,command= | awk '$2 ~ /\\+/ {print $1 \" \" $3}' | head -n 1"
-    }
+    // static func findPgidScriptForKill(ttyNameOnly: String) -> String {
+    //     // Escaping for "do shell script" needs to be handled by the caller if this string is embedded.
+    //     // This returns a raw shell command string.
+    //     "ps -t \(ttyNameOnly) -o pgid=,stat=,pid=,command= | awk '$2 ~ /\\+/ {print $1 \" \" $3}' | head -n 1"
+    // }
 }

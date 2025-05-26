@@ -241,33 +241,6 @@ enum ITermParser {
         Logger.log(level: .info, "[ITermParser] iTerm \(actionName) reported success: \(status)")
     }
 
-    // New parser for PGID script result
-    static func parsePgidOutput(resultData: Any, scriptContent _: String, tty: String) throws -> pid_t? {
-        Logger.log(level: .debug, "[ITermParser] Parsing PGID output for TTY \(tty). Data: \(resultData)")
-        guard let resultStr = resultData as? String else {
-            let errorMsg = "PGID script for TTY \(tty) did not return a string. Output: \(resultData)"
-            Logger.log(level: .warn, "[ITermParser] \(errorMsg)")
-            return nil
-        }
-
-        let trimmedPgidString = resultStr.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedPgidString.isEmpty {
-            Logger.log(level: .info, "[ITermParser] No PGID returned by script for TTY \(tty) (empty string).")
-            return nil
-        }
-
-        if let parsedPgid = pid_t(trimmedPgidString), parsedPgid > 0 {
-            Logger.log(level: .info, "[ITermParser] Successfully parsed PGID \(parsedPgid) for TTY \(tty).")
-            return parsedPgid
-        } else {
-            Logger.log(
-                level: .warn,
-                "[ITermParser] Invalid PGID string '\(trimmedPgidString)' received for TTY \(tty)."
-            )
-            return nil
-        }
-    }
-
     struct ExecuteCommandOutputParams {
         let appleScriptResultData: Any
         let scriptContent: String

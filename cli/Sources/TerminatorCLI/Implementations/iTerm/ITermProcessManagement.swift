@@ -121,36 +121,36 @@ extension ITermControl {
 
     private func findPGID(tty: String, tag: String) -> PGIDResult {
         let ttyNameOnly = (tty as NSString).lastPathComponent
-        let pgidFindScript = ITermScripts.getPGIDAppleScript(ttyNameOnly: ttyNameOnly)
-
         Logger.log(
             level: .debug,
-            "[ITermControl] Executing PGID find script for iTerm: \(pgidFindScript)",
+            "[ITermControl] Attempting to find PGID for TTY \(ttyNameOnly) using ProcessUtilities.",
             file: #file,
             function: #function
         )
 
-        let pgidFindResult = AppleScriptBridge.runAppleScript(script: pgidFindScript)
-
-        switch pgidFindResult {
-        case let .success(resultStringOrArray):
-            let parseResult = parsePgidFromResult(resultStringOrArray: resultStringOrArray, tty: tty, tag: tag)
+        if let processDetails = ProcessUtilities.getForegroundProcessInfo(forTTY: ttyNameOnly) {
+            let pgid = processDetails.pgid
+            let message = " Found PGID \(pgid) for iTerm session \(tag) (TTY: \(ttyNameOnly)) using ProcessUtilities."
+            Logger.log(level: .info, "[ITermControl]\(message)", file: #file, function: #function)
             return PGIDResult(
-                pgid: parseResult.pgid,
-                message: parseResult.message,
-                shouldReturnEarly: parseResult.shouldReturnEarly,
+                pgid: pgid,
+                message: message,
+                shouldReturnEarly: false,
                 error: nil
             )
-
-        case let .failure(error):
-            let message = " Failed to query processes on TTY \(tty) for iTerm session: \(error.localizedDescription)."
-            Logger.log(
-                level: .error,
-                "[ITermControl] Failed to run ps to find PGID on TTY \(tty) for iTerm: \(error.localizedDescription)",
-                file: #file,
-                function: #function
+        } else {
+            let message = " Could not find PGID for TTY \(ttyNameOnly) using ProcessUtilities for iTerm session \(tag)."
+            Logger.log(level: .warn, "[ITermControl]\(message)", file: #file, function: #function)
+            // shouldReturnEarly: true if no PGID means we should proceed to Ctrl+C or skip further kill attempts.
+            // This depends on the calling logic in findAndKillProcess.
+            // If preKillScriptPath is nil, findAndKillProcess will try Ctrl+C if pgid is nil.
+            // So, shouldReturnEarly: true seems appropriate here if no PGID is found by ps.
+            return PGIDResult(
+                pgid: nil,
+                message: message,
+                shouldReturnEarly: true, 
+                error: nil // Not an AppleScript error, but a failure to find PGID via ps.
             )
-            return PGIDResult(pgid: nil, message: message, shouldReturnEarly: false, error: error)
         }
     }
 
