@@ -68,4 +68,4 @@ on error e
 end try
 
 log "All tests completed!"
-return "TEST_SUITE_COMPLETE"
+return "PASSED"
