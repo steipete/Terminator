@@ -10,4 +10,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Misc
-.DS_Store 
+.DS_Store
+
+# LLVM bitcode files
+*.bc 

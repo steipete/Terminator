@@ -11,17 +11,13 @@ PRODUCT_NAME="terminator"
 
 # Swift compiler and linker flags for optimization and size reduction
 # -Osize: Optimize for code size.
-# -wmo: Whole Module Optimization.
+# -wmo: Whole Module Optimization (default in release).
 # -Xlinker -dead_strip: Remove unused code at the link stage.
-# -Xswiftc -static-stdlib: Statically link the Swift standard library (can increase size but removes external dependencies - consider if needed, often not for CLI tools that can rely on system Swift libs)
-# For now, let's not use -static-stdlib to keep size smaller if possible. If dynamic linking becomes an issue, we can add it.
-# SWIFT_BUILD_FLAGS="-Osize -wmo -Xlinker -dead_strip"
-# The `swift build -c release` command already applies optimizations.
-# -Osize needs to be passed via -Xswiftc
-# -wmo is default for release builds
-# -dead_strip is generally good.
-RELEASE_SWIFT_FLAGS="-Xswiftc -Osize"
-RELEASE_LINKER_FLAGS="-Xlinker -dead_strip"
+# -Xlinker -S: Strip debug symbols.
+# -Xswiftc -gnone: Disable debug info generation.
+# -Xswiftc -whole-module-optimization: Ensure WMO is enabled.
+RELEASE_SWIFT_FLAGS="-Xswiftc -Osize -Xswiftc -gnone -Xswiftc -whole-module-optimization"
+RELEASE_LINKER_FLAGS="-Xlinker -dead_strip -Xlinker -S -Xlinker -x"
 
 
 echo "🚀 Starting universal release build for ${PRODUCT_NAME}..."
@@ -87,7 +83,8 @@ echo "✅ Universal binary created at ${UNIVERSAL_BIN_PATH}"
 
 # Strip symbols for further size reduction (optional, but good for release)
 echo "✂️ Stripping symbols from universal binary..."
-strip "${UNIVERSAL_BIN_PATH}"
+# Use more aggressive stripping: -S removes debug symbols, -x removes local symbols
+strip -S -x "${UNIVERSAL_BIN_PATH}"
 echo "✅ Symbols stripped."
 
 # Verify the universal binary
