@@ -4,12 +4,20 @@ import * as fs from 'node:fs';
 import { SwiftCLIResult } from './swift-cli.js'; // For SwiftCLIResult
 import { debugLog, DEFAULT_BACKGROUND_STARTUP_SECONDS, DEFAULT_FOREGROUND_COMPLETION_SECONDS } from './config.js'; // For logging and defaults
 import * as path from 'node:path'; // For path.basename, path.sep, path.isAbsolute
+import * as os from 'node:os';
 import { RequestContextMeta } from './types.js';
 
 export function sanitizeTag(rawTag: string): string {
     if (!rawTag) return '';
     // SDD 3.1.2: Alphanumeric, underscore, hyphen, max 64 chars.
     return rawTag.replace(/[^a-zA-Z0-9_\-]/g, '_').substring(0, 64);
+}
+
+export function expandTilde(filePath: string): string {
+    if (filePath.startsWith('~/')) {
+        return path.join(os.homedir(), filePath.slice(2));
+    }
+    return filePath;
 }
 
 export function resolveEffectiveProjectPath(currentPath: string | undefined, fallbackPath?: string | undefined): string | null {
@@ -21,23 +29,35 @@ export function resolveEffectiveProjectPath(currentPath: string | undefined, fal
         return null;
     }
 
+    // Expand tilde first
+    const expandedPath = expandTilde(pathToCheck);
+    
     // Handle relative paths
-    const absolutePath = path.isAbsolute(pathToCheck) ? pathToCheck : path.resolve(pathToCheck);
+    const absolutePath = path.isAbsolute(expandedPath) ? expandedPath : path.resolve(expandedPath);
 
-    // Check if path exists and is a directory
+    // Check if path exists
     if (!fs.existsSync(absolutePath)) {
-        debugLog(`[Utils] effectiveProjectPath error: path '${absolutePath}' does not exist.`);
-        return null;
+        debugLog(`[Utils] Path '${absolutePath}' does not exist. Attempting to create it...`);
+        
+        try {
+            // Create directory recursively
+            fs.mkdirSync(absolutePath, { recursive: true });
+            debugLog(`[Utils] Successfully created directory: ${absolutePath}`);
+        } catch (e: any) {
+            debugLog(`[Utils] Failed to create directory '${absolutePath}'. Error: ${e.message}`);
+            return null;
+        }
     }
 
+    // Verify it's a directory (use statSync to follow symlinks)
     try {
-        const stats = fs.lstatSync(absolutePath);
+        const stats = fs.statSync(absolutePath);
         if (!stats.isDirectory()) {
-            debugLog(`[Utils] effectiveProjectPath error: path '${absolutePath}' is not a directory.`);
+            debugLog(`[Utils] effectiveProjectPath error: path '${absolutePath}' exists but is not a directory.`);
             return null;
         }
     } catch (e:any) {
-        debugLog(`[Utils] effectiveProjectPath error: fs.lstatSync failed for '${absolutePath}'. Error: ${e.message}`);
+        debugLog(`[Utils] effectiveProjectPath error: fs.statSync failed for '${absolutePath}'. Error: ${e.message}`);
         return null;
     }
 
@@ -78,8 +98,10 @@ export function extractOutputForAction(action: string, jsonData: any): string | 
         case 'read':
             return jsonData.readOutput || null;
         case 'exec':
+        case 'execute':
             return jsonData.execResult?.output || null;
         case 'list':
+        case 'sessions':
         case 'info':
             return JSON.stringify(jsonData, null, 2);
         default:
@@ -99,7 +121,7 @@ export function formatCliOutputForAI(
     const stdoutTrimmed = stdout.trim();
     const stderrTrimmed = stderr.trim();
 
-    if (action === 'list') {
+    if (action === 'list' || action === 'sessions') {
         try {
             const sessions = JSON.parse(stdoutTrimmed);
             if (Array.isArray(sessions)) {
@@ -111,8 +133,8 @@ export function formatCliOutputForAI(
                 return `Terminator: Found ${sessions.length} session(s). ${sessionDescriptions}.`;
             }
         } catch (e) {
-            debugLog(`[Utils] Failed to parse JSON for list: ${e}. Raw: ${stdoutTrimmed}`);
-            return `Terminator: 'list' completed, but output parsing failed. Raw: ${stdoutTrimmed}`;
+            debugLog(`[Utils] Failed to parse JSON for ${action}: ${e}. Raw: ${stdoutTrimmed}`);
+            return `Terminator: '${action}' completed, but output parsing failed. Raw: ${stdoutTrimmed}`;
         }
     }
 
@@ -168,7 +190,7 @@ export function formatCliOutputForAI(
         return `Terminator: Session '${tag || "Unknown"}' ${exitCode === 0 ? 'focused' : 'could not be focused'}. Output: ${stdoutTrimmed || stderrTrimmed || 'No output'}`.trim();
     }
 
-    if (action === 'exec') {
+    if (action === 'exec' || action === 'execute') {
         if (command === '') {
             return `Terminator: Session '${tag}' prepared.`;
         }

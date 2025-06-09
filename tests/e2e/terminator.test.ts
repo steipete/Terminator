@@ -245,7 +245,7 @@ describe('Terminator E2E Tests', () => {
       
       // Verify we can list by that tag
       const listResult = await runTerminator([
-        'list',
+        'sessions',
         '--terminal-app', 'terminal',
         '--tag', tag,
         '--json'

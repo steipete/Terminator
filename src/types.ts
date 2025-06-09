@@ -10,7 +10,7 @@ export interface TerminatorOptions {
 }
 
 export interface TerminatorExecuteParams {
-    action?: 'execute' | 'read' | 'list' | 'info' | 'focus' | 'kill';
+    action?: 'execute' | 'read' | 'sessions' | 'info' | 'focus' | 'kill';
     project_path: string;
     tag?: string;
     command?: string;

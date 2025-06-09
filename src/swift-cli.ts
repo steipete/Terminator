@@ -77,13 +77,13 @@ export async function invokeSwiftCLI(
             } else {
                 debugLog("Could not find start of JSON ('{') in info command stdout. Using raw.");
             }
-        } else if (cliArgs.includes('list') && cliArgs.includes('--json')) {
+        } else if (cliArgs.includes('sessions') && cliArgs.includes('--json')) {
             const jsonStartIndex = processedStdout.indexOf('[');
             if (jsonStartIndex !== -1) {
                 processedStdout = processedStdout.substring(jsonStartIndex);
                 debugLog('Extracted JSON array from Swift CLI stdout:', processedStdout.trim());
             } else {
-                debugLog("Could not find start of JSON array ('[') in list command stdout. Using raw.");
+                debugLog("Could not find start of JSON array ('[') in sessions command stdout. Using raw.");
             }
         }
         

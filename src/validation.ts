@@ -13,7 +13,7 @@ export function validateExecuteParams(params: any): ValidationResult {
     
     // Validate action
     if (params.action !== undefined) {
-        const validActions = ['execute', 'read', 'list', 'info', 'focus', 'kill'];
+        const validActions = ['execute', 'read', 'sessions', 'info', 'focus', 'kill'];
         if (typeof params.action !== 'string') {
             errors.push(`Action must be a string, got ${typeof params.action}`);
         } else if (!validActions.includes(params.action)) {
