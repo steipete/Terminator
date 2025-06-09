@@ -13,7 +13,13 @@
 4.  **Parameter Parsing:** Parameter parsing should be lenient (e.g., accept `path` if `project_path` is formally defined). Generally, advertise stricter schemas but be more lenient in execution to accommodate variations from agents.
 5.  **Runtime Error Handling:** In case of an error, emit a helpful message to the caller with information to potentially recover.
 6.  **Configuration Error Handling:** Misconfigurations (e.g., wrongly set environment variables) must not crash the tool. Instead, provide a useful explanation when the tool is run, enabling the user to self-correct their setup.
-7.  **Output Control:** There should be no output to `stdio` during normal tool operation, as this can disrupt MCP clients. File-based logging is the designated method for operational output.
+7.  **No stdio Output:** **CRITICAL: There must be absolutely NO output to stdout or stderr during any tool operation.** This includes:
+    *   No `console.log()`, `console.error()`, `console.warn()`, etc.
+    *   No `process.stdout.write()` or `process.stderr.write()`
+    *   No print statements or debug output to stdio
+    *   Even during errors or initialization, all output must go through the file logger
+    *   Any stdio output will disrupt MCP clients (like Claude) and cause loading errors
+    *   File-based logging (e.g., Pino to log files) is the only acceptable method for operational output
 8.  **`info` Command:**
     *   At least one tool must offer an `info` sub command (find the most appropriate tool and add there)
     *   This command shall list:

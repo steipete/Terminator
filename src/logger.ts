@@ -43,12 +43,19 @@ function getLogFilePath(): string {
       return absolutePath;
     }
     
-    console.error(`Warning: Cannot write to log file path: ${absolutePath}. Falling back to default.`);
+    // Silently fall back to default path - no console output per MCP best practices
   }
   
   const defaultPath = path.join(DEFAULT_LOG_DIR, DEFAULT_LOG_FILE);
-  ensureDirectoryExists(DEFAULT_LOG_DIR);
-  return defaultPath;
+  if (canWriteToPath(defaultPath)) {
+    ensureDirectoryExists(DEFAULT_LOG_DIR);
+    return defaultPath;
+  }
+  
+  // Fall back to temp directory as last resort
+  const tempPath = path.join(os.tmpdir(), 'terminator-mcp', DEFAULT_LOG_FILE);
+  ensureDirectoryExists(path.dirname(tempPath));
+  return tempPath;
 }
 
 function getLogLevel(): string {
@@ -59,7 +66,7 @@ function getLogLevel(): string {
     if (validLevels.includes(normalized)) {
       return normalized;
     }
-    console.error(`Warning: Invalid log level "${envLogLevel}". Using default: ${DEFAULT_LOG_LEVEL}`);
+    // Silently use default log level - no console output per MCP best practices
   }
   return DEFAULT_LOG_LEVEL;
 }
@@ -123,10 +130,41 @@ export function flushLogger(): Promise<void> {
 }
 
 export function getLoggerConfig() {
+  const issues: string[] = [];
+  const envLogFile = process.env[`${PROJECT_NAME}_LOG_FILE`];
+  const envLogLevel = process.env[`${PROJECT_NAME}_LOG_LEVEL`];
+  const actualLogFile = getLogFilePath();
+  
+  // Check log file path
+  if (envLogFile) {
+    const absolutePath = path.isAbsolute(envLogFile) 
+      ? envLogFile 
+      : path.join(process.cwd(), envLogFile);
+    
+    if (!canWriteToPath(absolutePath)) {
+      issues.push(`Cannot write to log file path: ${absolutePath}. Using: ${actualLogFile}`);
+    }
+  }
+  
+  // Check if using temp directory fallback
+  const defaultPath = path.join(DEFAULT_LOG_DIR, DEFAULT_LOG_FILE);
+  if (actualLogFile.includes(os.tmpdir()) && !canWriteToPath(defaultPath)) {
+    issues.push(`Cannot write to default log directory. Using temp directory: ${actualLogFile}`);
+  }
+  
+  // Check log level
+  if (envLogLevel) {
+    const normalized = envLogLevel.toLowerCase();
+    const validLevels = ['fatal', 'error', 'warn', 'info', 'debug', 'trace'];
+    if (!validLevels.includes(normalized)) {
+      issues.push(`Invalid log level "${envLogLevel}". Using default: ${DEFAULT_LOG_LEVEL}`);
+    }
+  }
+  
   return {
-    logFile: getLogFilePath(),
+    logFile: actualLogFile,
     logLevel: getLogLevel(),
     consoleLogging: shouldLogToConsole(),
-    configurationIssues: [],
+    configurationIssues: issues,
   };
 }

@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-beta.1] - 2025-01-06
+
+### Changed
+- **MCP Best Practices Compliance**: Full alignment with MCP best practices
+  - Removed all console output to prevent MCP client disruption
+  - Added temp directory fallback for logger when default paths are not writable
+  - Enhanced prepare-release script with E2E tests and Swift analyzer
+  - Improved error reporting without stdio output
+
+### Added
+- **Enhanced Release Process**: prepare-release.js now includes:
+  - E2E test execution
+  - Swift analyzer checks
+  - Build cache cleanup
+  - More comprehensive validation
+
+### Fixed
+- **Logger Configuration**: Fixed potential stdio output during logger initialization
+- **MCP Compliance**: Ensured zero console output during all operations
+
 ## [1.0.0-alpha.12] - 2025-05-26
 
 ### Changed

@@ -161,6 +161,10 @@ function checkTypeScript() {
   // Clean build directory
   log('Cleaning build directory...', colors.cyan);
   rmSync(join(projectRoot, 'dist'), { recursive: true, force: true });
+  
+  // Also clean any npm/typescript cache directories
+  rmSync(join(projectRoot, '.tsbuildinfo'), { force: true });
+  rmSync(join(projectRoot, 'node_modules/.cache'), { recursive: true, force: true });
 
   // Type check
   if (!execWithOutput('npm run build:ts', 'TypeScript compilation')) {
@@ -242,6 +246,13 @@ function checkSwift() {
     return false;
   }
   logSuccess('SwiftLint passed');
+
+  // Run Swift analyzer
+  if (!execWithOutput(`cd "${cliPath}" && swift build --analyze`, 'Swift analyzer')) {
+    logError('Swift analyzer found issues');
+    return false;
+  }
+  logSuccess('Swift analyzer passed');
 
   // Run Swift tests
   if (!execWithOutput(`cd "${cliPath}" && swift test`, 'Swift tests')) {
@@ -459,6 +470,7 @@ function checkPackageSize() {
     }
     
     const maxSizeInBytes = 5 * 1024 * 1024; // 5MB for Terminator (includes Swift binary)
+    // Note: MCP best practices suggest 2MB, but we need more due to the universal Swift binary
     
     if (sizeInBytes > maxSizeInBytes) {
       logWarning(`Package size (${sizeStr}) exceeds 5MB threshold`);
@@ -504,6 +516,19 @@ function checkTypeScriptDeclarations() {
   }
   
   logSuccess('TypeScript declarations are properly generated');
+  return true;
+}
+
+function checkE2ETests() {
+  logStep('E2E Tests');
+
+  // Run E2E tests
+  if (!execWithOutput('npm run test:e2e', 'E2E tests')) {
+    logError('E2E tests failed');
+    return false;
+  }
+  logSuccess('E2E tests passed');
+
   return true;
 }
 
@@ -855,6 +880,7 @@ async function main() {
     checkFileSize,
     checkTypeScript,
     checkTypeScriptDeclarations,
+    checkE2ETests,
     checkLoggerConfiguration,
     checkSwift,
     buildAndVerifyPackage,
