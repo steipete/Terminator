@@ -1,8 +1,10 @@
 import ArgumentParser
+import Foundation
 @testable import TerminatorCLI
-import XCTest
+import Testing
 
-final class InfoCommandTests: BaseTerminatorTests {
+@Suite("Info Command Tests", .tags(.info))
+struct InfoCommandTests {
     // MARK: - Test Output Structures
 
     struct TestInfoOutput: Decodable {
@@ -17,135 +19,85 @@ final class InfoCommandTests: BaseTerminatorTests {
         let activeConfiguration: [String: AnyCodable]?
     }
 
+    init() {
+        TestUtilities.clearEnvironment()
+        setenv("TERMINATOR_LOG_LEVEL", "none", 1)
+    }
+
+    deinit {
+        unsetenv("TERMINATOR_LOG_LEVEL")
+    }
+
     // MARK: - Tests
 
-    func testInfoCommand_DefaultOutput() throws {
-        setenv("TERMINATOR_LOG_LEVEL", "none", 1) // Tell CLI process to be quiet
-        defer { unsetenv("TERMINATOR_LOG_LEVEL") }
-        let result = try runCommand(arguments: ["info"])
+    @Test("Default output should contain required sections")
+    func defaultOutput() throws {
+        let result = try TestUtilities.runCommand(arguments: ["info"])
 
-        XCTAssertEqual(result.exitCode, ExitCode.success)
-        XCTAssertTrue(result.output.contains("Terminator CLI Version:"))
-        XCTAssertTrue(result.output.contains("--- Active Configuration ---"))
-        XCTAssertTrue(result.output.contains("TERMINATOR_APP:"))
-        XCTAssertTrue(result.output.contains("--- Managed Sessions ---"))
-        XCTAssertTrue(
+        #expect(result.exitCode == ExitCode.success)
+        #expect(result.output.contains("Terminator CLI Version:"))
+        #expect(result.output.contains("--- Active Configuration ---"))
+        #expect(result.output.contains("TERMINATOR_APP:"))
+        #expect(result.output.contains("--- Managed Sessions ---"))
+        #expect(
             result.errorOutput.contains("Warning:") ||
                 result.errorOutput.isEmpty ||
-                result.errorOutput.contains("Logger shutting down"),
-            "Stderr should contain warning, be empty, or just have logger messages. Got: \(result.errorOutput)"
+                result.errorOutput.contains("Logger shutting down")
         )
     }
 
-    func testInfoCommand_JsonOutput() throws {
-        setenv("TERMINATOR_LOG_LEVEL", "none", 1) // Tell CLI process to be quiet
-        defer { unsetenv("TERMINATOR_LOG_LEVEL") }
-        let result = try runCommand(arguments: ["info", "--json"])
+    @Test("JSON output should contain valid structure")
+    func jsonOutput() throws {
+        let result = try TestUtilities.runCommand(arguments: ["info", "--json"])
 
-        XCTAssertEqual(
-            result.exitCode,
-            ExitCode.success,
-            "Info --json should exit with success. Actual: \(result.exitCode.rawValue)"
-        )
+        #expect(result.exitCode == ExitCode.success)
 
         if !result.errorOutput.isEmpty && !result.errorOutput.contains("Logger shutting down") {
-            print("Unexpected stderr for testInfoCommand_JsonOutput was not empty:\n---\n\(result.errorOutput)---")
+            Issue.record("Unexpected stderr for info --json: \(result.errorOutput)")
         }
 
-        guard let jsonData = result.output.data(using: .utf8) else {
-            XCTFail("Failed to convert JSON output to Data. stdout: \(result.output)")
-            return
-        }
+        let jsonData = try #require(result.output.data(using: .utf8))
+        let decodedOutput = try JSONDecoder().decode(TestInfoOutput.self, from: jsonData)
 
-        do {
-            let decodedOutput = try JSONDecoder().decode(TestInfoOutput.self, from: jsonData)
-
-            XCTAssertFalse(decodedOutput.version.isEmpty, "JSON output should contain a non-empty version string.")
-            XCTAssertFalse(decodedOutput.configuration.isEmpty, "JSON output should contain non-empty configuration.")
-
-            let configContainsTerminatorApp = decodedOutput.configuration.keys.contains("TERMINATOR_APP")
-            XCTAssertTrue(configContainsTerminatorApp, "Active configuration should include TERMINATOR_APP")
-
-            XCTAssertNotNil(decodedOutput.sessions, "JSON output should contain sessions array (even if empty).")
-            XCTAssertTrue(decodedOutput.sessions.isEmpty, "Sessions array should be empty in this test context.")
-
-        } catch {
-            XCTFail(
-                "Error decoding JSON output: \(error.localizedDescription). stdout:\n\(result.output)\nstderr:\n\(result.errorOutput)"
-            )
-        }
+        #expect(!decodedOutput.version.isEmpty)
+        #expect(!decodedOutput.configuration.isEmpty)
+        #expect(decodedOutput.configuration.keys.contains("TERMINATOR_APP"))
+        #expect(decodedOutput.sessions.isEmpty) // No sessions in test context
     }
 
-    func testInfoCommand_UnknownTerminalApp_Json() throws {
-        // Temporarily set an unknown terminal app via environment variable
+    @Test("Unknown terminal app should return configuration error", .tags(.configuration))
+    func unknownTerminalAppJson() throws {
         setenv("TERMINATOR_APP", "UnknownApp123", 1)
-        setenv("TERMINATOR_LOG_LEVEL", "none", 1) // Tell CLI process to be quiet
-        defer {
-            unsetenv("TERMINATOR_APP")
-            unsetenv("TERMINATOR_LOG_LEVEL")
-        }
+        defer { unsetenv("TERMINATOR_APP") }
 
-        let result = try runCommand(arguments: ["info", "--json"])
+        let result = try TestUtilities.runCommand(arguments: ["info", "--json"])
 
-        XCTAssertEqual(
-            result.exitCode,
-            ExitCode(ErrorCodes.configurationError),
-            "Info with unknown app should lead to configurationError (2). Actual: \(result.exitCode.rawValue)"
-        )
+        #expect(result.exitCode == ExitCode(ErrorCodes.configurationError))
 
-        // If the above passes, then try decoding.
-        guard let jsonData = result.output.data(using: .utf8) else {
-            XCTFail("Failed to convert JSON output to Data for unknown app test. stdout: \(result.output)")
-            return
-        }
+        let jsonData = try #require(result.output.data(using: .utf8))
+        let decodedOutput = try JSONDecoder().decode(TestErrorOutput.self, from: jsonData)
 
-        do {
-            let decodedOutput = try JSONDecoder().decode(TestErrorOutput.self, from: jsonData)
-            // If we get here, decoding was successful.
-            XCTAssertFalse(decodedOutput.version.isEmpty, "Version should not be empty in error JSON")
-            XCTAssertTrue(
-                decodedOutput.error.contains("Unknown terminal application: UnknownApp123"),
-                "Error message mismatch in error JSON. Got: \(decodedOutput.error)"
-            )
-            XCTAssertNotNil(
-                decodedOutput.activeConfiguration,
-                "JSON output for unknown app should contain activeConfiguration."
-            )
-            XCTAssertEqual(
-                decodedOutput.activeConfiguration?["TERMINATOR_APP"]?.stringValue,
-                "UnknownApp123",
-                "TERMINATOR_APP in JSON should match the unknown app"
-            )
-        } catch {
-            XCTFail(
-                "Error decoding JSON output for unknown app test: \(error.localizedDescription). stdout:\n\(result.output)"
-            )
-        }
+        #expect(!decodedOutput.version.isEmpty)
+        #expect(decodedOutput.error.contains("Unknown terminal application: UnknownApp123"))
+        #expect(decodedOutput.activeConfiguration != nil)
+        #expect(decodedOutput.activeConfiguration?["TERMINATOR_APP"]?.stringValue == "UnknownApp123")
     }
 
-    // Test for Ghosty validation failure (SDD 3.2.3)
-    func testGhostyValidationFailure_ExitCode() throws {
-        // This test assumes Ghosty is NOT installed or will fail AppleScript validation.
-        // We set TERMINATOR_APP to Ghosty and expect a specific exit code.
+    @Test("Ghosty validation failure should exit with configuration error", .tags(.configuration, .ghosty))
+    func ghostyValidationFailure() throws {
+        // This test assumes Ghosty is NOT installed or will fail AppleScript validation
         setenv("TERMINATOR_APP", "Ghosty", 1)
-        // Allow error logs for this test to see the fputs from AppConfig
-        setenv("TERMINATOR_LOG_LEVEL", "error", 1)
+        setenv("TERMINATOR_LOG_LEVEL", "error", 1) // Allow error logs to see validation message
         defer {
             unsetenv("TERMINATOR_APP")
             unsetenv("TERMINATOR_LOG_LEVEL")
         }
 
-        let result = try runCommand(arguments: ["info"]) // Any command would trigger validate()
+        let result = try TestUtilities.runCommand(arguments: ["info"])
 
-        // As per TerminatorCLI.validate(), this should be ErrorCodes.configurationError (2)
-        XCTAssertEqual(
-            result.exitCode,
-            ExitCode(ErrorCodes.configurationError),
-            "Expected configurationError (2) due to Ghosty validation failure."
-        )
-        XCTAssertTrue(
-            result.errorOutput.contains("Configuration Error: TERMINATOR_APP is set to Ghosty"),
-            "Stderr should contain Ghosty validation error message."
-        )
+        #expect(result.exitCode == ExitCode(ErrorCodes.configurationError))
+        #expect(result.errorOutput.contains("Configuration Error: TERMINATOR_APP is set to Ghosty"))
     }
 }
+
+// Test tags are defined in TestTags.swift

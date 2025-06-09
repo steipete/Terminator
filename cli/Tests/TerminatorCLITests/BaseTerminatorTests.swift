@@ -1,11 +1,12 @@
 import ArgumentParser
+import Foundation
 @testable import TerminatorCLI
-import XCTest
+import Testing
 
-/// Base class for Terminator CLI tests with shared utilities
-class BaseTerminatorTests: XCTestCase {
+/// Base utilities for Terminator CLI tests
+enum TestUtilities {
     /// Runs the Terminator CLI executable with given arguments and returns output.
-    func runCommand(arguments: [String]) throws -> (output: String, errorOutput: String, exitCode: ExitCode) {
+    static func runCommand(arguments: [String]) throws -> (output: String, errorOutput: String, exitCode: ExitCode) {
         // Create a Process to run the built terminator executable
         let process = Process()
         process.executableURL = productsDirectory.appendingPathComponent("terminator")
@@ -31,7 +32,7 @@ class BaseTerminatorTests: XCTestCase {
     }
 
     /// Returns path to the built products directory.
-    var productsDirectory: URL {
+    static var productsDirectory: URL {
         #if os(macOS)
             for bundle in Bundle.allBundles where bundle.bundlePath.hasSuffix(".xctest") {
                 return bundle.bundleURL.deletingLastPathComponent()
@@ -42,9 +43,8 @@ class BaseTerminatorTests: XCTestCase {
         #endif
     }
 
-    override func setUp() {
-        super.setUp()
-        // Clear any environment variables that might interfere with tests
+    /// Clear all Terminator environment variables before tests
+    static func clearEnvironment() {
         unsetenv("TERMINATOR_APP")
         unsetenv("TERMINATOR_LOG_LEVEL")
         unsetenv("TERMINATOR_LOG_DIR")
@@ -58,5 +58,14 @@ class BaseTerminatorTests: XCTestCase {
         unsetenv("TERMINATOR_PRE_KILL_SCRIPT_PATH")
         unsetenv("TERMINATOR_REUSE_BUSY_SESSIONS")
         unsetenv("TERMINATOR_ITERM_PROFILE_NAME")
+    }
+}
+
+/// Base test suite that provides common setup and utilities
+@Suite("Base Terminator Tests")
+struct BaseTerminatorTests {
+    init() {
+        // Clear any environment variables that might interfere with tests
+        TestUtilities.clearEnvironment()
     }
 }

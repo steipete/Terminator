@@ -1,19 +1,19 @@
 import ArgumentParser
+import Foundation
 @testable import TerminatorCLI
 import Testing
-import Foundation
 
 @Suite("List Command Tests", .tags(.list))
 struct ListCommandTests {
     // MARK: - Test Support Types
-    
+
     struct TestAnyCodable: Codable {
         let value: Any
-        
+
         init(_ value: Any) {
             self.value = value
         }
-        
+
         init(from decoder: Decoder) throws {
             let container = try decoder.singleValueContainer()
             if container.decodeNil() {
@@ -37,72 +37,72 @@ struct ListCommandTests {
                 )
             }
         }
-        
+
         func encode(to _: Encoder) throws {
             fatalError("Encoding not needed for tests")
         }
     }
-    
+
     init() {
         TestUtilities.clearEnvironment()
         setenv("TERMINATOR_LOG_LEVEL", "none", 1)
     }
-    
+
     deinit {
         unsetenv("TERMINATOR_LOG_LEVEL")
     }
-    
+
     // MARK: - Tests
-    
+
     @Test("Default output with no sessions should show empty message")
     func defaultOutputNoSessions() throws {
         let result = try TestUtilities.runCommand(arguments: ["sessions"])
-        
+
         #expect(result.exitCode == ExitCode.success)
         #expect(result.output.contains("No active sessions found."))
         #expect(
             result.errorOutput.contains("Warning:") ||
-            result.errorOutput.isEmpty ||
-            result.errorOutput.contains("Logger shutting down")
+                result.errorOutput.isEmpty ||
+                result.errorOutput.contains("Logger shutting down")
         )
     }
-    
+
     @Test("JSON output with no sessions should return empty array", .tags(.json))
     func jsonOutputNoSessions() throws {
         let result = try TestUtilities.runCommand(arguments: ["sessions", "--json"])
-        
+
         #expect(result.exitCode == ExitCode.success)
-        
+
         if !result.errorOutput.isEmpty && !result.errorOutput.contains("Logger shutting down") {
             Issue.record("Unexpected stderr for list --json: \(result.errorOutput)")
         }
-        
+
         #expect(!result.errorOutput.contains("Warning: Failed to list active sessions"))
-        
+
         let jsonData = try #require(result.output.data(using: .utf8))
         let decodedOutput = try JSONDecoder().decode([[String: TestAnyCodable]].self, from: jsonData)
-        
+
         #expect(decodedOutput.isEmpty)
     }
-    
+
     @Test("JSON output with tag filter and no sessions should return empty array", .tags(.json, .filtering))
     func jsonOutputWithTagNoSessions() throws {
         let result = try TestUtilities.runCommand(arguments: ["sessions", "--json", "--tag", "myTestTag"])
-        
+
         #expect(result.exitCode == ExitCode.success)
-        
+
         if !result.errorOutput.isEmpty && !result.errorOutput.contains("Logger shutting down") {
             Issue.record("Unexpected stderr for list --json --tag: \(result.errorOutput)")
         }
-        
+
         #expect(!result.errorOutput.contains("Warning: Failed to list active sessions"))
-        
+
         let jsonData = try #require(result.output.data(using: .utf8))
         let decodedOutput = try JSONDecoder().decode([[String: TestAnyCodable]].self, from: jsonData)
-        
+
         #expect(decodedOutput.isEmpty)
     }
-    
+
     // Note: Testing ListCommand with actual sessions would require mocking AppleScriptBridge
     // or having a controlled terminal environment.
 }
