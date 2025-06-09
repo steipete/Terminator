@@ -299,11 +299,11 @@ You should see your configured terminal application open/focus, execute the echo
 
 ## AI Tool Overview: `terminator.execute`
 
-| `action` (default: `exec`) | Parameters                                                                                                   |
-| :------------------------- | :----------------------------------------------------------------------------------------------------------- |
-| `exec`                     | `project_path`, `command`, `tag?`, `background?`, `lines?`, `timeout?`, `focus?`                             |
-| `read`                     | `project_path`, `tag?`, `lines?`, `focus?`                                                                     |
-| `list`                     | `project_path?`, `tag?` (can list all if both omitted, or filter)                                           |
+| `action` (default: `execute`) | Parameters                                                                                                   |
+| :---------------------------- | :----------------------------------------------------------------------------------------------------------- |
+| `execute`                     | `project_path`, `command`, `tag?`, `background?`, `lines?`, `timeout?`, `focus?`                             |
+| `read`                        | `project_path`, `tag?`, `lines?`, `focus?`                                                                     |
+| `sessions`                    | `project_path?`, `tag?` (can list all if both omitted, or filter)                                           |
 | `info`                     | (No specific parameters beyond global ones if applicable; `project_path` and `tag` are generally not used) |
 | `focus`                    | `project_path`, `tag?` (`focus` is implicitly true)                                                          |
 | `kill`                     | `project_path`, `tag?`, `focus?`                                                                               |
