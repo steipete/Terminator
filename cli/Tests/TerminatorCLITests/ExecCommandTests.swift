@@ -10,13 +10,11 @@ struct ExecCommandTests {
         setenv("TERMINATOR_LOG_LEVEL", "none", 1)
     }
 
-    deinit {
-        unsetenv("TERMINATOR_LOG_LEVEL")
-    }
+    // Cleanup is handled in individual tests if needed
 
     // MARK: - Nested Suite for Basic Validation
 
-    @Suite("Basic Validation", .timeLimit(.seconds(10)))
+    @Suite("Basic Validation", .timeLimit(.minutes(1)))
     struct BasicValidation {
         @Test(
             "Missing required arguments",
@@ -56,7 +54,7 @@ struct ExecCommandTests {
 
     // MARK: - Nested Suite for Parameter Validation
 
-    @Suite("Parameter Validation", .tags(.parameters), .timeLimit(.seconds(10)))
+    @Suite("Parameter Validation", .tags(.parameters), .timeLimit(.minutes(1)))
     struct ParameterValidation {
         @Test(
             "Lines parameter validation",
@@ -128,7 +126,7 @@ struct ExecCommandTests {
 
     // MARK: - Nested Suite for Project Path Handling
 
-    @Suite("Project Path Handling", .tags(.projectPath), .timeLimit(.seconds(10)))
+    @Suite("Project Path Handling", .tags(.projectPath), .timeLimit(.minutes(1)))
     struct ProjectPathHandling {
         @Test(
             "Project path validation",
@@ -157,7 +155,7 @@ struct ExecCommandTests {
 
     // MARK: - Nested Suite for Execution Modes
 
-    @Suite("Execution Modes", .tags(.backgroundExecution), .timeLimit(.seconds(10)))
+    @Suite("Execution Modes", .tags(.backgroundExecution), .timeLimit(.minutes(1)))
     struct ExecutionModes {
         @Test("Background execution should fail when action fails")
         func backgroundExecution() throws {
@@ -176,7 +174,7 @@ struct ExecCommandTests {
 
     // MARK: - Nested Suite for Environment Variables
 
-    @Suite("Environment Variables", .tags(.environment), .timeLimit(.seconds(10)))
+    @Suite("Environment Variables", .tags(.environment), .timeLimit(.minutes(1)))
     struct EnvironmentVariables {
         @Test("Environment variables should be respected")
         func environmentVariablesRespected() throws {

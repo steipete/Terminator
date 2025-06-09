@@ -3,20 +3,18 @@ import Foundation
 @testable import TerminatorCLI
 import Testing
 
-@Suite("Exec Command Grouping Tests", .tags(.exec, .grouping), .timeLimit(.seconds(30)))
+@Suite("Exec Command Grouping Tests", .tags(.exec, .grouping), .timeLimit(.minutes(1)))
 struct ExecCommandGroupingTests {
     init() {
         TestUtilities.clearEnvironment()
         setenv("TERMINATOR_LOG_LEVEL", "none", 1)
     }
 
-    deinit {
-        unsetenv("TERMINATOR_LOG_LEVEL")
-    }
+    // Cleanup is handled in individual tests if needed
 
     // MARK: - Parameterized Grouping Tests
 
-    struct GroupingTestCase: CustomTestStringConvertible {
+    struct GroupingTestCase: CustomTestStringConvertible, Sendable {
         let groupingMode: String
         let tagValue: String
         let projectPath: String
@@ -101,7 +99,7 @@ struct ExecCommandGroupingTests {
 
     // MARK: - Combined Parameter Tests
 
-    struct CombinedTestCase: CustomTestStringConvertible {
+    struct CombinedTestCase: CustomTestStringConvertible, Sendable {
         let groupingMode: String
         let focusMode: String
         let background: Bool

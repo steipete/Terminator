@@ -10,9 +10,9 @@ let typeInteger: DescType = 0x6C6F_6E67 // 'long' = kAELongInteger
 let typeNull: DescType = 0x6E75_6C6C // 'null' = kAENull
 let typeAEList: DescType = 0x6C69_7374 // 'list' = kAEList
 
-enum AppleScriptError: Error {
-    case scriptCompilationFailed(errorInfo: [String: Any])
-    case scriptExecutionFailed(errorInfo: [String: Any])
+enum AppleScriptError: Error, Sendable {
+    case scriptCompilationFailed(errorInfo: String) // Changed from [String: Any] to String
+    case scriptExecutionFailed(errorInfo: String) // Changed from [String: Any] to String
     case permissionDenied // Specifically for error -1743
     case unknownError(message: String)
     case typeConversionError(message: String)
@@ -31,7 +31,7 @@ enum AppleScriptBridge {
             Logger.log(level: .error, "Failed to initialize NSAppleScript. This is unexpected.")
             return .failure(
                 .scriptCompilationFailed(
-                    errorInfo: ["NSAppleScriptErrorMessage": "Failed to initialize NSAppleScript object."]
+                    errorInfo: "Failed to initialize NSAppleScript object."
                 )
             )
         }
@@ -46,7 +46,8 @@ enum AppleScriptBridge {
             if errorNumber == -1743 { // Permissions error
                 return .failure(.permissionDenied)
             }
-            return .failure(.scriptExecutionFailed(errorInfo: errorDict))
+            let errorInfo = "Error \(errorNumber): \(errorMessage)"
+            return .failure(.scriptExecutionFailed(errorInfo: errorInfo))
         }
 
         // Handle different descriptor types

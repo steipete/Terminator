@@ -11,10 +11,7 @@ struct ExecCommandITermTests {
         setenv("TERMINATOR_APP", "iTerm", 1)
     }
 
-    deinit {
-        unsetenv("TERMINATOR_LOG_LEVEL")
-        unsetenv("TERMINATOR_APP")
-    }
+    // Cleanup is handled in individual tests if needed
 
     // MARK: - iTerm Grouping Tests
 

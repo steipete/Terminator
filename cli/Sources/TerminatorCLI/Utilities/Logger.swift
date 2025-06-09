@@ -1,11 +1,50 @@
 import Foundation
 
 enum Logger {
-    private static var currentLogLevel: AppConfig
-        .LogLevel = .info // Assuming AppConfig.LogLevel is accessible or moved too
-    private static var logFileURL: URL?
+    private static let lock = NSLock()
+    private nonisolated(unsafe) static var _currentLogLevel: AppConfig.LogLevel = .info
+    private nonisolated(unsafe) static var _logFileURL: URL?
     private static let fileHandleQueue = DispatchQueue(label: "com.steipete.terminator.logFileQueue")
-    private static var fileHandle: FileHandle?
+    private nonisolated(unsafe) static var _fileHandle: FileHandle?
+
+    private static var currentLogLevel: AppConfig.LogLevel {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _currentLogLevel
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            _currentLogLevel = newValue
+        }
+    }
+
+    private static var logFileURL: URL? {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _logFileURL
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            _logFileURL = newValue
+        }
+    }
+
+    private static var fileHandle: FileHandle? {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _fileHandle
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            _fileHandle = newValue
+        }
+    }
 
     static func configure(level: AppConfig.LogLevel, directory: URL) {
         currentLogLevel = level

@@ -48,9 +48,7 @@ struct ListCommandTests {
         setenv("TERMINATOR_LOG_LEVEL", "none", 1)
     }
 
-    deinit {
-        unsetenv("TERMINATOR_LOG_LEVEL")
-    }
+    // Cleanup is handled in individual tests if needed
 
     // MARK: - Tests
 

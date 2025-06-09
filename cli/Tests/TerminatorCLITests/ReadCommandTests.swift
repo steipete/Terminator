@@ -10,9 +10,7 @@ struct ReadCommandTests {
         setenv("TERMINATOR_LOG_LEVEL", "none", 1)
     }
 
-    deinit {
-        unsetenv("TERMINATOR_LOG_LEVEL")
-    }
+    // Cleanup is handled in individual tests if needed
 
     @Test("Read with tag should fail when action fails")
     func withTagActionFails() throws {

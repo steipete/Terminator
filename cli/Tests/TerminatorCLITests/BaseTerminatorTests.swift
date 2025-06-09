@@ -34,10 +34,32 @@ enum TestUtilities {
     /// Returns path to the built products directory.
     static var productsDirectory: URL {
         #if os(macOS)
-            for bundle in Bundle.allBundles where bundle.bundlePath.hasSuffix(".xctest") {
-                return bundle.bundleURL.deletingLastPathComponent()
+            // For Swift Testing, we need to find the build directory
+            // First check if we're in SPM test context
+            if let testBundle = Bundle.allBundles.first(where: { $0.bundlePath.hasSuffix(".xctest") }) {
+                return testBundle.bundleURL.deletingLastPathComponent()
             }
-            fatalError("couldn't find the products directory")
+
+            // Fallback: Look for the executable relative to the current directory
+            let fileManager = FileManager.default
+            let currentDir = URL(fileURLWithPath: fileManager.currentDirectoryPath)
+
+            // Check common SPM build paths
+            let possiblePaths = [
+                currentDir.appendingPathComponent(".build/debug"),
+                currentDir.appendingPathComponent(".build/release"),
+                currentDir.appendingPathComponent("../.build/debug"),
+                currentDir.appendingPathComponent("../.build/release")
+            ]
+
+            for path in possiblePaths {
+                let execPath = path.appendingPathComponent("terminator")
+                if fileManager.fileExists(atPath: execPath.path) {
+                    return path
+                }
+            }
+
+            fatalError("couldn't find the products directory. Current directory: \(currentDir.path)")
         #else
             return Bundle.main.bundleURL
         #endif
