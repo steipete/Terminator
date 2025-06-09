@@ -28,7 +28,7 @@ describe('Terminator MCP Tool - Execute Action E2E Tests', () => {
     
     expect(mockedInvokeSwiftCLI).toHaveBeenCalled();
     const calledArgs = mockedInvokeSwiftCLI.mock.calls[0][0];
-    expect(calledArgs[0]).toBe('exec'); 
+    expect(calledArgs[0]).toBe('execute'); 
   });
 
   it('should return error when project_path is missing', async () => {

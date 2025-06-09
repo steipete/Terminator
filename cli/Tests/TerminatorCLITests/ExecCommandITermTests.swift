@@ -1,149 +1,109 @@
 import ArgumentParser
 @testable import TerminatorCLI
-import XCTest
+import Testing
+import Foundation
 
-final class ExecCommandITermTests: BaseTerminatorTests {
-    // MARK: - iTerm Grouping Tests
-
-    func testExecCommand_ITerm_WithProjectGrouping_ActionFails() throws {
+@Suite("Exec Command iTerm Tests", .tags(.exec, .iTerm))
+struct ExecCommandITermTests {
+    
+    init() {
+        TestUtilities.clearEnvironment()
         setenv("TERMINATOR_LOG_LEVEL", "none", 1)
         setenv("TERMINATOR_APP", "iTerm", 1)
+    }
+    
+    deinit {
+        unsetenv("TERMINATOR_LOG_LEVEL")
+        unsetenv("TERMINATOR_APP")
+    }
+    
+    // MARK: - iTerm Grouping Tests
+    
+    @Test("iTerm with project grouping should fail when action fails", .tags(.grouping))
+    func iTermWithProjectGroupingActionFails() throws {
         setenv("TERMINATOR_WINDOW_GROUPING", "project", 1)
-        defer {
-            unsetenv("TERMINATOR_LOG_LEVEL")
-            unsetenv("TERMINATOR_APP")
-            unsetenv("TERMINATOR_WINDOW_GROUPING")
-        }
-
+        defer { unsetenv("TERMINATOR_WINDOW_GROUPING") }
+        
         let tagValue = "execTagITermProjectGroup"
         let projectPath = "/some/test/iterm_project_path"
         let commandToRun = "echo hello iTerm project"
-        let result = try runCommand(arguments: [
-            "exec",
+        
+        let result = try TestUtilities.runCommand(arguments: [
+            "execute",
             tagValue,
             "--project-path",
             projectPath,
             "--command",
             commandToRun
         ])
-
-        XCTAssertNotEqual(
-            result.exitCode,
-            ExitCode.success,
-            "Exec command with iTerm, project grouping should fail when underlying action fails."
-        )
-        XCTAssertTrue(
-            result.errorOutput.contains("Error executing command:") || result.errorOutput
-                .contains("session not found"),
-            "Stderr should contain a relevant error message for iTerm, project grouping. Got: \(result.errorOutput)"
+        
+        #expect(result.exitCode != ExitCode.success)
+        #expect(
+            result.errorOutput.contains("Error executing command:") ||
+            result.errorOutput.contains("session not found")
         )
     }
-
-    func testExecCommand_ITerm_WithSmartGrouping_ActionFails() throws {
-        setenv("TERMINATOR_LOG_LEVEL", "none", 1)
-        setenv("TERMINATOR_APP", "iTerm", 1)
+    
+    @Test("iTerm with smart grouping should fail when action fails", .tags(.grouping))
+    func iTermWithSmartGroupingActionFails() throws {
         setenv("TERMINATOR_WINDOW_GROUPING", "smart", 1)
-        defer {
-            unsetenv("TERMINATOR_LOG_LEVEL")
-            unsetenv("TERMINATOR_APP")
-            unsetenv("TERMINATOR_WINDOW_GROUPING")
-        }
-
+        defer { unsetenv("TERMINATOR_WINDOW_GROUPING") }
+        
         let tagValue = "execTagITermSmartGroup"
+        let projectPath = "/some/test/iterm_smart_path"
         let commandToRun = "echo hello iTerm smart"
-        let result = try runCommand(arguments: ["exec", tagValue, "--command", commandToRun])
-
-        XCTAssertNotEqual(
-            result.exitCode,
-            ExitCode.success,
-            "Exec command with iTerm, smart grouping should fail when underlying action fails."
-        )
-        XCTAssertTrue(
-            result.errorOutput.contains("Error executing command:") || result.errorOutput
-                .contains("session not found"),
-            "Stderr should contain a relevant error message for iTerm, smart grouping. Got: \(result.errorOutput)"
+        
+        let result = try TestUtilities.runCommand(arguments: [
+            "execute",
+            tagValue,
+            "--project-path",
+            projectPath,
+            "--command",
+            commandToRun
+        ])
+        
+        #expect(result.exitCode != ExitCode.success)
+        #expect(
+            result.errorOutput.contains("Error executing command:") ||
+            result.errorOutput.contains("session not found")
         )
     }
-
-    func testExecCommand_ITerm_WithOffGrouping_ActionFails() throws {
-        setenv("TERMINATOR_LOG_LEVEL", "none", 1)
-        setenv("TERMINATOR_APP", "iTerm", 1)
+    
+    @Test("iTerm with grouping off should fail when action fails", .tags(.grouping))
+    func iTermWithGroupingOffActionFails() throws {
         setenv("TERMINATOR_WINDOW_GROUPING", "off", 1)
-        defer {
-            unsetenv("TERMINATOR_LOG_LEVEL")
-            unsetenv("TERMINATOR_APP")
-            unsetenv("TERMINATOR_WINDOW_GROUPING")
-        }
-
-        let tagValue = "execTagITermOffGroup"
+        defer { unsetenv("TERMINATOR_WINDOW_GROUPING") }
+        
+        let tagValue = "execTagITermGroupOff"
+        let projectPath = "/some/test/iterm_off_path"
         let commandToRun = "echo hello iTerm off"
-        let result = try runCommand(arguments: ["exec", tagValue, "--command", commandToRun])
-
-        XCTAssertNotEqual(
-            result.exitCode,
-            ExitCode.success,
-            "Exec command with iTerm, off grouping should fail when underlying action fails."
-        )
-        XCTAssertTrue(
-            result.errorOutput.contains("Error executing command:") || result.errorOutput
-                .contains("session not found"),
-            "Stderr should contain a relevant error message for iTerm, off grouping. Got: \(result.errorOutput)"
+        
+        let result = try TestUtilities.runCommand(arguments: [
+            "execute",
+            tagValue,
+            "--project-path",
+            projectPath,
+            "--command",
+            commandToRun
+        ])
+        
+        #expect(result.exitCode != ExitCode.success)
+        #expect(
+            result.errorOutput.contains("Error executing command:") ||
+            result.errorOutput.contains("session not found")
         )
     }
-
+    
     // MARK: - iTerm Focus Mode Tests
-
-    func testExecCommand_ITerm_WithProjectGrouping_FocusForce_ActionFails() throws {
-        setenv("TERMINATOR_LOG_LEVEL", "none", 1)
-        setenv("TERMINATOR_APP", "iTerm", 1)
-        setenv("TERMINATOR_WINDOW_GROUPING", "project", 1)
-        defer {
-            unsetenv("TERMINATOR_LOG_LEVEL")
-            unsetenv("TERMINATOR_APP")
-            unsetenv("TERMINATOR_WINDOW_GROUPING")
-        }
-
-        let tagValue = "execTagITermProjectGroupForceFocus"
-        let projectPath = "/some/test/iterm_project_path_ff"
-        let commandToRun = "echo hello iTerm project force_focus"
-        let result = try runCommand(arguments: [
-            "exec",
-            tagValue,
-            "--project-path",
-            projectPath,
-            "--command",
-            commandToRun,
-            "--focus-mode",
-            "force-focus"
-        ])
-
-        XCTAssertNotEqual(
-            result.exitCode,
-            ExitCode.success,
-            "Exec command with iTerm, project grouping, force-focus should fail."
-        )
-        XCTAssertTrue(
-            result.errorOutput.contains("Error executing command:") || result.errorOutput
-                .contains("session not found"),
-            "Stderr should contain a relevant error message. Got: \(result.errorOutput)"
-        )
-    }
-
-    func testExecCommand_ITerm_WithProjectGrouping_FocusNo_ActionFails() throws {
-        setenv("TERMINATOR_LOG_LEVEL", "none", 1)
-        setenv("TERMINATOR_APP", "iTerm", 1)
-        setenv("TERMINATOR_WINDOW_GROUPING", "project", 1)
-        defer {
-            unsetenv("TERMINATOR_LOG_LEVEL")
-            unsetenv("TERMINATOR_APP")
-            unsetenv("TERMINATOR_WINDOW_GROUPING")
-        }
-
-        let tagValue = "execTagITermProjectGroupNoFocus"
-        let projectPath = "/some/test/iterm_project_path_nf"
-        let commandToRun = "echo hello iTerm project no_focus"
-        let result = try runCommand(arguments: [
-            "exec",
+    
+    @Test("iTerm with no focus mode should fail when action fails")
+    func iTermNoFocusActionFails() throws {
+        let tagValue = "execTagITermNoFocus"
+        let projectPath = "/some/test/iterm_nofocus_path"
+        let commandToRun = "echo no focus"
+        
+        let result = try TestUtilities.runCommand(arguments: [
+            "execute",
             tagValue,
             "--project-path",
             projectPath,
@@ -152,250 +112,64 @@ final class ExecCommandITermTests: BaseTerminatorTests {
             "--focus-mode",
             "no-focus"
         ])
-
-        XCTAssertNotEqual(
-            result.exitCode,
-            ExitCode.success,
-            "Exec command with iTerm, project grouping, no-focus should fail."
-        )
-        XCTAssertTrue(
-            result.errorOutput.contains("Error executing command:") || result.errorOutput
-                .contains("session not found"),
-            "Stderr should contain a relevant error message. Got: \(result.errorOutput)"
+        
+        #expect(result.exitCode != ExitCode.success)
+        #expect(
+            result.errorOutput.contains("Error executing command:") ||
+            result.errorOutput.contains("session not found")
         )
     }
-
-    func testExecCommand_ITerm_WithProjectGrouping_FocusAuto_ActionFails() throws {
-        setenv("TERMINATOR_LOG_LEVEL", "none", 1)
-        setenv("TERMINATOR_APP", "iTerm", 1)
-        setenv("TERMINATOR_WINDOW_GROUPING", "project", 1)
-        defer {
-            unsetenv("TERMINATOR_LOG_LEVEL")
-            unsetenv("TERMINATOR_APP")
-            unsetenv("TERMINATOR_WINDOW_GROUPING")
-        }
-
-        let tagValue = "execTagITermProjectGroupAutoBehavior"
-        let projectPath = "/some/test/iterm_project_path_ab"
-        let commandToRun = "echo hello iTerm project auto_behavior"
-        let result = try runCommand(arguments: [
-            "exec",
+    
+    @Test("iTerm with force focus mode should fail when action fails")
+    func iTermForceFocusActionFails() throws {
+        let tagValue = "execTagITermForceFocus"
+        let projectPath = "/some/test/iterm_forcefocus_path"
+        let commandToRun = "echo force focus"
+        
+        let result = try TestUtilities.runCommand(arguments: [
+            "execute",
             tagValue,
             "--project-path",
             projectPath,
             "--command",
             commandToRun,
             "--focus-mode",
-            "auto-behavior"
-        ])
-
-        XCTAssertNotEqual(
-            result.exitCode,
-            ExitCode.success,
-            "Exec command with iTerm, project grouping, auto-behavior should fail."
-        )
-        XCTAssertTrue(
-            result.errorOutput.contains("Error executing command:") || result.errorOutput
-                .contains("session not found"),
-            "Stderr should contain a relevant error message. Got: \(result.errorOutput)"
-        )
-    }
-
-    func testExecCommand_ITerm_WithSmartGrouping_FocusForce_ActionFails() throws {
-        setenv("TERMINATOR_LOG_LEVEL", "none", 1)
-        setenv("TERMINATOR_APP", "iTerm", 1)
-        setenv("TERMINATOR_WINDOW_GROUPING", "smart", 1)
-        defer {
-            unsetenv("TERMINATOR_LOG_LEVEL")
-            unsetenv("TERMINATOR_APP")
-            unsetenv("TERMINATOR_WINDOW_GROUPING")
-        }
-
-        let tagValue = "execTagITermSmartGroupForceFocus"
-        let commandToRun = "echo hello iTerm smart force_focus"
-        let result = try runCommand(arguments: [
-            "exec",
-            tagValue,
-            "--command",
-            commandToRun,
-            "--focus-mode",
             "force-focus"
         ])
-
-        XCTAssertNotEqual(
-            result.exitCode,
-            ExitCode.success,
-            "Exec command with iTerm, smart grouping, force-focus should fail."
-        )
-        XCTAssertTrue(
-            result.errorOutput.contains("Error executing command:") || result.errorOutput
-                .contains("session not found"),
-            "Stderr should contain a relevant error message. Got: \(result.errorOutput)"
+        
+        #expect(result.exitCode != ExitCode.success)
+        #expect(
+            result.errorOutput.contains("Error executing command:") ||
+            result.errorOutput.contains("session not found")
         )
     }
-
-    func testExecCommand_ITerm_WithSmartGrouping_FocusNo_ActionFails() throws {
-        setenv("TERMINATOR_LOG_LEVEL", "none", 1)
-        setenv("TERMINATOR_APP", "iTerm", 1)
-        setenv("TERMINATOR_WINDOW_GROUPING", "smart", 1)
-        defer {
-            unsetenv("TERMINATOR_LOG_LEVEL")
-            unsetenv("TERMINATOR_APP")
-            unsetenv("TERMINATOR_WINDOW_GROUPING")
-        }
-
-        let tagValue = "execTagITermSmartGroupNoFocus"
-        let commandToRun = "echo hello iTerm smart no_focus"
-        let result = try runCommand(arguments: [
-            "exec",
+    
+    // MARK: - iTerm Profile Tests
+    
+    @Test("iTerm with profile name should fail when action fails", .tags(.configuration))
+    func iTermWithProfileNameActionFails() throws {
+        setenv("TERMINATOR_ITERM_PROFILE_NAME", "MyTestProfile", 1)
+        defer { unsetenv("TERMINATOR_ITERM_PROFILE_NAME") }
+        
+        let tagValue = "execTagITermProfile"
+        let projectPath = "/some/test/iterm_profile_path"
+        let commandToRun = "echo profile test"
+        
+        let result = try TestUtilities.runCommand(arguments: [
+            "execute",
             tagValue,
+            "--project-path",
+            projectPath,
             "--command",
-            commandToRun,
-            "--focus-mode",
-            "no-focus"
+            commandToRun
         ])
-
-        XCTAssertNotEqual(
-            result.exitCode,
-            ExitCode.success,
-            "Exec command with iTerm, smart grouping, no-focus should fail."
-        )
-        XCTAssertTrue(
-            result.errorOutput.contains("Error executing command:") || result.errorOutput
-                .contains("session not found"),
-            "Stderr should contain a relevant error message. Got: \(result.errorOutput)"
-        )
-    }
-
-    func testExecCommand_ITerm_WithSmartGrouping_FocusAuto_ActionFails() throws {
-        setenv("TERMINATOR_LOG_LEVEL", "none", 1)
-        setenv("TERMINATOR_APP", "iTerm", 1)
-        setenv("TERMINATOR_WINDOW_GROUPING", "smart", 1)
-        defer {
-            unsetenv("TERMINATOR_LOG_LEVEL")
-            unsetenv("TERMINATOR_APP")
-            unsetenv("TERMINATOR_WINDOW_GROUPING")
-        }
-
-        let tagValue = "execTagITermSmartGroupAutoBehavior"
-        let commandToRun = "echo hello iTerm smart auto_behavior"
-        let result = try runCommand(arguments: [
-            "exec",
-            tagValue,
-            "--command",
-            commandToRun,
-            "--focus-mode",
-            "auto-behavior"
-        ])
-
-        XCTAssertNotEqual(
-            result.exitCode,
-            ExitCode.success,
-            "Exec command with iTerm, smart grouping, auto-behavior should fail."
-        )
-        XCTAssertTrue(
-            result.errorOutput.contains("Error executing command:") || result.errorOutput
-                .contains("session not found"),
-            "Stderr should contain a relevant error message. Got: \(result.errorOutput)"
-        )
-    }
-
-    func testExecCommand_ITerm_WithOffGrouping_FocusForce_ActionFails() throws {
-        setenv("TERMINATOR_LOG_LEVEL", "none", 1)
-        setenv("TERMINATOR_APP", "iTerm", 1)
-        setenv("TERMINATOR_WINDOW_GROUPING", "off", 1)
-        defer {
-            unsetenv("TERMINATOR_LOG_LEVEL")
-            unsetenv("TERMINATOR_APP")
-            unsetenv("TERMINATOR_WINDOW_GROUPING")
-        }
-
-        let tagValue = "execTagITermOffGroupForceFocus"
-        let commandToRun = "echo hello iTerm off force_focus"
-        let result = try runCommand(arguments: [
-            "exec",
-            tagValue,
-            "--command",
-            commandToRun,
-            "--focus-mode",
-            "force-focus"
-        ])
-
-        XCTAssertNotEqual(
-            result.exitCode,
-            ExitCode.success,
-            "Exec command with iTerm, off grouping, force-focus should fail."
-        )
-        XCTAssertTrue(
-            result.errorOutput.contains("Error executing command:") || result.errorOutput
-                .contains("session not found"),
-            "Stderr should contain a relevant error message. Got: \(result.errorOutput)"
-        )
-    }
-
-    func testExecCommand_ITerm_WithOffGrouping_FocusNo_ActionFails() throws {
-        setenv("TERMINATOR_LOG_LEVEL", "none", 1)
-        setenv("TERMINATOR_APP", "iTerm", 1)
-        setenv("TERMINATOR_WINDOW_GROUPING", "off", 1)
-        defer {
-            unsetenv("TERMINATOR_LOG_LEVEL")
-            unsetenv("TERMINATOR_APP")
-            unsetenv("TERMINATOR_WINDOW_GROUPING")
-        }
-
-        let tagValue = "execTagITermOffGroupNoFocus"
-        let commandToRun = "echo hello iTerm off no_focus"
-        let result = try runCommand(arguments: [
-            "exec",
-            tagValue,
-            "--command",
-            commandToRun,
-            "--focus-mode",
-            "no-focus"
-        ])
-
-        XCTAssertNotEqual(
-            result.exitCode,
-            ExitCode.success,
-            "Exec command with iTerm, off grouping, no-focus should fail."
-        )
-        XCTAssertTrue(
-            result.errorOutput.contains("Error executing command:") || result.errorOutput
-                .contains("session not found"),
-            "Stderr should contain a relevant error message. Got: \(result.errorOutput)"
-        )
-    }
-
-    func testExecCommand_ITerm_WithOffGrouping_FocusAuto_ActionFails() throws {
-        setenv("TERMINATOR_LOG_LEVEL", "none", 1)
-        setenv("TERMINATOR_APP", "iTerm", 1)
-        setenv("TERMINATOR_WINDOW_GROUPING", "off", 1)
-        defer {
-            unsetenv("TERMINATOR_LOG_LEVEL")
-            unsetenv("TERMINATOR_APP")
-            unsetenv("TERMINATOR_WINDOW_GROUPING")
-        }
-
-        let tagValue = "execTagITermOffGroupAutoBehavior"
-        let commandToRun = "echo hello iTerm off auto_behavior"
-        let result = try runCommand(arguments: [
-            "exec",
-            tagValue,
-            "--command",
-            commandToRun,
-            "--focus-mode",
-            "auto-behavior"
-        ])
-
-        XCTAssertNotEqual(
-            result.exitCode,
-            ExitCode.success,
-            "Exec command with iTerm, off grouping, auto-behavior should fail."
-        )
-        XCTAssertTrue(
-            result.errorOutput.contains("Error executing command:") || result.errorOutput
-                .contains("session not found"),
-            "Stderr should contain a relevant error message. Got: \(result.errorOutput)"
+        
+        #expect(result.exitCode != ExitCode.success)
+        #expect(
+            result.errorOutput.contains("Error executing command:") ||
+            result.errorOutput.contains("session not found")
         )
     }
 }
+
+// Test tags are defined in TestTags.swift

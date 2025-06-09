@@ -1,129 +1,197 @@
 import ArgumentParser
 @testable import TerminatorCLI
-import XCTest
+import Testing
+import Foundation
 
-final class ExecCommandTests: BaseTerminatorTests {
-    // MARK: - Basic Tests
-
-    func testExecCommand_MissingTag() throws {
+@Suite("Exec Command Tests", .tags(.exec))
+struct ExecCommandTests {
+    
+    init() {
+        TestUtilities.clearEnvironment()
         setenv("TERMINATOR_LOG_LEVEL", "none", 1)
-        defer { unsetenv("TERMINATOR_LOG_LEVEL") }
-
-        let result = try runCommand(arguments: ["exec"])
-        XCTAssertEqual(
-            result.exitCode,
-            ExitCode(ErrorCodes.improperUsage),
-            "Exec command should fail with improperUsage (64) if tag is missing. Got \(result.exitCode.rawValue)"
-        )
-        XCTAssertTrue(
-            result.errorOutput.lowercased().contains("error: missing expected argument '<tag>'"),
-            "Stderr should indicate missing tag argument. Got: \(result.errorOutput)"
-        )
     }
-
-    func testExecCommand_PrepareSession_ActionFails() throws {
-        setenv("TERMINATOR_LOG_LEVEL", "none", 1)
-        defer { unsetenv("TERMINATOR_LOG_LEVEL") }
-
-        let tagValue = "execTagNoCommand"
-        let result = try runCommand(arguments: ["exec", tagValue]) // No --command, so it's a prepare
-
-        XCTAssertNotEqual(
-            result.exitCode,
-            ExitCode.success,
-            "Exec command (prepare session) should fail when underlying action fails."
-        )
-        // Expect a general error from the controller or session not found
-        XCTAssertTrue(
-            result.errorOutput.contains("Error executing command:") || result.errorOutput
-                .contains("session not found"),
-            "Stderr should contain a relevant error message for prepare session failure. Got: \(result.errorOutput)"
-        )
+    
+    deinit {
+        unsetenv("TERMINATOR_LOG_LEVEL")
     }
-
-    func testExecCommand_WithCommand_ActionFails() throws {
-        setenv("TERMINATOR_LOG_LEVEL", "none", 1)
-        defer { unsetenv("TERMINATOR_LOG_LEVEL") }
-
-        let tagValue = "execTagWithCommand"
-        let commandToRun = "echo hello"
-        let result = try runCommand(arguments: ["exec", tagValue, "--command", commandToRun])
-
-        XCTAssertNotEqual(
-            result.exitCode,
-            ExitCode.success,
-            "Exec command with a command should fail when underlying action fails."
-        )
-        // Expect a general error from the controller or session not found
-        XCTAssertTrue(
-            result.errorOutput.contains("Error executing command:") || result.errorOutput
-                .contains("session not found"),
-            "Stderr should contain a relevant error message for command execution failure. Got: \(result.errorOutput)"
-        )
+    
+    // MARK: - Nested Suite for Basic Validation
+    
+    @Suite("Basic Validation", .timeLimit(.seconds(10)))
+    struct BasicValidation {
+        
+        @Test("Missing required arguments", 
+              arguments: [
+                  CommandTestCase(
+                      arguments: ["execute"],
+                      expectedExitCode: ExitCode(ErrorCodes.improperUsage),
+                      errorShouldContain: ["missing expected argument '<tag>'"]
+                  ),
+                  CommandTestCase(
+                      arguments: ["execute", "tag", "--project-path"],
+                      expectedExitCode: ExitCode(ErrorCodes.improperUsage),
+                      errorShouldContain: ["missing expected argument"]
+                  )
+              ])
+        func missingRequiredArguments(_ testCase: CommandTestCase) throws {
+            try TestUtilities.assertCommand(testCase)
+        }
+        
+        @Test("Session preparation scenarios",
+              arguments: [
+                  ("execTagNoCommand", nil, "Prepare session without command"),
+                  ("execTagEmptyCommand", "", "Empty command string")
+              ])
+        func sessionPreparation(tag: String, command: String?, description: String) throws {
+            var args = ["execute", tag]
+            if let command {
+                args.append(contentsOf: ["--command", command])
+            }
+            
+            try TestUtilities.assertActionFails(arguments: args)
+        }
     }
-
-    func testExecCommand_Background_ActionFails() throws {
-        setenv("TERMINATOR_LOG_LEVEL", "none", 1)
-        defer { unsetenv("TERMINATOR_LOG_LEVEL") }
-
-        let tagValue = "execTagBackground"
-        let commandToRun = "sleep 5"
-        // --background is a Flag, so it doesn't take a value
-        let result = try runCommand(arguments: ["exec", tagValue, "--command", commandToRun, "--background"])
-
-        XCTAssertNotEqual(
-            result.exitCode,
-            ExitCode.success,
-            "Exec command with --background should still report failure if action fails."
-        )
-        // Even for background, if the setup/initial dispatch fails (e.g. session not found), it should report an error.
-        XCTAssertTrue(
-            result.errorOutput.contains("Error executing command:") || result.errorOutput
-                .contains("session not found"),
-            "Stderr should contain a relevant error message for background command failure. Got: \(result.errorOutput)"
-        )
+    
+    // MARK: - Nested Suite for Parameter Validation
+    
+    @Suite("Parameter Validation", .tags(.parameters), .timeLimit(.seconds(10)))
+    struct ParameterValidation {
+        
+        @Test("Lines parameter validation",
+              arguments: [
+                  ParameterTestCase<Int>(input: "50", expectedValue: 50),
+                  ParameterTestCase<Int>(input: "0", expectedValue: 0),
+                  ParameterTestCase<Int>(input: "50.5", expectedValue: 50), // Should be floored
+                  ParameterTestCase<Int>(input: "-10", shouldSucceed: false, errorKeyword: "lines"),
+                  ParameterTestCase<Int>(input: "notanumber", shouldSucceed: false, errorKeyword: "lines")
+              ])
+        func linesParameter(_ testCase: ParameterTestCase<Int>) throws {
+            let result = try TestUtilities.runCommand(arguments: ["execute", "testTag", "--lines", testCase.input])
+            
+            if testCase.shouldSucceed {
+                #expect(!result.errorOutput.contains("Invalid value for '--lines'"))
+            } else {
+                #expect(result.exitCode == ExitCode(ErrorCodes.improperUsage))
+                if let errorKeyword = testCase.errorKeyword {
+                    #expect(result.errorOutput.contains(errorKeyword))
+                }
+            }
+        }
+        
+        @Test("Timeout parameter validation",
+              arguments: [
+                  ParameterTestCase<Int>(input: "60", expectedValue: 60),
+                  ParameterTestCase<Int>(input: "1", expectedValue: 1),
+                  ParameterTestCase<Int>(input: "0", shouldSucceed: false, errorKeyword: "timeout"),
+                  ParameterTestCase<Int>(input: "-5", shouldSucceed: false, errorKeyword: "timeout"),
+                  ParameterTestCase<Int>(input: "notanumber", shouldSucceed: false, errorKeyword: "timeout")
+              ])
+        func timeoutParameter(_ testCase: ParameterTestCase<Int>) throws {
+            let result = try TestUtilities.runCommand(arguments: ["execute", "testTag", "--timeout", testCase.input])
+            
+            if testCase.shouldSucceed {
+                #expect(!result.errorOutput.contains("Invalid value for '--timeout'"))
+            } else {
+                #expect(result.exitCode == ExitCode(ErrorCodes.improperUsage))
+                if let errorKeyword = testCase.errorKeyword {
+                    #expect(result.errorOutput.contains(errorKeyword))
+                }
+            }
+        }
+        
+        @Test("Focus mode validation",
+              arguments: ["force-focus", "no-focus", "auto-behavior"])
+        func validFocusModes(mode: String) throws {
+            try TestUtilities.assertActionFails(
+                arguments: ["execute", "testTag", "--focus-mode", mode]
+            )
+        }
+        
+        @Test("Invalid focus mode should fail with improper usage")
+        func invalidFocusMode() throws {
+            try TestUtilities.assertCommand(
+                CommandTestCase(
+                    arguments: ["execute", "testTag", "--focus-mode", "invalid-mode"],
+                    expectedExitCode: ExitCode(ErrorCodes.improperUsage),
+                    errorShouldContain: ["Invalid value for '--focus-mode'"]
+                )
+            )
+        }
     }
-
-    func testExecCommand_EmptyCommand_IsPrepareSession_ActionFails() throws {
-        setenv("TERMINATOR_LOG_LEVEL", "none", 1)
-        defer { unsetenv("TERMINATOR_LOG_LEVEL") }
-
-        let tagValue = "execTagEmptyCommand"
-        let result = try runCommand(arguments: ["exec", tagValue, "--command", ""])
-
-        XCTAssertNotEqual(
-            result.exitCode,
-            ExitCode.success,
-            "Exec command with empty command (prepare session) should fail when underlying action fails."
-        )
-        XCTAssertTrue(
-            result.errorOutput.contains("Error executing command:") || result.errorOutput
-                .contains("session not found"),
-            "Stderr should contain a relevant error message for empty command (prepare) failure. Got: \(result.errorOutput)"
-        )
+    
+    // MARK: - Nested Suite for Project Path Handling
+    
+    @Suite("Project Path Handling", .tags(.projectPath), .timeLimit(.seconds(10)))
+    struct ProjectPathHandling {
+        
+        @Test("Project path validation",
+              arguments: [
+                  ("/absolute/path", true, nil),
+                  ("relative/path", false, "project-path"),
+                  ("~/home/path", false, "must be an absolute path"),
+                  ("", false, "project-path")
+              ])
+        func projectPathValidation(path: String, isValid: Bool, errorKeyword: String?) throws {
+            let args = path.isEmpty 
+                ? ["execute", "testTag"]
+                : ["execute", "testTag", "--project-path", path]
+            
+            let result = try TestUtilities.runCommand(arguments: args)
+            
+            if !isValid {
+                #expect(result.exitCode == ExitCode(ErrorCodes.improperUsage))
+                if let errorKeyword {
+                    #expect(result.errorOutput.contains(errorKeyword))
+                }
+            }
+        }
     }
-
-    func testExecCommand_WithTimeout_ActionFails() throws {
-        setenv("TERMINATOR_LOG_LEVEL", "none", 1)
-        defer { unsetenv("TERMINATOR_LOG_LEVEL") }
-
-        let tagValue = "execTagWithTimeout"
-        let commandToRun = "echo hello"
-        let result = try runCommand(arguments: ["exec", tagValue, "--command", commandToRun, "--timeout", "1"])
-
-        XCTAssertNotEqual(
-            result.exitCode,
-            ExitCode.success,
-            "Exec command with timeout should fail when underlying action fails."
-        )
-        // The timeout itself might not be triggered if basic session setup fails first.
-        // So we expect either a generic execution error or a session not found error primarily.
-        // If a timeout error specific to AppConfig/Controller were to surface directly, the message would be different.
-        XCTAssertTrue(
-            result.errorOutput.contains("Error executing command:") ||
-                result.errorOutput.contains("session not found") ||
-                result.errorOutput.contains("timed out"), // Adding timeout as a possible message part
-            "Stderr should contain a relevant error message for command execution failure with timeout. Got: \(result.errorOutput)"
-        )
+    
+    // MARK: - Nested Suite for Execution Modes
+    
+    @Suite("Execution Modes", .tags(.backgroundExecution), .timeLimit(.seconds(10)))
+    struct ExecutionModes {
+        
+        @Test("Background execution should fail when action fails")
+        func backgroundExecution() throws {
+            try TestUtilities.assertActionFails(
+                arguments: ["execute", "execTagBackground", "--command", "sleep 5", "--background"]
+            )
+        }
+        
+        @Test("Foreground execution should fail when action fails")
+        func foregroundExecution() throws {
+            try TestUtilities.assertActionFails(
+                arguments: ["execute", "execTagForeground", "--command", "echo hello"]
+            )
+        }
+    }
+    
+    // MARK: - Nested Suite for Environment Variables
+    
+    @Suite("Environment Variables", .tags(.environment), .timeLimit(.seconds(10)))
+    struct EnvironmentVariables {
+        
+        @Test("Environment variables should be respected")
+        func environmentVariablesRespected() throws {
+            var env = EnvironmentSetup()
+            env.set("TERMINATOR_DEFAULT_LINES", "200")
+            env.set("TERMINATOR_FOREGROUND_COMPLETION_SECONDS", "120")
+            defer { env.restore() }
+            
+            try TestUtilities.assertActionFails(
+                arguments: ["exec", "testTag", "--command", "echo test"]
+            )
+        }
+        
+        @Test("Reuse busy session flag should be accepted")
+        func reuseBusySessionFlag() throws {
+            try TestUtilities.assertActionFails(
+                arguments: ["exec", "testTag", "--reuse-busy-session"],
+                expectedErrors: ["Error executing command:", "session not found"]
+            )
+        }
     }
 }
+
+// Test tags are defined in TestTags.swift

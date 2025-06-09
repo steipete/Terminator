@@ -32,22 +32,22 @@ describe('Terminator E2E Tests', () => {
     }
   });
 
-  describe('List Command', () => {
+  describe('Sessions Command', () => {
     it('should handle empty terminal sessions gracefully', async () => {
-      const result = await runTerminator(['list', '--terminal-app', 'terminal']);
+      const result = await runTerminator(['sessions', '--terminal-app', 'terminal']);
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('No active sessions found');
     });
 
-    it('should handle list command with iTerm when no windows exist', async () => {
-      const result = await runTerminator(['list', '--terminal-app', 'iterm']);
+    it('should handle sessions command with iTerm when no windows exist', async () => {
+      const result = await runTerminator(['sessions', '--terminal-app', 'iterm']);
       expect(result.exitCode).toBe(0);
       // Should either show no sessions or handle gracefully
       expect(result.all).toMatch(/No active sessions found|Successfully parsed 0 iTerm sessions/);
     });
 
     it('should list sessions in JSON format', async () => {
-      const result = await runTerminator(['list', '--terminal-app', 'terminal', '--json']);
+      const result = await runTerminator(['sessions', '--terminal-app', 'terminal', '--json']);
       expect(result.exitCode).toBe(0);
       
       // Output might be "null" or empty array when no sessions
@@ -61,17 +61,17 @@ describe('Terminator E2E Tests', () => {
     });
 
     it('should handle invalid terminal app gracefully', async () => {
-      const result = await runTerminator(['list', '--terminal-app', 'invalid-app']);
+      const result = await runTerminator(['sessions', '--terminal-app', 'invalid-app']);
       expect(result.exitCode).not.toBe(0);
       expect(result.stderr).toContain('Invalid value');
     });
   });
 
-  describe('Exec Command Edge Cases', () => {
+  describe('Execute Command Edge Cases', () => {
     it('should handle empty command (prepare session only)', async () => {
       const tag = `test-empty-${Date.now()}`;
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--command', '',
@@ -85,7 +85,7 @@ describe('Terminator E2E Tests', () => {
     it('should handle exec without command flag entirely', async () => {
       const tag = `test-nocommand-${Date.now()}`;
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--project-path', PROJECT_ROOT
@@ -99,7 +99,7 @@ describe('Terminator E2E Tests', () => {
       const tag = `test-special-${Date.now()}`;
       const specialCommand = 'echo "Hello $USER" && echo \'Single quotes\' && echo `date`';
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--command', specialCommand
@@ -112,7 +112,7 @@ describe('Terminator E2E Tests', () => {
       const tag = `test-long-${Date.now()}`;
       const longCommand = 'echo ' + 'a'.repeat(1000);
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--command', longCommand
@@ -125,7 +125,7 @@ describe('Terminator E2E Tests', () => {
       const tag = `test-multiline-${Date.now()}`;
       const multilineCommand = 'echo "Line 1" &&\necho "Line 2" &&\necho "Line 3"';
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--command', multilineCommand
@@ -162,7 +162,7 @@ describe('Terminator E2E Tests', () => {
 
   describe('Error Handling', () => {
     it('should provide helpful error for missing required arguments', async () => {
-      const result = await runTerminator(['exec']);
+      const result = await runTerminator(['execute']);
       expect(result.exitCode).not.toBe(0);
       expect(result.stderr).toContain('Missing expected argument');
     });
@@ -180,7 +180,7 @@ describe('Terminator E2E Tests', () => {
     it('should handle permission errors gracefully', async () => {
       // This might not always trigger, but tests the error path
       const result = await runTerminator([
-        'list',
+        'sessions',
         '--terminal-app', 'terminal',
         '--log-dir', '/root/no-permission'  // Should fail
       ]);
@@ -196,7 +196,7 @@ describe('Terminator E2E Tests', () => {
       const tag = `test-unicode-${Date.now()}`;
       const unicodeCommand = 'echo "Hello 世界 🌍"';
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--command', unicodeCommand
@@ -209,7 +209,7 @@ describe('Terminator E2E Tests', () => {
       const tag = `test-spaces-${Date.now()}`;
       const pathWithSpaces = '/tmp/test folder with spaces';
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--project-path', pathWithSpaces,
@@ -223,7 +223,7 @@ describe('Terminator E2E Tests', () => {
   describe('Tag Filtering', () => {
     it('should handle filtering by non-existent tag', async () => {
       const result = await runTerminator([
-        'list',
+        'sessions',
         '--terminal-app', 'terminal',
         '--tag', 'non-existent-tag-xyz'
       ]);
@@ -235,7 +235,7 @@ describe('Terminator E2E Tests', () => {
     it('should handle creating session with tag', async () => {
       const tag = `test-tag-${Date.now()}`;
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--command', 'echo "Tagged session"'
@@ -271,7 +271,7 @@ describe('Terminator E2E Tests', () => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Now try to list sessions
-      const result = await runTerminator(['list', '--terminal-app', 'terminal']);
+      const result = await runTerminator(['sessions', '--terminal-app', 'terminal']);
       
       // Should either start Terminal or handle gracefully
       expect(result.exitCode).toBe(0);

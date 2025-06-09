@@ -1,8 +1,11 @@
 import ArgumentParser
 import Foundation
 
-struct Exec: ParsableCommand { // Changed from TerminatorSubcommand to ParsableCommand as it's standalone now
-    static let configuration = CommandConfiguration(abstract: "Execute a command in a session.")
+struct Execute: ParsableCommand { // Changed from TerminatorSubcommand to ParsableCommand as it's standalone now
+    static let configuration = CommandConfiguration(
+        commandName: "execute",
+        abstract: "Execute a command in a session."
+    )
 
     @OptionGroup var globals: TerminatorCLI.GlobalOptions // Explicitly reference GlobalOptions from TerminatorCLI
 

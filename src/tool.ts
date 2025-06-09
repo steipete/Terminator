@@ -30,8 +30,8 @@ export const terminatorTool = {
         properties: {
             action: {
                 type: 'string',
-                description: "Optional. The operation to perform: 'execute', 'read', 'list', 'info', 'focus', or 'kill'. Defaults to 'execute'.",
-                enum: ['execute', 'read', 'list', 'info', 'focus', 'kill'],
+                description: "Optional. The operation to perform: 'execute', 'read', 'sessions', 'info', 'focus', or 'kill'. Defaults to 'execute'.",
+                enum: ['execute', 'read', 'sessions', 'info', 'focus', 'kill'],
                 default: 'execute'
             },
             project_path: { type: 'string', description: 'Absolute path to the project directory. This is a mandatory field.' },
@@ -94,11 +94,11 @@ export const terminatorTool = {
 
         const action = params.action || 'execute';
         
-        // Map 'execute' to 'exec' for internal use
-        const internalAction = action === 'execute' ? 'exec' : action;
+        // Map action names to CLI commands
+        const internalAction = action === 'execute' ? 'execute' : action === 'sessions' ? 'sessions' : action;
         
-        if (!['exec', 'execute', 'read', 'list', 'info', 'focus', 'kill'].includes(action)) {
-            return { success: false, message: `Error: Invalid action '${action}'. Must be one of execute, read, list, info, focus, kill.` };
+        if (!['execute', 'read', 'sessions', 'info', 'focus', 'kill'].includes(action)) {
+            return { success: false, message: `Error: Invalid action '${action}'. Must be one of execute, read, sessions, info, focus, kill.` };
         }
         
         const options = getCanonicalOptions(params as any);
@@ -111,7 +111,7 @@ export const terminatorTool = {
         }
 
         let commandOpt: string | undefined = typeof options.command === 'string' ? options.command : undefined;
-        if (internalAction === 'exec' && options.command === undefined) commandOpt = '';
+        if (internalAction === 'execute' && options.command === undefined) commandOpt = '';
         
         let lines = typeof options.lines === 'number' ? options.lines : DEFAULT_LINES;
         if (typeof options.lines === 'string') lines = parseInt(options.lines, 10) || DEFAULT_LINES;
@@ -137,7 +137,7 @@ export const terminatorTool = {
 
         let tag = resolveDefaultTag(options.tag, effectiveProjectPath);
 
-        if (!tag && ['exec', 'execute', 'read', 'kill', 'focus'].includes(action) && action !== 'list' && action !== 'info') {
+        if (!tag && ['execute', 'read', 'kill', 'focus'].includes(action) && action !== 'sessions' && action !== 'info') {
             const errorMsg = 'Error: Could not determine a session tag even with a project_path. This indicates an internal issue.';
             logger.error({ tagVal: options.tag, projPath: effectiveProjectPath }, errorMsg);
             return { success: false, message: errorMsg };
@@ -145,9 +145,9 @@ export const terminatorTool = {
         
         const cliArgs: string[] = [internalAction];
         if (tag) {
-            if (internalAction === 'list' && options.tag) { 
+            if (internalAction === 'sessions' && options.tag) { 
                 /* Will be added as --tag option later */
-            } else if (internalAction !== 'list' && internalAction !== 'info') {
+            } else if (internalAction !== 'sessions' && internalAction !== 'info') {
                 cliArgs.push(tag);
             }
         }
@@ -155,7 +155,7 @@ export const terminatorTool = {
         if (effectiveProjectPath && internalAction !== 'info') {
             cliArgs.push('--project-path', effectiveProjectPath);
         }
-        if (commandOpt !== undefined && internalAction === 'exec') { 
+        if (commandOpt !== undefined && internalAction === 'execute') { 
             // Only add --command if there's actually a command to execute
             // Empty string means "prepare session only" and shouldn't have --command flag
             if (commandOpt !== '') {
@@ -163,16 +163,16 @@ export const terminatorTool = {
             }
         }
         
-        if (internalAction === 'exec' || internalAction === 'read') {
+        if (internalAction === 'execute' || internalAction === 'read') {
             cliArgs.push('--lines', lines.toString());
         }
         
         const focusModeCli = focus ? 'force-focus' : 'no-focus'; 
-        if (['exec', 'read', 'kill', 'focus'].includes(internalAction)) {
+        if (['execute', 'read', 'kill', 'focus'].includes(internalAction)) {
             cliArgs.push('--focus-mode', focusModeCli);
         }
 
-        if (internalAction === 'exec') {
+        if (internalAction === 'execute') {
             if (background) {
                 cliArgs.push('--background');
             }
@@ -181,10 +181,10 @@ export const terminatorTool = {
             }
         }
         
-        if (internalAction === 'list' || internalAction === 'info' || internalAction === 'read') {
+        if (internalAction === 'sessions' || internalAction === 'info' || internalAction === 'read') {
             cliArgs.push('--json');
         }
-        if (internalAction === 'list' && tag && options.tag) { 
+        if (internalAction === 'sessions' && tag && options.tag) { 
             cliArgs.push('--tag', tag); 
         }
 

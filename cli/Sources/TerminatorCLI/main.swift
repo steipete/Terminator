@@ -11,7 +11,7 @@ struct TerminatorCLI: ParsableCommand {
     static var configuration = CommandConfiguration(
         abstract: "A Swift CLI to manage macOS terminal sessions for an MCP plugin.",
         version: "1.0.0-beta.1", // Updated to reflect significant refactoring
-        subcommands: [Exec.self, Read.self, List.self, Info.self, Focus.self, Kill.self],
+        subcommands: [Execute.self, Read.self, Sessions.self, Info.self, Focus.self, Kill.self],
         defaultSubcommand: Info.self
     )
 

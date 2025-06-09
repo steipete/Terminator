@@ -32,7 +32,7 @@ describe('swift-cli', () => {
 
     describe('invokeSwiftCLI', () => {
         it('should spawn Swift CLI with correct arguments', async () => {
-            const args = ['exec', 'test-tag', '--command', 'echo hello'];
+            const args = ['execute', 'test-tag', '--command', 'echo hello'];
             const env = { TERMINATOR_APP: 'iTerm' };
             
             // Set up successful execution
@@ -61,7 +61,7 @@ describe('swift-cli', () => {
         });
 
         it('should handle stderr output', async () => {
-            const args = ['exec', 'test-tag'];
+            const args = ['execute', 'test-tag'];
             const errorMessage = 'Error: Something went wrong';
             
             mockChildProcess.on.mockImplementation((event: string, handler: Function) => {
@@ -82,7 +82,7 @@ describe('swift-cli', () => {
         });
 
         it('should handle process errors', async () => {
-            const args = ['exec', 'test-tag'];
+            const args = ['execute', 'test-tag'];
             
             mockChildProcess.on.mockImplementation((event: string, handler: Function) => {
                 if (event === 'error') {
@@ -99,7 +99,7 @@ describe('swift-cli', () => {
         });
 
         it('should handle cancellation via abort signal', async () => {
-            const args = ['exec', 'test-tag'];
+            const args = ['execute', 'test-tag'];
             
             mockContext.abortSignal.addEventListener.mockImplementation((event: string, handler: Function) => {
                 if (event === 'abort') {
@@ -125,7 +125,7 @@ describe('swift-cli', () => {
         });
 
         it('should handle internal timeout', async () => {
-            const args = ['exec', 'test-tag'];
+            const args = ['execute', 'test-tag'];
             const timeout = 100; // 100ms timeout
             
             mockChildProcess.on.mockImplementation((event: string, handler: Function) => {
@@ -144,7 +144,7 @@ describe('swift-cli', () => {
         });
 
         it('should include PATH in environment', async () => {
-            const args = ['list'];
+            const args = ['sessions'];
             const customEnv = { CUSTOM_VAR: 'value' };
             
             mockChildProcess.on.mockImplementation((event: string, handler: Function) => {

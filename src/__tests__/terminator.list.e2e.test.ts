@@ -15,7 +15,7 @@ describe('Terminator MCP Tool - List Action E2E Tests', () => {
 
   it('should use provided list action explicitly', async () => {
     const params: TerminatorExecuteParams = {
-      action: 'list',
+      action: 'sessions',
       project_path: '/Users/steipete/Projects/Terminator',
     };
     
@@ -27,13 +27,13 @@ describe('Terminator MCP Tool - List Action E2E Tests', () => {
 
     expect(mockedInvokeSwiftCLI).toHaveBeenCalled();
     const calledArgs = mockedInvokeSwiftCLI.mock.calls[0][0];
-    expect(calledArgs[0]).toBe('list');
+    expect(calledArgs[0]).toBe('sessions');
     expect(calledArgs).toContain('--json');
   });
 
   it('should pass tag option to Swift CLI when provided', async () => {
     const params: TerminatorExecuteParams = {
-      action: 'list',
+      action: 'sessions',
       project_path: '/Users/steipete/Projects/Terminator',
       tag: 'specific-tag',
     };
@@ -53,7 +53,7 @@ describe('Terminator MCP Tool - List Action E2E Tests', () => {
     
     expect(mockedInvokeSwiftCLI).toHaveBeenCalled();
     const calledArgs = mockedInvokeSwiftCLI.mock.calls[0][0];
-    expect(calledArgs[0]).toBe('list');
+    expect(calledArgs[0]).toBe('sessions');
     expect(calledArgs).toContain('--tag');
     expect(calledArgs).toContain('specific-tag');
     expect(calledArgs).toContain('--json');
@@ -61,7 +61,7 @@ describe('Terminator MCP Tool - List Action E2E Tests', () => {
 
   it('should handle list with multiple sessions', async () => {
     const params: TerminatorExecuteParams = {
-      action: 'list',
+      action: 'sessions',
       project_path: '/Users/steipete/Projects/Terminator',
     };
     
@@ -89,7 +89,7 @@ describe('Terminator MCP Tool - List Action E2E Tests', () => {
 
   it('should handle malformed JSON response gracefully', async () => {
     const params: TerminatorExecuteParams = {
-      action: 'list',
+      action: 'sessions',
       project_path: '/Users/steipete/Projects/Terminator',
     };
     

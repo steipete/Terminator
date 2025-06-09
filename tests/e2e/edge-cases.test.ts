@@ -35,7 +35,7 @@ describe('Terminator Edge Cases', () => {
   describe('Range Bounds Edge Cases', () => {
     it('should handle empty AppleScript lists without crashing', async () => {
       // This specifically tests the Range bounds fix
-      const result = await runTerminator(['list', '--terminal-app', 'terminal']);
+      const result = await runTerminator(['sessions', '--terminal-app', 'terminal']);
       
       // Should not crash with Range bounds error
       expect(result.exitCode).toBe(0);
@@ -45,7 +45,7 @@ describe('Terminator Edge Cases', () => {
 
     it('should handle nested empty lists in AppleScript results', async () => {
       // Test with iTerm which might return nested structures
-      const result = await runTerminator(['list', '--terminal-app', 'iterm', '--json']);
+      const result = await runTerminator(['sessions', '--terminal-app', 'iterm', '--json']);
       
       expect(result.exitCode).toBe(0);
       expect(result.stderr).not.toContain('Range requires lowerBound <= upperBound');
@@ -64,7 +64,7 @@ describe('Terminator Edge Cases', () => {
     it('should handle commands with backticks', async () => {
       const tag = `test-backticks-${Date.now()}`;
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--command', 'echo `whoami`'
@@ -76,7 +76,7 @@ describe('Terminator Edge Cases', () => {
     it('should handle commands with dollar signs', async () => {
       const tag = `test-dollar-${Date.now()}`;
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--command', 'echo $HOME'
@@ -88,7 +88,7 @@ describe('Terminator Edge Cases', () => {
     it('should handle commands with semicolons', async () => {
       const tag = `test-semicolon-${Date.now()}`;
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--command', 'echo "First"; echo "Second"'
@@ -100,7 +100,7 @@ describe('Terminator Edge Cases', () => {
     it('should handle commands with pipes', async () => {
       const tag = `test-pipe-${Date.now()}`;
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--command', 'echo "test" | cat'
@@ -112,7 +112,7 @@ describe('Terminator Edge Cases', () => {
     it('should handle commands with redirects', async () => {
       const tag = `test-redirect-${Date.now()}`;
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--command', 'echo "test" > /tmp/terminator-test.txt'
@@ -126,7 +126,7 @@ describe('Terminator Edge Cases', () => {
     it('should handle paths with tildes', async () => {
       const tag = `test-tilde-${Date.now()}`;
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--project-path', '~/Desktop',
@@ -139,7 +139,7 @@ describe('Terminator Edge Cases', () => {
     it('should handle paths with environment variables', async () => {
       const tag = `test-envvar-${Date.now()}`;
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--project-path', '$HOME/Desktop',
@@ -152,7 +152,7 @@ describe('Terminator Edge Cases', () => {
     it('should handle relative paths', async () => {
       const tag = `test-relative-${Date.now()}`;
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--project-path', '.',
@@ -165,7 +165,7 @@ describe('Terminator Edge Cases', () => {
     it('should handle non-existent paths gracefully', async () => {
       const tag = `test-nonexist-${Date.now()}`;
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--project-path', '/this/path/does/not/exist/xyz123',
@@ -181,7 +181,7 @@ describe('Terminator Edge Cases', () => {
     it('should handle completely empty exec command', async () => {
       const tag = `test-empty-exec-${Date.now()}`;
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal'
       ]);
@@ -193,7 +193,7 @@ describe('Terminator Edge Cases', () => {
     it('should handle whitespace-only commands', async () => {
       const tag = `test-whitespace-${Date.now()}`;
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--command', '   '
@@ -205,7 +205,7 @@ describe('Terminator Edge Cases', () => {
     it('should handle zero-length command string', async () => {
       const tag = `test-zerolen-${Date.now()}`;
       const result = await runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--command', ''
@@ -222,7 +222,7 @@ describe('Terminator Edge Cases', () => {
       for (let i = 0; i < 5; i++) {
         const tag = `test-concurrent-${Date.now()}-${i}`;
         promises.push(runTerminator([
-          'exec',
+          'execute',
           tag,
           '--terminal-app', 'terminal',
           '--command', `echo "Concurrent test ${i}"`
@@ -237,19 +237,19 @@ describe('Terminator Edge Cases', () => {
       });
     });
 
-    it('should handle list while sessions are being created', async () => {
-      const tag = `test-concurrent-list-${Date.now()}`;
+    it('should handle sessions while sessions are being created', async () => {
+      const tag = `test-concurrent-sessions-${Date.now()}`;
       // Start creating a session
       const execPromise = runTerminator([
-        'exec',
+        'execute',
         tag,
         '--terminal-app', 'terminal',
         '--command', 'sleep 5'
       ]);
       
-      // Immediately list sessions
+      // Immediately query sessions
       const listResult = await runTerminator([
-        'list',
+        'sessions',
         '--terminal-app', 'terminal'
       ]);
       
@@ -292,7 +292,7 @@ describe('Terminator Edge Cases', () => {
   describe('Logging Edge Cases', () => {
     it('should handle invalid log directory gracefully', async () => {
       const result = await runTerminator([
-        'list',
+        'sessions',
         '--terminal-app', 'terminal',
         '--log-dir', '/dev/null/not-a-directory'
       ]);
@@ -303,7 +303,7 @@ describe('Terminator Edge Cases', () => {
 
     it('should handle very verbose logging', async () => {
       const result = await runTerminator([
-        'list',
+        'sessions',
         '--terminal-app', 'terminal',
         '--log-level', 'debug',
         '--verbose'

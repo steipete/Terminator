@@ -1,8 +1,11 @@
 import ArgumentParser
 import Foundation
 
-struct List: ParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "List active Terminator sessions.")
+struct Sessions: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "sessions",
+        abstract: "List active Terminator sessions."
+    )
 
     @OptionGroup var globals: TerminatorCLI.GlobalOptions // Adjusted for external reference
 
@@ -49,7 +52,7 @@ struct List: ParsableCommand {
     private func logCommand() {
         Logger.log(
             level: .info,
-            "Executing 'list' command."
+            "Executing 'sessions' command."
                 + (projectPath != nil ? " Filtering by project: \(projectPath!)" : "")
                 + (tag != nil ? " Filtering by tag: \(tag!)" : "")
         )

@@ -124,26 +124,28 @@ For local development configuration:
 ```json
 {
   "mcpServers": {
-    "terminator_local": {
+    "terminator": {
       "command": "node",
-      "args": [
-        "/path/to/terminator/dist/index.js"
-      ],
+      "args": ["/Users/steipete/Projects/Terminator/dist/index.js"],
       "env": {
-        "TERMINATOR_LOG_LEVEL": "debug"
+        "MCP_SERVER_VIA_STDIO": "true",
+        "TERMINATOR_LOG_LEVEL": "debug",
+        "TERMINATOR_LOG_FILE": "/tmp/terminator.log"
       }
     }
   }
 }
 ```
 
+Replace `/Users/steipete/Projects/Terminator` with your actual project path.
+
 ## Functionality
 
 The core functionality is exposed via the `terminator.execute` MCP tool. This tool allows an AI agent to perform actions such as:
 
-*   **`exec`**: Execute a shell command in a managed terminal session.
+*   **`execute`**: Execute a shell command in a managed terminal session.
 *   **`read`**: Read output from an existing session.
-*   **`list`**: List all active Terminator-managed sessions.
+*   **`sessions`**: List all active Terminator-managed sessions.
 *   **`info`**: Get information about Terminator (version, configuration, sessions).
 *   **`focus`**: Bring a specific session's terminal window/tab to the foreground.
 *   **`kill`**: Terminate the process running in a specific session.
@@ -158,16 +160,16 @@ The core functionality is exposed via the `terminator.execute` MCP tool. This to
 
 **Parameters:**
 
-*   `action: string` (Required): The operation to perform. Enum: `"exec"`, `"read"`, `"list"`, `"info"`, `"focus"`, `"kill"`. Default: `"exec"`.
+*   `action: string` (Required): The operation to perform. Enum: `"execute"`, `"read"`, `"sessions"`, `"info"`, `"focus"`, `"kill"`. Default: `"execute"`.
 *   `project_path: string` (Required): Absolute path to the project directory. This is used to uniquely identify sessions and can influence window/tab grouping behavior.
-*   `tag?: string`: An optional unique identifier for the session within the context of a `project_path`. If omitted, a tag may be derived from the `project_path` or other factors. Primarily used with `exec`, `read`, `kill`, `focus`. Can be used to filter `list`.
-*   `command?: string`: (Required for `action: "exec"`) The shell command to execute. Example: `"npm run dev"`.
-*   `background?: boolean`: (For `action: "exec"`, default: `false`) If `true`, the command is considered long-running (e.g., a server); the tool returns quickly after starting it. If `false`, the tool waits for the command to complete (or timeout).
-*   `lines?: number`: (For `action: "exec"`, `"read"`, default: `100`) Maximum number of recent output lines to return.
-*   `timeout?: number`: (For `action: "exec"`, in seconds) Overrides the default timeout. For `background: true`, this is the startup timeout. For `background: false`, this is the completion timeout.
-*   `focus?: boolean`: (For `action: "exec"`, `"read"`, `"kill"`, `"focus"`, default: `true`) If `true`, `terminator` will attempt to bring the terminal application to the foreground and focus the relevant session. For `action: "focus"`, this is implicitly `true`.
+*   `tag?: string`: An optional unique identifier for the session within the context of a `project_path`. If omitted, a tag may be derived from the `project_path` or other factors. Primarily used with `execute`, `read`, `kill`, `focus`. Can be used to filter `sessions`.
+*   `command?: string`: (Required for `action: "execute"`) The shell command to execute. Example: `"npm run dev"`.
+*   `background?: boolean`: (For `action: "execute"`, default: `false`) If `true`, the command is considered long-running (e.g., a server); the tool returns quickly after starting it. If `false`, the tool waits for the command to complete (or timeout).
+*   `lines?: number`: (For `action: "execute"`, `"read"`, default: `100`) Maximum number of recent output lines to return.
+*   `timeout?: number`: (For `action: "execute"`, in seconds) Overrides the default timeout. For `background: true`, this is the startup timeout. For `background: false`, this is the completion timeout.
+*   `focus?: boolean`: (For `action: "execute"`, `"read"`, `"kill"`, `"focus"`, default: `true`) If `true`, `terminator` will attempt to bring the terminal application to the foreground and focus the relevant session. For `action: "focus"`, this is implicitly `true`.
 
-**Returns:** `Promise<{ success: boolean, message: string, data?: any }>` (The `data` field may contain action-specific information, e.g., output for `read` or `exec`)
+**Returns:** `Promise<{ success: boolean, message: string, data?: any }>` (The `data` field may contain action-specific information, e.g., output for `read` or `execute`)
 
 ## Configuration (Environment Variables)
 
@@ -192,20 +194,20 @@ The `terminator` Swift CLI (and by extension, this NPM package) can be configure
     *   `"smart"`: (Default) Tries to find an existing window for the `project_path`. If none, tries to find *any* Terminator-managed window. Otherwise, creates a new window. (See SDD for full logic).
     *   Default: `"smart"`
 
-*   **`TERMINATOR_DEFAULT_LINES`**: Default maximum number of output lines to return for `exec` and `read` actions if not specified in the call.
+*   **`TERMINATOR_DEFAULT_LINES`**: Default maximum number of output lines to return for `execute` and `read` actions if not specified in the call.
     *   Default: `100`
 
-*   **`TERMINATOR_BACKGROUND_STARTUP_SECONDS`**: Default timeout (in seconds) for commands run with `background: true` to produce initial output before the `exec` action returns.
+*   **`TERMINATOR_BACKGROUND_STARTUP_SECONDS`**: Default timeout (in seconds) for commands run with `background: true` to produce initial output before the `execute` action returns.
     *   Default: `5`
 
 *   **`TERMINATOR_FOREGROUND_COMPLETION_SECONDS`**: Default timeout (in seconds) for commands run with `background: false` to complete.
     *   Default: `60`
 
-*   **`TERMINATOR_DEFAULT_FOCUS_ON_ACTION`**: Default behavior for whether to focus the terminal on actions like `exec`, `read`, `kill`, `focus`.
+*   **`TERMINATOR_DEFAULT_FOCUS_ON_ACTION`**: Default behavior for whether to focus the terminal on actions like `execute`, `read`, `kill`, `focus`.
     *   Values: `"true"`, `"false"` (case-insensitive, also accepts `"1"`, `"0"`, `"yes"`, `"no"`, etc.)
     *   Default: `"true"`
 
-*   **`TERMINATOR_SIGINT_WAIT_SECONDS`**: Time (in seconds) the `kill` subcommand waits after sending SIGINT before escalating (during process termination or when `exec` stops a busy process).
+*   **`TERMINATOR_SIGINT_WAIT_SECONDS`**: Time (in seconds) the `kill` subcommand waits after sending SIGINT before escalating (during process termination or when `execute` stops a busy process).
     *   Default: `2`
 
 *   **`TERMINATOR_SIGTERM_WAIT_SECONDS`**: Time (in seconds) the `kill` subcommand waits after sending SIGTERM before escalating to SIGKILL.
@@ -262,7 +264,7 @@ To test command execution (ensure `TERMINATOR_APP` is set, e.g., to `Terminal`):
 {
   "tool_name": "terminator.execute",
   "inputs": {
-    "action": "exec",
+    "action": "execute",
     "options": {
       "tag": "test-echo",
       "command": "echo \"Hello from Terminator MCP!\" && sleep 2",

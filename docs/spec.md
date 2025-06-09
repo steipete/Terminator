@@ -5,7 +5,7 @@
 **Primary Maintainer:** `@steipete`
 **Context Prompt Summary (Original Request Essence & V1.3 Refinements):**
 The goal is an MCP plugin (`terminator`) providing a terminal utility. Originally AppleScript-based, it's to be re-implemented with a Swift CLI binary wrapped in a Node.js MCP package. Key requirements include: clear tool description for ML model use, similar feature set to the old script but with smarter CLI parameters, NPX installation, configurable terminal app (Apple Terminal default, supporting iTerm, Ghosty), logging to a temporary directory (not stdout), an info block on first significant use, session tracking capabilities, and robust testing focused on the Swift CLI. The project emphasizes minimizing user focus disruption and providing a simple, reliable interface for AI agents.
-**V1.3 Refinements:** The `action` parameter for the AI tool is now optional, defaulting to `"execute"`. The action name `"exec"` has been changed to `"execute"` throughout for clarity for AI agents. This SDD version incorporates extensive detailing to proactively address implementation ambiguities and ensure all rules and behaviors are explicitly defined.
+**V1.3 Refinements:** The `action` parameter for the AI tool is now optional, defaulting to `"execute"`. The action names have been changed for clarity: `"exec"` is now `"execute"` and `"list"` is now `"sessions"`. This SDD version incorporates extensive detailing to proactively address implementation ambiguities and ensure all rules and behaviors are explicitly defined.
 
 **1. Overview**
 
@@ -65,7 +65,7 @@ Terminator consists of two main components:
         *   **Bundled Executable:** Includes the pre-compiled universal macOS binary of the `terminator` Swift CLI, located at `swift-bin/terminator` within the package. This path will be resolved dynamically using `path.join(__dirname, '..', 'swift-bin', 'terminator')` assuming the JS files are in a `dist` or `lib` subdirectory.
 
     *   **3.1.2. Node.js Wrapper Responsibilities:**
-        *   **MCP Tool Registration:** Registers a single tool, `terminator.execute`, with the MCP host. (Note: The tool name is `terminator.execute`, aligning with the default action, but it handles *all* actions like `list`, `kill`, etc., via its `action` parameter).
+        *   **MCP Tool Registration:** Registers a single tool, `terminator.execute`, with the MCP host. (Note: The tool name is `terminator.execute`, aligning with the default action, but it handles *all* actions like `sessions`, `kill`, etc., via its `action` parameter).
         *   **Dynamic Tool Description Construction:**
             *   On initialization, the wrapper reads all relevant `TERMINATOR_*` environment variables (listed in Section 3.2.3).
             *   These read values are used to populate the *default values* for corresponding parameters (`lines`, `timeout`, `focus`, `background`) in the JSON schema of the `terminator.execute` tool presented to the AI.
@@ -121,14 +121,14 @@ Terminator consists of two main components:
                     *   Truncated to a maximum of 64 characters.
                     *   If the result is empty after sanitization (e.g., input was `///`), use `"_default_tag_"`.
                     *   Example Regex for allowed characters (applied after basename extraction): `/[^a-zA-Z0-9_-]/g` (replace with `_`).
-            *   If `options.tag` is omitted and `effectiveProjectPath` cannot be determined (this should not happen as `project_path` is mandatory), and the `action` requires a `tag` (e.g., `execute`, `read`, `kill`, `focus`), an error will be returned to the AI ("Cannot determine a session tag. Please provide a 'tag' or ensure a project context is available."). `list` and `info` can operate without a tag if the Swift CLI supports it (though usually a tag is derived).
+            *   If `options.tag` is omitted and `effectiveProjectPath` cannot be determined (this should not happen as `project_path` is mandatory), and the `action` requires a `tag` (e.g., `execute`, `read`, `kill`, `focus`), an error will be returned to the AI ("Cannot determine a session tag. Please provide a 'tag' or ensure a project context is available."). `sessions` and `info` can operate without a tag if the Swift CLI supports it (though usually a tag is derived).
         *   **Swift CLI (`terminator`) Invocation:**
-            *   Constructs the appropriate `terminator` subcommand (e.g., `execute`, `list`) and arguments (e.g., `--project_path`, `--tag`, `--lines`). All Swift CLI arguments will be `kebab-case`.
+            *   Constructs the appropriate `terminator` subcommand (e.g., `execute`, `sessions`) and arguments (e.g., `--project_path`, `--tag`, `--lines`). All Swift CLI arguments will be `kebab-case`.
             *   Spawns the bundled `terminator` Swift binary as a child process using `child_process.spawn`.
             *   **Environment Variable Forwarding:** The Node.js wrapper will *selectively* pass only the known `TERMINATOR_*` environment variables (listed in Section 3.2.3) that are present in its own environment to the Swift CLI process. It does not pass its entire `process.env`.
             *   Includes an internal, non-configurable timeout for the Swift CLI process itself. This timeout will be `MAX(TERMINATOR_FOREGROUND_COMPLETION_SECONDS, TERMINATOR_BACKGROUND_STARTUP_SECONDS) + 60 seconds` (a fixed 60-second buffer). If this wrapper-level timeout is hit, the Swift CLI process will be killed using `SIGKILL`, and an error "Terminator Swift CLI unresponsive and was terminated." returned to the AI.
         *   **Output Handling from Swift CLI:**
-            *   For `terminator list` and `terminator info` subcommands, the wrapper *always* appends `--json` when invoking the Swift CLI. The `stdout` (JSON string) from the Swift CLI is then parsed by the wrapper.
+            *   For `terminator sessions` and `terminator info` subcommands, the wrapper *always* appends `--json` when invoking the Swift CLI. The `stdout` (JSON string) from the Swift CLI is then parsed by the wrapper.
             *   For `terminator execute` and `terminator read` subcommands, the `stdout` is treated as raw text output from the command/session.
             *   The wrapper formats results into the `message` field of the `Promise<{ success: boolean, message: string }>` structure returned to the AI, according to the rules in Section 3.1.4.
         *   **Error Handling & Swift CLI Crash Detection:**
@@ -146,7 +146,7 @@ Terminator consists of two main components:
         *   **`execute` Success (Background Start):** "Terminator: Command started in background in session '[displayTag]'. Initial output (up to 'lines' limit):\n[captured stdout/stderr]"
         *   **`execute` Timeout:** "Terminator: Command timed out after X seconds in session '[displayTag]'. Output may be incomplete. Output:\n[captured stdout/stderr up to 'lines' limit]"
         *   **`read` Success:** "Terminator: Content from session '[displayTag]':\n[captured scrollback up to 'lines' limit]"
-        *   **`list` Success (Example):** "Terminator: Found 2 sessions.\n1. 🤖💥 MyProject / api (Busy)\n2. 🤖💥 ui_tests (Idle)" (Session details derived from Swift CLI JSON output). If no sessions: "Terminator: No active sessions found."
+        *   **`sessions` Success (Example):** "Terminator: Found 2 sessions.\n1. 🤖💥 MyProject / api (Busy)\n2. 🤖💥 ui_tests (Idle)" (Session details derived from Swift CLI JSON output). If no sessions: "Terminator: No active sessions found."
         *   **`info` Success (Example):** "Terminator v0.1.0. Config: App=iTerm, Grouping=smart, LogLevel=info. Active Sessions:\n1. 🤖💥 MyProject / api (Busy)" (Or "No active sessions.") (Details from Swift CLI JSON).
         *   **`kill` Success:** "Terminator: Process in session '[displayTag]' successfully terminated."
         *   **`focus` Success:** "Terminator: Session '[displayTag]' is now focused."
@@ -158,8 +158,8 @@ Terminator consists of two main components:
         *   **(Dynamically Constructed) Overall Description:**
             "Manages macOS terminal sessions using the `[Resolved TERMINATOR_APP, e.g., \"iTerm\"]` application. Ideal for running commands, especially those that might be long-running or could hang, as it isolates them to protect your workflow. The session screen is automatically cleared before executing a new command or after a process is killed. Use this to execute shell commands, retrieve output, and manage terminal processes. If 'action' is not specified, it defaults to 'execute'. \nTerminator MCP [SERVER_VERSION] using [Resolved TERMINATOR_APP]"
         *   **Parameters (Schema - Flattened Structure):**
-            *   `action?: string`: (Optional, default: `\"execute\"`) The operation to perform: 'execute', 'read', 'list', 'info', 'focus', or 'kill'. Defaults to 'execute'.
-                *   Enum: `\"execute\"`, `\"read\"`, `\"list\"`, `\"info\"`, `\"focus\"`, `\"kill\"`.
+            *   `action?: string`: (Optional, default: `\"execute\"`) The operation to perform: 'execute', 'read', 'sessions', 'info', 'focus', or 'kill'. Defaults to 'execute'.
+                *   Enum: `\"execute\"`, `\"read\"`, `\"sessions\"`, `\"info\"`, `\"focus\"`, `\"kill\"`.
             *   `project_path: string`: (Mandatory) Absolute path to the project directory.
             *   `tag?: string`: (Optional) A unique identifier for the session (e.g., \"ui-build\", \"api-server\"). If omitted, a tag will be derived from the `project_path`.
             *   `command?: string`: (Optional, primarily for `action: \"execute\"`) The shell command to execute. If `action` is 'execute' and `command` is empty or omitted, the session will be prepared (cleared, focused if applicable), but no new command is run.
@@ -221,7 +221,7 @@ Terminator consists of two main components:
             *   `--log-level <debug|info|warn|error|none>` (Overrides `TERMINATOR_LOG_LEVEL`)
             *   `--log-dir <path>` (Overrides `TERMINATOR_LOG_DIR`)
             *   `--grouping <off|project|smart>` (Overrides `TERMINATOR_WINDOW_GROUPING`)
-            *   `--json`: (Used by `list` and `info` subcommands) Output results in JSON format to `stdout`.
+            *   `--json`: (Used by `sessions` and `info` subcommands) Output results in JSON format to `stdout`.
             *   `-v, --verbose`: (Alias for `--log-level debug`)
             *   `-h, --help`: Display help information.
             *   `--version`: Display `terminator` CLI version.
@@ -266,16 +266,16 @@ Terminator consists of two main components:
             *   Finds session.
             *   Retrieves last `lines` from the current scrollback buffer via AppleScript (`contents of current_session` for iTerm2, `history` or `contents of selected tab` for Terminal, best-effort for Ghosty).
             *   Errors (code 3) if session not found.
-        *   **`list [--project-path <path>] [--json]`**
+        *   **`sessions [--project-path <path>] [--json]`**
             *   Scans all tabs of all windows of `TERMINATOR_APP` via AppleScript. Parses tab titles matching the `::TERMINATOR_SESSION::` pattern.
             *   For each matched tab, determines TTY and uses `ps` to check if `is_busy`.
             *   If `--json`, outputs a JSON array: `[{ "sessionIdentifier": "display_name", "project_path": "/abs/path/or_null", "tag": "actual_tag", "fullTabTitle": "...", "tty": "/dev/tty...", "isBusy": true/false, "windowIdentifier": "apple_script_id", "tabIdentifier": "apple_script_id" }, ...]`.
-            *   If not `--json`, human-readable list.
+            *   If not `--json`, human-readable sessions list.
         *   **`info [--json]`**
             *   Outputs `terminator` CLI version.
             *   Lists all resolved `TERMINATOR_*` configuration values.
-            *   Includes output similar to `list` for all currently managed sessions.
-            *   If `--json`, outputs a JSON object: `{ "version": "0.1.0", "configuration": { "app": "iTerm", "logLevel": "info", ... }, "sessions": [ ...list_output... ] }`.
+            *   Includes output similar to `sessions` for all currently managed sessions.
+            *   If `--json`, outputs a JSON object: `{ "version": "0.1.0", "configuration": { "app": "iTerm", "logLevel": "info", ... }, "sessions": [ ...sessions_output... ] }`.
         *   **`focus [--project-path <path>] --tag <tag_string>`**
             *   Finds session, brings its window and tab to the foreground using AppleScript.
         *   **`kill [--project-path <path>] --tag <tag_string> [--focus-mode <force-focus|no-focus|default-behavior>]`**
@@ -355,7 +355,7 @@ Terminator consists of two main components:
         *   Examples of how to set them (e.g., in `.zshrc`, `.bash_profile`, or IDE-specific settings).
     *   **AI Tool Usage (`terminator.execute`):**
         *   Explanation of the `action` parameter (and its default to `execute`).
-        *   Table listing each `action` value (`execute`, `read`, `list`, `info`, `focus`, `kill`).
+        *   Table listing each `action` value (`execute`, `read`, `sessions`, `info`, `focus`, `kill`).
         *   For each action, list applicable `options` (`project_path`, `tag`, `command`, `background`, `lines`, `timeout`, `focus`).
         *   Clear examples of AI invoking the tool for common scenarios.
     *   **Troubleshooting:**

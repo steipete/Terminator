@@ -40,7 +40,7 @@ describe('terminatorTool', () => {
             const schema = terminatorTool.inputSchema;
             expect(schema.type).toBe('object');
             expect(schema.required).toEqual(['project_path']);
-            expect(schema.properties.action.enum).toEqual(['execute', 'read', 'list', 'info', 'focus', 'kill']);
+            expect(schema.properties.action.enum).toEqual(['execute', 'read', 'sessions', 'info', 'focus', 'kill']);
         });
 
         it('should have correct output schema', () => {
@@ -70,7 +70,7 @@ describe('terminatorTool', () => {
             
             expect(result.success).toBe(true);
             expect(swiftCli.invokeSwiftCLI).toHaveBeenCalledWith(
-                expect.arrayContaining(['exec', 'test-tag', '--project-path', '/path/to/project', '--command', 'echo hello']),
+                expect.arrayContaining(['execute', 'test-tag', '--project-path', '/path/to/project', '--command', 'echo hello']),
                 expect.any(Object),
                 mockContext,
                 expect.any(Number)
@@ -95,7 +95,7 @@ describe('terminatorTool', () => {
             
             expect(result.success).toBe(true);
             expect(swiftCli.invokeSwiftCLI).toHaveBeenCalledWith(
-                expect.arrayContaining(['exec']),
+                expect.arrayContaining(['execute']),
                 expect.any(Object),
                 mockContext,
                 expect.any(Number)
@@ -129,9 +129,9 @@ describe('terminatorTool', () => {
             );
         });
 
-        it('should handle list action', async () => {
+        it('should handle sessions action', async () => {
             const params = {
-                action: 'list',
+                action: 'sessions',
                 project_path: '/path/to/project'
             };
             
@@ -147,7 +147,7 @@ describe('terminatorTool', () => {
             
             expect(result.success).toBe(true);
             expect(swiftCli.invokeSwiftCLI).toHaveBeenCalledWith(
-                expect.arrayContaining(['list', '--json']),
+                expect.arrayContaining(['sessions', '--json']),
                 expect.any(Object),
                 mockContext,
                 expect.any(Number)
