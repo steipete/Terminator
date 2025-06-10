@@ -3,11 +3,13 @@ import Foundation
 // Structure for JSON output of 'info' command (SDD 3.2.5)
 struct InfoOutput: Codable {
     let version: String
+    let buildTime: String
     let managedSessions: [[String: AnyCodable]]
     let activeConfiguration: [String: AnyCodable]
 
     enum CodingKeys: String, CodingKey {
         case version
+        case buildTime = "build_time"
         case managedSessions = "sessions"
         case activeConfiguration = "configuration"
     }

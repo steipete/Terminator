@@ -127,6 +127,7 @@ struct Info: ParsableCommand {
 
         let infoOutput = InfoOutput(
             version: TerminatorCLI.configuration.version,
+            buildTime: buildTime,
             managedSessions: codableSessions.map { $0.mapValues { AnyCodable($0) } },
             activeConfiguration: config.asDictionary.mapValues { AnyCodable($0) }
         )
@@ -155,6 +156,7 @@ struct Info: ParsableCommand {
 
     private func outputText(config: AppConfig, sessions: [TerminalSessionInfo]) {
         print("Terminator CLI Version: \(TerminatorCLI.configuration.version)")
+        print("Build Time: \(buildTime)")
         print("--- Active Configuration ---")
 
         for (key, value) in config.asDictionary.sorted(by: { $0.key < $1.key }) {
