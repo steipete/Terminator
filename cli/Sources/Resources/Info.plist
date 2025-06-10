@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key>
+    <string>terminator</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.steipete.terminator-cli</string>
+    <key>CFBundleName</key>
+    <string>terminator</string>
+    <key>CFBundlePackageType</key>
+    <string>EXEC</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>14.0</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Terminator needs to send Apple events to Terminal applications to manage your terminal sessions.</string>
+    <key>NSAppleScriptEnabled</key>
+    <true/>
+</dict>
+</plist>

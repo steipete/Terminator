@@ -20,7 +20,15 @@ let package = Package(
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
             ],
-            path: "Sources/TerminatorCLI"
+            path: "Sources/TerminatorCLI",
+            linkerSettings: [
+                .unsafeFlags([
+                    "-Xlinker", "-sectcreate",
+                    "-Xlinker", "__TEXT",
+                    "-Xlinker", "__info_plist",
+                    "-Xlinker", "Sources/Resources/Info.plist"
+                ])
+            ]
         ),
         .testTarget(
             name: "TerminatorCLITests",

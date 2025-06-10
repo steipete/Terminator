@@ -52,6 +52,16 @@ strip -Sx "$FINAL_BINARY_PATH.tmp"
 # Replace the old binary with the new one
 mv "$FINAL_BINARY_PATH.tmp" "$FINAL_BINARY_PATH"
 
+# Code sign with entitlements
+if [ -f "$SWIFT_PROJECT_PATH/terminator.entitlements" ]; then
+    echo "🔏 Code signing with entitlements for Apple Events..."
+    codesign --force --sign - --entitlements "$SWIFT_PROJECT_PATH/terminator.entitlements" "$FINAL_BINARY_PATH"
+    echo "✅ Code signing complete with Apple Events entitlement"
+else
+    echo "⚠️  No entitlements file found, signing without entitlements"
+    codesign --force --sign - "$FINAL_BINARY_PATH"
+fi
+
 echo "🗑️ Cleaning up temporary architecture-specific binaries..."
 rm -f "$ARM64_BINARY_TEMP" "$X86_64_BINARY_TEMP"
 

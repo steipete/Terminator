@@ -2,6 +2,7 @@ import AppKit // Required for NSAppleScript
 import CoreServices // For AE* constants
 import Foundation
 import UniformTypeIdentifiers // Import for UTType
+import ApplicationServices // For AEDeterminePermissionToAutomateTarget
 
 // Define AppleScript type constants using their FourCharCode UInt32 literal values
 let typeText: DescType = 0x5445_5854 // 'TEXT' = kAEText
@@ -9,6 +10,9 @@ let typeBoolean: DescType = 0x626F_6F6C // 'bool' = kAEBoolean
 let typeInteger: DescType = 0x6C6F_6E67 // 'long' = kAELongInteger
 let typeNull: DescType = 0x6E75_6C6C // 'null' = kAENull
 let typeAEList: DescType = 0x6C69_7374 // 'list' = kAEList
+let typeApplicationBundleID: DescType = 0x62756E64 // 'bund' = typeApplicationBundleID
+let typeWildCard: DescType = 0x2A2A2A2A // '****' = typeWildCard
+let errAEEventNotPermitted: OSStatus = -1743 // Permission denied
 
 enum AppleScriptError: Error, Sendable {
     case scriptCompilationFailed(errorInfo: String) // Changed from [String: Any] to String
@@ -19,6 +23,55 @@ enum AppleScriptError: Error, Sendable {
 }
 
 enum AppleScriptBridge {
+    static func checkAndRequestPermission(for bundleIdentifier: String) -> Bool {
+        Logger.log(level: .debug, "Checking Apple Events permission for \(bundleIdentifier)")
+        
+        // Create AEAddressDesc for the target application
+        var targetAddress = AEAddressDesc()
+        defer { AEDisposeDesc(&targetAddress) }
+        
+        // Convert bundle identifier to data
+        let bundleIDData = bundleIdentifier.data(using: .utf8)!
+        
+        // Create the address descriptor for the target app
+        let err = bundleIDData.withUnsafeBytes { bytes in
+            AECreateDesc(
+                typeApplicationBundleID,
+                bytes.baseAddress!,
+                bytes.count,
+                &targetAddress
+            )
+        }
+        
+        if err != noErr {
+            Logger.log(level: .error, "Failed to create AEAddressDesc for \(bundleIdentifier): \(err)")
+            return false
+        }
+        
+        // Check permission and ask user if needed
+        let permissionStatus = AEDeterminePermissionToAutomateTarget(
+            &targetAddress,
+            typeWildCard,
+            typeWildCard,
+            true // askUserIfNeeded
+        )
+        
+        switch permissionStatus {
+        case noErr:
+            Logger.log(level: .debug, "Apple Events permission granted for \(bundleIdentifier)")
+            return true
+        case OSStatus(errAEEventNotPermitted):
+            Logger.log(level: .error, "Apple Events permission denied for \(bundleIdentifier)")
+            return false
+        case OSStatus(procNotFound):
+            Logger.log(level: .error, "Target application \(bundleIdentifier) not found")
+            return false
+        default:
+            Logger.log(level: .error, "Apple Events permission check failed with error: \(permissionStatus)")
+            return false
+        }
+    }
+    
     static func runAppleScript(script: String) -> Result<Any, AppleScriptError> {
         Logger.log(level: .debug, "Attempting to run AppleScript:")
         // Log the script itself only at debug for PII
