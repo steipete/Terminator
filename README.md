@@ -184,9 +184,14 @@ The `terminator` Swift CLI (and by extension, this NPM package) can be configure
     *   Values: `"debug"`, `"info"`, `"warn"`, `"error"`, `"fatal"` (case-insensitive)
     *   Default: `"info"`
 
+*   **`TERMINATOR_LOG_FILE`**: Custom path for the log file.
+    *   Example: `/tmp/terminator.log` or `~/custom-terminator.log`
+    *   If not set, defaults to `~/Library/Logs/terminator-mcp/terminator.log`
+    *   Fallback: `/tmp/terminator-mcp/terminator.log` if default location is not writable
+
 *   **`TERMINATOR_LOG_DIR`**: Directory where the Swift CLI will write its log files.
     *   Default: `~/Library/Logs/terminator-mcp/`
-    *   Fallback: A `terminator-mcp` subdirectory within the system's temporary directory (e.g., `/var/folders/.../terminator-mcp/`).
+    *   Fallback: A `terminator-mcp` subdirectory within the system's temporary directory (e.g., `/var/folders/.../terminator-mcp/`)
 
 *   **`TERMINATOR_WINDOW_GROUPING`**: Strategy for how new sessions group into windows/tabs.
     *   `"off"`: Always aim for a new window unless an exact session (project+tag) already exists.
@@ -288,7 +293,11 @@ You should see your configured terminal application open/focus, execute the echo
 
 *   **`TERMINATOR_APP` not found/supported:** Ensure the application specified in `TERMINATOR_APP` is installed and is one of the supported terminals (Apple Terminal, iTerm2, Ghosty). The CLI will error if it cannot interact with the specified app.
 
-*   **Log Files:** The Swift CLI component logs to files located by default in `~/Library/Logs/terminator-mcp/`. Check these logs for detailed error messages or debug information (set `TERMINATOR_LOG_LEVEL="debug"` for more verbosity).
+*   **Log Files:** The Swift CLI component logs to files. Default locations:
+    *   Primary: `~/Library/Logs/terminator-mcp/terminator.log`
+    *   Fallback: `/tmp/terminator-mcp/terminator.log`
+    *   Custom: Set `TERMINATOR_LOG_FILE` environment variable
+    *   Check these logs for detailed error messages or debug information (set `TERMINATOR_LOG_LEVEL="debug"` for more verbosity).
 
 *   **Swift CLI not executable:** The `postinstall` script for this NPM package attempts to `chmod +x bin/terminator`. If this failed, you might need to do it manually.
 
