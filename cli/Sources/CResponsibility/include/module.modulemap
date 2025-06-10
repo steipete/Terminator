@@ -1,0 +1,4 @@
+module CResponsibility {
+    header "responsibility.h"
+    export *
+}
