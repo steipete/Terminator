@@ -220,16 +220,27 @@ The `terminator` Swift CLI (and by extension, this NPM package) can be configure
 
 ## Permissions Setup (macOS Automation)
 
-For `terminator` to control terminal applications like Apple Terminal or iTerm2, you need to grant it Automation permissions in macOS.
+For `terminator` to control terminal applications like Apple Terminal or iTerm2, you need to grant it two types of permissions in macOS:
 
-1.  The first time `terminator` attempts to control an application (e.g., Terminal.app), macOS will prompt you to allow this. You **must click "OK"**. 
-    *   *(Screenshot of typical permission dialog would go here)*
-2.  If you accidentally click "Don't Allow" or want to manage these permissions:
-    *   Open **System Settings**. 
-    *   Go to **Privacy & Security** -> **Automation**.
-    *   Find the application that *ran* `terminator` (this might be your IDE, e.g., "Cursor", or "Terminal" itself if you ran a test script from there).
-    *   Ensure it has a checkbox enabled for the target terminal application (e.g., "Terminal", "iTerm").
-    *   *(Screenshot of Automation settings panel would go here)*
+### 1. Automation Permission (AppleEvents)
+
+The first time `terminator` attempts to control an application (e.g., Terminal.app), macOS will prompt you to allow this. You **must click "OK"**. 
+
+If you accidentally click "Don't Allow" or want to manage these permissions:
+*   Open **System Settings**. 
+*   Go to **Privacy & Security** -> **Automation**.
+*   Find the application that *ran* `terminator` (this might be your IDE, e.g., "Cursor", or "Terminal" itself if you ran a test script from there).
+*   Ensure it has a checkbox enabled for the target terminal application (e.g., "Terminal", "iTerm").
+
+### 2. Accessibility Permission (for creating new tabs)
+
+To create new terminal tabs, you must also grant accessibility permissions:
+*   Open **System Settings**.
+*   Go to **Privacy & Security** -> **Accessibility**.
+*   Enable access for your Terminal application (Terminal, iTerm, or Ghostty).
+*   **Important**: You may need to restart your terminal application after granting this permission.
+
+If you see an error like "terminator is not allowed to send keystrokes", this indicates missing Accessibility permissions.
 
 To reset permissions for testing or troubleshooting (this will cause macOS to prompt again):
 
