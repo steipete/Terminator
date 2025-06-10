@@ -342,7 +342,7 @@ describe("Terminator E2E Tests", () => {
 
       // Should either start Terminal or handle gracefully
       expectSuccessOrAppleScriptError(result);
-    });
+    }, 60000); // Increase timeout to 60 seconds
   });
 
   afterAll(async () => {

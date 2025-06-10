@@ -199,8 +199,12 @@ export const terminatorTool = {
     if (tag) {
       if (internalAction === "sessions" && options.tag) {
         /* Will be added as --tag option later */
-      } else if (internalAction !== "sessions" && internalAction !== "info") {
+      } else if (internalAction === "execute") {
+        // Execute command takes tag as positional argument
         cliArgs.push(tag);
+      } else if (internalAction === "read" || internalAction === "focus" || internalAction === "kill") {
+        // Read, focus and kill commands take tag as --tag option
+        cliArgs.push("--tag", tag);
       }
     }
 
@@ -220,9 +224,17 @@ export const terminatorTool = {
     }
 
     const focusModeCli = focus ? "force-focus" : "no-focus";
-    if (["execute", "read", "kill", "focus"].includes(internalAction)) {
+    if (["execute", "read"].includes(internalAction)) {
       cliArgs.push("--focus-mode", focusModeCli);
     }
+    
+    // Kill command has different focus parameters
+    if (internalAction === "kill") {
+      cliArgs.push("--focus-mode", focusModeCli);
+      cliArgs.push("--focus-on-kill", focus ? "true" : "false");
+    }
+    
+    // Focus command doesn't need focus-mode as it always focuses
 
     if (internalAction === "execute") {
       if (background) {

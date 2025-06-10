@@ -176,7 +176,9 @@ extension AppleTerminalControl {
                         }
                     } else {
                         Logger.log(level: .info, "[AppleTerminalControl] Foreground command completed (marker found).")
+                        Logger.log(level: .debug, "[AppleTerminalControl] Raw output before marker removal: \(outputText ?? "<nil>")")
                         outputText = outputText?.replacingOccurrences(of: completionMarker, with: "")
+                        Logger.log(level: .debug, "[AppleTerminalControl] Final output after marker removal: \(outputText ?? "<nil>")")
                         // Try to get PGID of the command that just ran if possible, though it might be gone.
                         // This is best-effort for foreground.
                         if let fgInfo = ProcessUtilities.getForegroundProcessInfo(forTTY: tty) {

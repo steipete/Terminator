@@ -166,8 +166,17 @@ struct Execute: ParsableCommand { // Changed from TerminatorSubcommand to Parsab
     }
 
     private func handleSuccessfulResult(_ result: ExecuteCommandResult) {
-        if !background, let outputText = result.output, let cmd = command, !cmd.isEmpty {
-            print(outputText)
+        if !background, let cmd = command, !cmd.isEmpty {
+            // Always print output for foreground commands, even if empty
+            // This ensures the wrapper gets some stdout to indicate success
+            if let outputText = result.output {
+                print(outputText)
+            } else {
+                // Log that output was nil for debugging
+                Logger.log(level: .warn, "Foreground command '\(cmd)' completed but output was nil")
+                // Print empty string to indicate successful execution with no output
+                print("")
+            }
         }
 
         if background, let cmd = command, !cmd.isEmpty {
