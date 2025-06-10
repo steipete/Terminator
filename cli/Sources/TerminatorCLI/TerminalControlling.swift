@@ -25,22 +25,24 @@ struct TerminalAppController {
     init(config: AppConfig) {
         self.config = config
         appName = config.terminalApp
-        
+
         // Check permissions for the target app
-        let bundleID: String
-        switch appName.lowercased() {
+        let bundleID = switch appName.lowercased() {
         case "terminal", "terminal.app":
-            bundleID = "com.apple.Terminal"
+            "com.apple.Terminal"
         case "iterm", "iterm.app", "iterm2", "iterm2.app":
-            bundleID = "com.googlecode.iterm2"
+            "com.googlecode.iterm2"
         default:
-            bundleID = ""
+            ""
         }
-        
+
         if !bundleID.isEmpty {
             Logger.log(level: .info, "Checking Apple Events permission for \(appName)")
             if !AppleScriptBridge.checkAndRequestPermission(for: bundleID) {
-                Logger.log(level: .warn, "Apple Events permission not granted for \(appName). Some operations may fail.")
+                Logger.log(
+                    level: .warn,
+                    "Apple Events permission not granted for \(appName). Some operations may fail."
+                )
             }
         }
 

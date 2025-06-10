@@ -1,13 +1,16 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import { execa } from 'execa';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { expectSuccessOrAppleScriptError, expectFailureWithMessage } from './test-utils.js';
+import { describe, it, expect, beforeAll } from "vitest";
+import { execa } from "execa";
+import path from "path";
+import { fileURLToPath } from "url";
+import {
+  expectSuccessOrAppleScriptError,
+  expectFailureWithMessage,
+} from "./test-utils.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PROJECT_ROOT = path.resolve(__dirname, '../..');
-const SWIFT_CLI_PATH = path.join(PROJECT_ROOT, 'bin', 'terminator');
+const PROJECT_ROOT = path.resolve(__dirname, "../..");
+const SWIFT_CLI_PATH = path.join(PROJECT_ROOT, "bin", "terminator");
 
 // Helper to run Swift CLI commands
 async function runTerminator(args: string[]) {
@@ -16,8 +19,8 @@ async function runTerminator(args: string[]) {
     all: true,
     env: {
       ...process.env,
-      TERMINATOR_SKIP_RESPONSIBILITY: '1'
-    }
+      TERMINATOR_SKIP_RESPONSIBILITY: "1",
+    },
   });
   return {
     stdout: result.stdout,
@@ -27,36 +30,51 @@ async function runTerminator(args: string[]) {
   };
 }
 
-describe('Terminator Edge Cases', () => {
+describe("Terminator Edge Cases", () => {
   beforeAll(async () => {
     // Check if Swift CLI exists
     try {
-      await execa(SWIFT_CLI_PATH, ['--version'], { timeout: 5000 });
+      await execa(SWIFT_CLI_PATH, ["--version"], { timeout: 5000 });
     } catch (error) {
-      throw new Error(`Swift CLI not found at ${SWIFT_CLI_PATH}. Run 'npm run build:swift' first.`);
+      throw new Error(
+        `Swift CLI not found at ${SWIFT_CLI_PATH}. Run 'npm run build:swift' first.`,
+      );
     }
   });
 
-  describe('Range Bounds Edge Cases', () => {
-    it('should handle empty AppleScript lists without crashing', async () => {
+  describe("Range Bounds Edge Cases", () => {
+    it("should handle empty AppleScript lists without crashing", async () => {
       // This specifically tests the Range bounds fix
-      const result = await runTerminator(['sessions', '--terminal-app', 'terminal']);
-      
+      const result = await runTerminator([
+        "sessions",
+        "--terminal-app",
+        "terminal",
+      ]);
+
       // Should not crash with Range bounds error
       expectSuccessOrAppleScriptError(result);
-      expect(result.stderr).not.toContain('Range requires lowerBound <= upperBound');
-      expect(result.stderr).not.toContain('Fatal error');
+      expect(result.stderr).not.toContain(
+        "Range requires lowerBound <= upperBound",
+      );
+      expect(result.stderr).not.toContain("Fatal error");
     });
 
-    it('should handle nested empty lists in AppleScript results', async () => {
+    it("should handle nested empty lists in AppleScript results", async () => {
       // Test with iTerm which might return nested structures
-      const result = await runTerminator(['sessions', '--terminal-app', 'iterm', '--json']);
-      
+      const result = await runTerminator([
+        "sessions",
+        "--terminal-app",
+        "iterm",
+        "--json",
+      ]);
+
       expectSuccessOrAppleScriptError(result);
-      expect(result.stderr).not.toContain('Range requires lowerBound <= upperBound');
-      
+      expect(result.stderr).not.toContain(
+        "Range requires lowerBound <= upperBound",
+      );
+
       // Handle null or empty JSON response
-      if (result.stdout.trim() === 'null' || result.stdout.trim() === '') {
+      if (result.stdout.trim() === "null" || result.stdout.trim() === "") {
         expect(true).toBe(true);
       } else {
         const sessions = JSON.parse(result.stdout);
@@ -65,260 +83,304 @@ describe('Terminator Edge Cases', () => {
     });
   });
 
-  describe('Command Escaping and Special Cases', () => {
-    it('should handle commands with backticks', async () => {
+  describe("Command Escaping and Special Cases", () => {
+    it("should handle commands with backticks", async () => {
       const tag = `test-backticks-${Date.now()}`;
       const result = await runTerminator([
-        'execute',
+        "execute",
         tag,
-        '--terminal-app', 'terminal',
-        '--command', 'echo `whoami`'
+        "--terminal-app",
+        "terminal",
+        "--command",
+        "echo `whoami`",
       ]);
-      
+
       expectSuccessOrAppleScriptError(result);
     });
 
-    it('should handle commands with dollar signs', async () => {
+    it("should handle commands with dollar signs", async () => {
       const tag = `test-dollar-${Date.now()}`;
       const result = await runTerminator([
-        'execute',
+        "execute",
         tag,
-        '--terminal-app', 'terminal',
-        '--command', 'echo $HOME'
+        "--terminal-app",
+        "terminal",
+        "--command",
+        "echo $HOME",
       ]);
-      
+
       expectSuccessOrAppleScriptError(result);
     });
 
-    it('should handle commands with semicolons', async () => {
+    it("should handle commands with semicolons", async () => {
       const tag = `test-semicolon-${Date.now()}`;
       const result = await runTerminator([
-        'execute',
+        "execute",
         tag,
-        '--terminal-app', 'terminal',
-        '--command', 'echo "First"; echo "Second"'
+        "--terminal-app",
+        "terminal",
+        "--command",
+        'echo "First"; echo "Second"',
       ]);
-      
+
       expectSuccessOrAppleScriptError(result);
     });
 
-    it('should handle commands with pipes', async () => {
+    it("should handle commands with pipes", async () => {
       const tag = `test-pipe-${Date.now()}`;
       const result = await runTerminator([
-        'execute',
+        "execute",
         tag,
-        '--terminal-app', 'terminal',
-        '--command', 'echo "test" | cat'
+        "--terminal-app",
+        "terminal",
+        "--command",
+        'echo "test" | cat',
       ]);
-      
+
       expectSuccessOrAppleScriptError(result);
     });
 
-    it('should handle commands with redirects', async () => {
+    it("should handle commands with redirects", async () => {
       const tag = `test-redirect-${Date.now()}`;
       const result = await runTerminator([
-        'execute',
+        "execute",
         tag,
-        '--terminal-app', 'terminal',
-        '--command', 'echo "test" > /tmp/terminator-test.txt'
+        "--terminal-app",
+        "terminal",
+        "--command",
+        'echo "test" > /tmp/terminator-test.txt',
       ]);
-      
+
       expectSuccessOrAppleScriptError(result);
     });
   });
 
-  describe('Path Edge Cases', () => {
-    it('should handle paths with tildes', async () => {
+  describe("Path Edge Cases", () => {
+    it("should handle paths with tildes", async () => {
       const tag = `test-tilde-${Date.now()}`;
       const result = await runTerminator([
-        'execute',
+        "execute",
         tag,
-        '--terminal-app', 'terminal',
-        '--project-path', '~/Desktop',
-        '--command', 'pwd'
+        "--terminal-app",
+        "terminal",
+        "--project-path",
+        "~/Desktop",
+        "--command",
+        "pwd",
       ]);
-      
+
       expectSuccessOrAppleScriptError(result);
     });
 
-    it('should handle paths with environment variables', async () => {
+    it("should handle paths with environment variables", async () => {
       const tag = `test-envvar-${Date.now()}`;
       const result = await runTerminator([
-        'execute',
+        "execute",
         tag,
-        '--terminal-app', 'terminal',
-        '--project-path', '$HOME/Desktop',
-        '--command', 'pwd'
+        "--terminal-app",
+        "terminal",
+        "--project-path",
+        "$HOME/Desktop",
+        "--command",
+        "pwd",
       ]);
-      
+
       expectSuccessOrAppleScriptError(result);
     });
 
-    it('should handle relative paths', async () => {
+    it("should handle relative paths", async () => {
       const tag = `test-relative-${Date.now()}`;
       const result = await runTerminator([
-        'execute',
+        "execute",
         tag,
-        '--terminal-app', 'terminal',
-        '--project-path', '.',
-        '--command', 'pwd'
+        "--terminal-app",
+        "terminal",
+        "--project-path",
+        ".",
+        "--command",
+        "pwd",
       ]);
-      
+
       expectSuccessOrAppleScriptError(result);
     });
 
-    it('should handle non-existent paths gracefully', async () => {
+    it("should handle non-existent paths gracefully", async () => {
       const tag = `test-nonexist-${Date.now()}`;
       const result = await runTerminator([
-        'execute',
+        "execute",
         tag,
-        '--terminal-app', 'terminal',
-        '--project-path', '/this/path/does/not/exist/xyz123',
-        '--command', 'pwd'
+        "--terminal-app",
+        "terminal",
+        "--project-path",
+        "/this/path/does/not/exist/xyz123",
+        "--command",
+        "pwd",
       ]);
-      
+
       // Should still create session but cd might fail
       expectSuccessOrAppleScriptError(result);
     });
   });
 
-  describe('Null and Undefined Handling', () => {
-    it('should handle completely empty exec command', async () => {
+  describe("Null and Undefined Handling", () => {
+    it("should handle completely empty exec command", async () => {
       const tag = `test-empty-exec-${Date.now()}`;
       const result = await runTerminator([
-        'execute',
+        "execute",
         tag,
-        '--terminal-app', 'terminal'
+        "--terminal-app",
+        "terminal",
       ]);
-      
+
       // Should create a new session without executing any command
       expectSuccessOrAppleScriptError(result);
     });
 
-    it('should handle whitespace-only commands', async () => {
+    it("should handle whitespace-only commands", async () => {
       const tag = `test-whitespace-${Date.now()}`;
       const result = await runTerminator([
-        'execute',
+        "execute",
         tag,
-        '--terminal-app', 'terminal',
-        '--command', '   '
+        "--terminal-app",
+        "terminal",
+        "--command",
+        "   ",
       ]);
-      
+
       expectSuccessOrAppleScriptError(result);
     });
 
-    it('should handle zero-length command string', async () => {
+    it("should handle zero-length command string", async () => {
       const tag = `test-zerolen-${Date.now()}`;
       const result = await runTerminator([
-        'execute',
+        "execute",
         tag,
-        '--terminal-app', 'terminal',
-        '--command', ''
+        "--terminal-app",
+        "terminal",
+        "--command",
+        "",
       ]);
-      
+
       expectSuccessOrAppleScriptError(result);
     });
   });
 
-  describe('Concurrent Operations', () => {
-    it('should handle multiple exec commands in quick succession', async () => {
+  describe("Concurrent Operations", () => {
+    it("should handle multiple exec commands in quick succession", async () => {
       const promises = [];
-      
+
       for (let i = 0; i < 5; i++) {
         const tag = `test-concurrent-${Date.now()}-${i}`;
-        promises.push(runTerminator([
-          'execute',
-          tag,
-          '--terminal-app', 'terminal',
-          '--command', `echo "Concurrent test ${i}"`
-        ]));
+        promises.push(
+          runTerminator([
+            "execute",
+            tag,
+            "--terminal-app",
+            "terminal",
+            "--command",
+            `echo "Concurrent test ${i}"`,
+          ]),
+        );
       }
-      
+
       const results = await Promise.all(promises);
-      
+
       // All should succeed
-      results.forEach(result => {
+      results.forEach((result) => {
         expectSuccessOrAppleScriptError(result);
       });
     });
 
-    it('should handle sessions while sessions are being created', async () => {
+    it("should handle sessions while sessions are being created", async () => {
       const tag = `test-concurrent-sessions-${Date.now()}`;
       // Start creating a session
       const execPromise = runTerminator([
-        'execute',
+        "execute",
         tag,
-        '--terminal-app', 'terminal',
-        '--command', 'sleep 5'
+        "--terminal-app",
+        "terminal",
+        "--command",
+        "sleep 5",
       ]);
-      
+
       // Immediately query sessions
       const listResult = await runTerminator([
-        'sessions',
-        '--terminal-app', 'terminal'
+        "sessions",
+        "--terminal-app",
+        "terminal",
       ]);
-      
+
       expectSuccessOrAppleScriptError(listResult);
-      
+
       // Wait for exec to complete
       const execResult = await execPromise;
       expectSuccessOrAppleScriptError(execResult);
     });
   });
 
-  describe('Session ID Edge Cases', () => {
-    it('should handle very long session IDs', async () => {
-      const longId = 'a'.repeat(500);
+  describe("Session ID Edge Cases", () => {
+    it("should handle very long session IDs", async () => {
+      const longId = "a".repeat(500);
       const result = await runTerminator([
-        'kill',
-        '--terminal-app', 'terminal',
-        '--tag', longId,
-        '--focus-on-kill', 'false'
+        "kill",
+        "--terminal-app",
+        "terminal",
+        "--tag",
+        longId,
+        "--focus-on-kill",
+        "false",
       ]);
-      
+
       // Should fail gracefully
       expect(result.exitCode).not.toBe(0);
-      expect(result.stderr.toLowerCase()).toContain('not found');
+      expect(result.stderr.toLowerCase()).toContain("not found");
     });
 
-    it('should handle session IDs with special characters', async () => {
+    it("should handle session IDs with special characters", async () => {
       const specialId = 'session-!@#$%^&*()_+{}|:"<>?';
       const result = await runTerminator([
-        'kill',
-        '--terminal-app', 'terminal',
-        '--tag', specialId,
-        '--focus-on-kill', 'false'
+        "kill",
+        "--terminal-app",
+        "terminal",
+        "--tag",
+        specialId,
+        "--focus-on-kill",
+        "false",
       ]);
-      
+
       // Should fail gracefully
       expect(result.exitCode).not.toBe(0);
-      expect(result.stderr.toLowerCase()).toContain('not found');
+      expect(result.stderr.toLowerCase()).toContain("not found");
     });
   });
 
-  describe('Logging Edge Cases', () => {
-    it('should handle invalid log directory gracefully', async () => {
+  describe("Logging Edge Cases", () => {
+    it("should handle invalid log directory gracefully", async () => {
       const result = await runTerminator([
-        'sessions',
-        '--terminal-app', 'terminal',
-        '--log-dir', '/dev/null/not-a-directory'
+        "sessions",
+        "--terminal-app",
+        "terminal",
+        "--log-dir",
+        "/dev/null/not-a-directory",
       ]);
-      
+
       // Should work but might not write logs
       expect([0, 1]).toContain(result.exitCode);
     });
 
-    it('should handle very verbose logging', async () => {
+    it("should handle very verbose logging", async () => {
       const result = await runTerminator([
-        'sessions',
-        '--terminal-app', 'terminal',
-        '--log-level', 'debug',
-        '--verbose'
+        "sessions",
+        "--terminal-app",
+        "terminal",
+        "--log-level",
+        "debug",
+        "--verbose",
       ]);
-      
+
       expectSuccessOrAppleScriptError(result);
       // Should have debug output
-      expect(result.all).toContain('DEBUG');
+      expect(result.all).toContain("DEBUG");
     });
   });
 });

@@ -67,7 +67,14 @@ struct ExecCommandTests {
             ]
         )
         func linesParameter(_ testCase: ParameterTestCase<Int>) throws {
-            let result = try TestUtilities.runCommand(arguments: ["execute", "testTag", "--terminal-app", "terminal", "--lines", testCase.input])
+            let result = try TestUtilities.runCommand(arguments: [
+                "execute",
+                "testTag",
+                "--terminal-app",
+                "terminal",
+                "--lines",
+                testCase.input
+            ])
 
             if testCase.shouldSucceed {
                 #expect(!result.errorOutput.contains("Invalid value for '--lines'"))
@@ -90,7 +97,14 @@ struct ExecCommandTests {
             ]
         )
         func timeoutParameter(_ testCase: ParameterTestCase<Int>) throws {
-            let result = try TestUtilities.runCommand(arguments: ["execute", "testTag", "--terminal-app", "terminal", "--timeout", testCase.input])
+            let result = try TestUtilities.runCommand(arguments: [
+                "execute",
+                "testTag",
+                "--terminal-app",
+                "terminal",
+                "--timeout",
+                testCase.input
+            ])
 
             if testCase.shouldSucceed {
                 #expect(!result.errorOutput.contains("Invalid value for '--timeout'"))
@@ -161,7 +175,15 @@ struct ExecCommandTests {
         @Test("Background execution should fail when action fails")
         func backgroundExecution() throws {
             try TestUtilities.assertActionFails(
-                arguments: ["execute", "execTagBackground", "--terminal-app", "terminal", "--command", "sleep 5", "--background"]
+                arguments: [
+                    "execute",
+                    "execTagBackground",
+                    "--terminal-app",
+                    "terminal",
+                    "--command",
+                    "sleep 5",
+                    "--background"
+                ]
             )
         }
 

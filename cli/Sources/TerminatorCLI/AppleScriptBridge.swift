@@ -1,8 +1,8 @@
 import AppKit // Required for NSAppleScript
+import ApplicationServices // For AEDeterminePermissionToAutomateTarget
 import CoreServices // For AE* constants
 import Foundation
 import UniformTypeIdentifiers // Import for UTType
-import ApplicationServices // For AEDeterminePermissionToAutomateTarget
 
 // Use Logger from the same module
 
@@ -12,8 +12,8 @@ let typeBoolean: DescType = 0x626F_6F6C // 'bool' = kAEBoolean
 let typeInteger: DescType = 0x6C6F_6E67 // 'long' = kAELongInteger
 let typeNull: DescType = 0x6E75_6C6C // 'null' = kAENull
 let typeAEList: DescType = 0x6C69_7374 // 'list' = kAEList
-let typeApplicationBundleID: DescType = 0x62756E64 // 'bund' = typeApplicationBundleID
-let typeWildCard: DescType = 0x2A2A2A2A // '****' = typeWildCard
+let typeApplicationBundleID: DescType = 0x6275_6E64 // 'bund' = typeApplicationBundleID
+let typeWildCard: DescType = 0x2A2A_2A2A // '****' = typeWildCard
 let errAEEventNotPermitted: OSStatus = -1743 // Permission denied
 let procNotFound: OSStatus = -600 // Process not found
 
@@ -37,13 +37,13 @@ enum AppleScriptBridge {
             Logger.log(level: .info, "Target app not running, attempting to launch...")
             if let appURL = workspace.urlForApplication(withBundleIdentifier: bundleIdentifier) {
                 Logger.log(level: .debug, "Launching app at URL: \(appURL)")
-                
+
                 if #available(macOS 11.0, *) {
                     let configuration = NSWorkspace.OpenConfiguration()
                     configuration.activates = false
-                    
+
                     workspace.openApplication(at: appURL, configuration: configuration) { _, error in
-                        if let error = error {
+                        if let error {
                             Logger.log(level: .error, "Failed to launch app: \(error)")
                         } else {
                             Logger.log(level: .debug, "Launched target app")
@@ -62,14 +62,14 @@ enum AppleScriptBridge {
                 }
             }
         }
-        
+
         // Create AEAddressDesc for the target application
         var targetAddress = AEAddressDesc()
         defer { AEDisposeDesc(&targetAddress) }
-        
+
         // Convert bundle identifier to CFString and use it properly
-        var err: OSErr = OSErr(noErr)
-        
+        var err = OSErr(noErr)
+
         bundleIdentifier.withCString { cString in
             err = AECreateDesc(
                 typeApplicationBundleID,
@@ -78,12 +78,12 @@ enum AppleScriptBridge {
                 &targetAddress
             )
         }
-        
+
         if err != noErr {
             Logger.log(level: .error, "Failed to create AEAddressDesc for \(bundleIdentifier): \(err)")
             return false
         }
-        
+
         // Check permission and ask user if needed
         let permissionStatus = AEDeterminePermissionToAutomateTarget(
             &targetAddress,
@@ -91,9 +91,9 @@ enum AppleScriptBridge {
             typeWildCard,
             true // askUserIfNeeded
         )
-        
+
         Logger.log(level: .info, "Permission check result: \(permissionStatus)")
-        
+
         switch permissionStatus {
         case noErr:
             Logger.log(level: .info, "Apple Events permission granted for \(bundleIdentifier)")
@@ -109,10 +109,10 @@ enum AppleScriptBridge {
             return false
         }
     }
-    
+
     private static let permissionCheckQueue = DispatchQueue(label: "com.steipete.terminator.permissionCheck")
     private nonisolated(unsafe) static var hasCheckedPermission = false
-    
+
     static func runAppleScript(script: String) -> Result<Any, AppleScriptError> {
         // Check permissions on first AppleScript execution
         var shouldCheckPermission = false
@@ -122,20 +122,19 @@ enum AppleScriptBridge {
                 shouldCheckPermission = true
             }
         }
-        
+
         if shouldCheckPermission {
             // Determine which app we're targeting from the script
-            let bundleID: String
-            if script.contains("tell application \"Terminal\"") {
-                bundleID = "com.apple.Terminal"
+            let bundleID = if script.contains("tell application \"Terminal\"") {
+                "com.apple.Terminal"
             } else if script.contains("tell application \"iTerm\"") {
-                bundleID = "com.googlecode.iterm2"
+                "com.googlecode.iterm2"
             } else if script.contains("tell application \"Ghostty\"") {
-                bundleID = "com.mitchellh.ghostty"
+                "com.mitchellh.ghostty"
             } else {
-                bundleID = ""
+                ""
             }
-            
+
             if !bundleID.isEmpty {
                 Logger.log(level: .info, "First AppleScript execution - checking permissions for \(bundleID)")
                 if !checkAndRequestPermission(for: bundleID) {
@@ -144,14 +143,14 @@ enum AppleScriptBridge {
                 }
             }
         }
-        
+
         // Check if this script needs accessibility permissions
         if AccessibilityPermission.isAccessibilityNeededForScript(script) {
             if !AccessibilityPermission.checkAccessibilityPermission() {
                 Logger.log(level: .warn, "Script requires accessibility permissions which are not granted")
                 // Request permissions (this will show a dialog if not granted)
                 AccessibilityPermission.requestAccessibilityPermission()
-                
+
                 // Check again after requesting
                 if !AccessibilityPermission.checkAccessibilityPermission() {
                     Logger.log(level: .error, "Accessibility permissions still not granted after request")
@@ -159,7 +158,7 @@ enum AppleScriptBridge {
                 }
             }
         }
-        
+
         Logger.log(level: .debug, "Attempting to run AppleScript:")
         // Log the script itself only at debug for PII
         Logger.log(level: .debug, "\\n--BEGIN APPLE SCRIPT--\\n\(script)\\n--END APPLE SCRIPT--\\n")

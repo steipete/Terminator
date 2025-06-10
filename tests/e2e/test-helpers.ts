@@ -1,11 +1,11 @@
-import { execa } from 'execa';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { execa } from "execa";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PROJECT_ROOT = path.resolve(__dirname, '../..');
-const SWIFT_CLI_PATH = path.join(PROJECT_ROOT, 'bin', 'terminator');
+const PROJECT_ROOT = path.resolve(__dirname, "../..");
+const SWIFT_CLI_PATH = path.join(PROJECT_ROOT, "bin", "terminator");
 
 // Check if we can actually automate Terminal
 let terminalAutomationAvailable: boolean | null = null;
@@ -17,14 +17,18 @@ export async function isTerminalAutomationAvailable(): Promise<boolean> {
 
   try {
     // Try a simple sessions command to see if AppleScript works
-    const result = await execa(SWIFT_CLI_PATH, ['sessions', '--terminal-app', 'terminal'], {
-      reject: false,
-      env: {
-        ...process.env,
-        TERMINATOR_SKIP_RESPONSIBILITY: '1'
-      }
-    });
-    
+    const result = await execa(
+      SWIFT_CLI_PATH,
+      ["sessions", "--terminal-app", "terminal"],
+      {
+        reject: false,
+        env: {
+          ...process.env,
+          TERMINATOR_SKIP_RESPONSIBILITY: "1",
+        },
+      },
+    );
+
     // If we get exit code 0, automation works
     // If we get exit code 3 (AppleScript error), it doesn't
     terminalAutomationAvailable = result.exitCode === 0;
@@ -42,8 +46,8 @@ export async function runTerminator(args: string[]) {
     all: true,
     env: {
       ...process.env,
-      TERMINATOR_SKIP_RESPONSIBILITY: '1'
-    }
+      TERMINATOR_SKIP_RESPONSIBILITY: "1",
+    },
   });
   return {
     stdout: result.stdout,
@@ -57,7 +61,7 @@ export async function runTerminator(args: string[]) {
 export async function skipIfNoAutomation(testFn: () => Promise<void>) {
   const available = await isTerminalAutomationAvailable();
   if (!available) {
-    console.log('Skipping test: Terminal automation not available');
+    console.log("Skipping test: Terminal automation not available");
     return;
   }
   return testFn();

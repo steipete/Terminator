@@ -86,13 +86,13 @@ enum TestUtilities {
         unsetenv("TERMINATOR_REUSE_BUSY_SESSIONS")
         unsetenv("TERMINATOR_ITERM_PROFILE_NAME")
     }
-    
+
     /// Check if we're running in a CI environment
     static var isCI: Bool {
-        return ProcessInfo.processInfo.environment["CI"] != nil ||
-               ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] != nil ||
-               ProcessInfo.processInfo.environment["JENKINS"] != nil ||
-               ProcessInfo.processInfo.environment["TRAVIS"] != nil
+        ProcessInfo.processInfo.environment["CI"] != nil ||
+            ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] != nil ||
+            ProcessInfo.processInfo.environment["JENKINS"] != nil ||
+            ProcessInfo.processInfo.environment["TRAVIS"] != nil
     }
 }
 

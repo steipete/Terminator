@@ -56,7 +56,7 @@ struct Execute: ParsableCommand { // Changed from TerminatorSubcommand to Parsab
             try processResult(result, params: params)
         } catch let error as TerminalControllerError {
             var errorMessage = "Error executing command: \(error.localizedDescription)\n"
-            
+
             // Check if this is a System Events permission error
             if case let .appleScriptError(_, _, underlyingError) = error,
                let scriptError = underlyingError as? AppleScriptError,
@@ -69,7 +69,7 @@ struct Execute: ParsableCommand { // Changed from TerminatorSubcommand to Parsab
             } else {
                 errorMessage += "Script (if applicable):\n\(error.scriptContent ?? "N/A")\n"
             }
-            
+
             fputs(errorMessage, stderr)
             throw ExitCode(error.suggestedErrorCode)
         } catch {

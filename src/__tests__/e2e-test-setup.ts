@@ -1,11 +1,11 @@
 /// <reference types="vitest/globals" />
-import { vi } from 'vitest';
-import type { Mock } from 'vitest';
-import type { SdkCallContext, SwiftCLIResult } from '../types.js';
-import { invokeSwiftCLI } from '../swift-cli.js';
+import { vi } from "vitest";
+import type { Mock } from "vitest";
+import type { SdkCallContext, SwiftCLIResult } from "../types.js";
+import { invokeSwiftCLI } from "../swift-cli.js";
 
 // Mock the swift-cli module
-vi.mock('../swift-cli.js', () => ({
+vi.mock("../swift-cli.js", () => ({
   invokeSwiftCLI: vi.fn(),
 }));
 
@@ -27,43 +27,43 @@ export function createMockContext(): SdkCallContext {
 // Common mock responses
 export const mockResponses = {
   successfulExecution: {
-    stdout: 'OK_COMPLETED_FG Mocked CLI output',
-    stderr: '',
+    stdout: "OK_COMPLETED_FG Mocked CLI output",
+    stderr: "",
     exitCode: 0,
     cancelled: false,
     internalTimeoutHit: false,
   },
   successfulBackgroundExecution: {
-    stdout: 'OK_STARTED_BG Command started in background',
-    stderr: '',
+    stdout: "OK_STARTED_BG Command started in background",
+    stderr: "",
     exitCode: 0,
     cancelled: false,
     internalTimeoutHit: false,
   },
   emptyList: {
-    stdout: '[]',
-    stderr: '',
+    stdout: "[]",
+    stderr: "",
     exitCode: 0,
     cancelled: false,
     internalTimeoutHit: false,
   },
   cancelled: {
-    stdout: '',
-    stderr: '',
+    stdout: "",
+    stderr: "",
     exitCode: null,
     cancelled: true,
     internalTimeoutHit: false,
   },
   timeout: {
-    stdout: '',
-    stderr: '',
+    stdout: "",
+    stderr: "",
     exitCode: null,
     cancelled: false,
     internalTimeoutHit: true,
   },
   configError: {
-    stdout: '',
-    stderr: 'Configuration error',
+    stdout: "",
+    stderr: "Configuration error",
     exitCode: 2,
     cancelled: false,
     internalTimeoutHit: false,
