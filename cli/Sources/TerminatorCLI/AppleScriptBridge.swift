@@ -21,6 +21,7 @@ enum AppleScriptError: Error, Sendable {
     case scriptCompilationFailed(errorInfo: String) // Changed from [String: Any] to String
     case scriptExecutionFailed(errorInfo: String) // Changed from [String: Any] to String
     case permissionDenied // Specifically for error -1743
+    case systemEventsPermissionDenied // Specifically for error 1002 (keystrokes)
     case unknownError(message: String)
     case typeConversionError(message: String)
 }
@@ -28,7 +29,6 @@ enum AppleScriptError: Error, Sendable {
 enum AppleScriptBridge {
     static func checkAndRequestPermission(for bundleIdentifier: String) -> Bool {
         Logger.log(level: .info, "Checking Apple Events permission for \(bundleIdentifier)")
-        
         // Launch the target app if it's not running
         let workspace = NSWorkspace.shared
         if let app = workspace.runningApplications.first(where: { $0.bundleIdentifier == bundleIdentifier }) {
@@ -130,6 +130,8 @@ enum AppleScriptBridge {
                 bundleID = "com.apple.Terminal"
             } else if script.contains("tell application \"iTerm\"") {
                 bundleID = "com.googlecode.iterm2"
+            } else if script.contains("tell application \"Ghostty\"") {
+                bundleID = "com.mitchellh.ghostty"
             } else {
                 bundleID = ""
             }
@@ -139,6 +141,21 @@ enum AppleScriptBridge {
                 if !checkAndRequestPermission(for: bundleID) {
                     Logger.log(level: .error, "Apple Events permission not granted for \(bundleID)")
                     return .failure(.permissionDenied)
+                }
+            }
+        }
+        
+        // Check if this script needs accessibility permissions
+        if AccessibilityPermission.isAccessibilityNeededForScript(script) {
+            if !AccessibilityPermission.checkAccessibilityPermission() {
+                Logger.log(level: .warn, "Script requires accessibility permissions which are not granted")
+                // Request permissions (this will show a dialog if not granted)
+                AccessibilityPermission.requestAccessibilityPermission()
+                
+                // Check again after requesting
+                if !AccessibilityPermission.checkAccessibilityPermission() {
+                    Logger.log(level: .error, "Accessibility permissions still not granted after request")
+                    return .failure(.systemEventsPermissionDenied)
                 }
             }
         }
@@ -168,6 +185,11 @@ enum AppleScriptBridge {
             Logger.log(level: .debug, "Full AppleScript error details: \(errorDict)")
             if errorNumber == -1743 { // Permissions error
                 return .failure(.permissionDenied)
+            }
+            if errorNumber == 1002 && errorMessage.contains("not allowed to send keystrokes") {
+                // System Events keystroke permission error
+                Logger.log(level: .warn, "System Events keystroke permission denied, will retry with osascript")
+                return .failure(.systemEventsPermissionDenied)
             }
             let errorInfo = "Error \(errorNumber): \(errorMessage)"
             return .failure(.scriptExecutionFailed(errorInfo: errorInfo))

@@ -55,10 +55,22 @@ struct Execute: ParsableCommand { // Changed from TerminatorSubcommand to Parsab
             let result = try executeCommand(config: config, params: params)
             try processResult(result, params: params)
         } catch let error as TerminalControllerError {
-            fputs(
-                "Error executing command: \(error.localizedDescription)\nScript (if applicable):\n\(error.scriptContent ?? "N/A")\n",
-                stderr
-            )
+            var errorMessage = "Error executing command: \(error.localizedDescription)\n"
+            
+            // Check if this is a System Events permission error
+            if case let .appleScriptError(_, _, underlyingError) = error,
+               let scriptError = underlyingError as? AppleScriptError,
+               case .systemEventsPermissionDenied = scriptError {
+                errorMessage += "\n🔐 System Events Permission Required:\n"
+                errorMessage += "1. Open System Settings > Privacy & Security > Accessibility\n"
+                errorMessage += "2. Enable access for Terminal (or the terminal app you're using)\n"
+                errorMessage += "3. You may need to restart Terminal after granting permission\n"
+                errorMessage += "\nNote: This is required for creating new Terminal tabs programmatically.\n"
+            } else {
+                errorMessage += "Script (if applicable):\n\(error.scriptContent ?? "N/A")\n"
+            }
+            
+            fputs(errorMessage, stderr)
             throw ExitCode(error.suggestedErrorCode)
         } catch {
             fputs("An unexpected error occurred: \(error.localizedDescription)\n", stderr)

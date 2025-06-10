@@ -18,6 +18,8 @@
     <string>14.0</string>
     <key>NSAppleEventsUsageDescription</key>
     <string>Terminator needs to send Apple events to Terminal applications to manage your terminal sessions.</string>
+    <key>NSAccessibilityUsageDescription</key>
+    <string>Terminator needs accessibility access to create new terminal tabs and control Terminal applications via AppleScript. This allows it to manage your development sessions efficiently.</string>
     <key>NSAppleScriptEnabled</key>
     <true/>
 </dict>
