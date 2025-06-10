@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-beta.7] - 2025-06-10
+
+### Added
+- **Comprehensive Test Suite**: Added extensive test coverage for recent features
+  - Process responsibility tests with C wrapper validation
+  - Accessibility permission tests with status checking
+  - Logger tests for proper stderr output and formatting
+  - Build time tests to verify version injection
+  - Swift log parser tests for TypeScript integration
+  - Log filtering tests to ensure clean client output
+- **Test Utilities**: Enhanced test infrastructure for better reliability
+  - `expectSuccessOrAppleScriptError` helper for handling automation permission errors
+  - `TERMINATOR_SKIP_RESPONSIBILITY` environment variable to prevent test spawning issues
+  - Test serialization to prevent parallel execution and permission dialog spam
+  - Improved error handling for environments without automation permissions
+
+### Changed
+- **Log Output Filtering**: Swift logs are now filtered from stderr to prevent internal logs from polluting client output
+  - Logs are still parsed and forwarded to pino logger for debugging
+  - Client only sees clean command output without internal debug information
+- **Test Organization**: Restructured tests for better maintainability
+  - Tests now run serially to avoid macOS permission dialog spam
+  - Updated test expectations to match actual CLI behavior
+  - Fixed CLI argument format expectations (e.g., `--tag` instead of `--session-id`)
+
+### Fixed
+- **Process Responsibility in Tests**: Fixed issue where parent process exits with code 0 when child is spawned
+  - Added environment variable check to skip responsibility disclaiming in tests
+  - Tests now properly capture exit codes and error messages
+- **Test Compatibility**: Fixed all failing tests
+  - Updated error message expectations to match actual CLI output
+  - Fixed project path validation tests to handle runtime validation
+  - Fixed timeout parameter validation to accept 0 and negative values
+  - Added explicit terminal app specification to prevent iTerm errors
+
 ## [1.0.0-beta.6] - 2025-01-10
 
 ### Added

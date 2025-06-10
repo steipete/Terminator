@@ -3,7 +3,7 @@ import Foundation
 
 // AUTO-GENERATED VERSION - DO NOT EDIT
 let appVersion = "1.0.0-beta.7"
-let buildTime = "2025-06-10T13:49:57Z"
+let buildTime = "2025-06-10T14:17:18Z"
 
 // Attempt to disclaim parent responsibility early if needed
 // This is crucial for Apple Events permission dialogs to appear correctly when
