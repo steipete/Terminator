@@ -119,4 +119,4 @@ fi
 echo ""
 echo "✅ Test complete!"
 echo ""
-echo "Note: Output capture to files is not working yet, but session management is functional."
+echo "Note: Output capture to files is now working! Session management is functional."

@@ -38,7 +38,8 @@ enum AppleTerminalParser {
             let parsedTag = parsedInfo?.tag
 
             guard let tag = parsedTag else {
-                Logger.log(level: .warn, "[AppleTerminalParser] Could not parse tag from session title: \\(title)")
+                // Skip non-Terminator tabs (normal behavior)
+                Logger.log(level: .debug, "[AppleTerminalParser] Skipping non-Terminator tab with title: \(title)")
                 continue
             }
 

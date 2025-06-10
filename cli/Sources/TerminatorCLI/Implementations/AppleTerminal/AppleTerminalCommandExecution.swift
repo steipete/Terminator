@@ -104,7 +104,7 @@ extension AppleTerminalControl {
         let coreCommand = shellCommandSegments.joined(separator: " && ")
 
         let shellCommandToExecuteWithRedirection: String
-        let quotedLogFilePathForShell = "'\\(logFilePath.escapingSingleQuotes())'"
+        let quotedLogFilePathForShell = "'\(logFilePath.escapingSingleQuotes())'"
         let escapedCompletionMarkerForShell = completionMarker.escapingSingleQuotes()
 
         if params.executionMode == .foreground {
