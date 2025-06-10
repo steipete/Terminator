@@ -48,10 +48,11 @@ extension AppleTerminalControl {
 
         // Filter by project path if provided
         if let projectPath {
-            candidateSessions = existingSessions.filter { $0.projectPath == projectPath }
+            let projectHash = SessionUtilities.generateProjectHash(projectPath: projectPath)
+            candidateSessions = existingSessions.filter { $0.projectPath == projectHash }
             Logger.log(
                 level: .debug,
-                "[AppleTerminalControl] After filtering by project path '\(projectPath)': \(candidateSessions.count) candidates"
+                "[AppleTerminalControl] After filtering by project path '\(projectPath)' (hash: \(projectHash)): \(candidateSessions.count) candidates"
             )
         }
 

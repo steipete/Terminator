@@ -36,37 +36,49 @@ extension AppleTerminalControl {
         // Busy Check and Interruption as per SDD 3.2.5
         if let processInfo = ProcessUtilities.getForegroundProcessInfo(forTTY: tty) {
             let foundPgid = processInfo.pgid
-            Logger.log(
-                level: .info,
-                "[AppleTerminalControl] Session TTY \(tty) for tag \(params.tag) is busy with command '\(processInfo.command)' (PGID: \(foundPgid)). Attempting to interrupt."
-            )
-            // SDD 3.2.5: "Attempt to stop the foreground process group by sending SIGINT via killpg(). Wait for a fixed
-            // internal timeout (e.g., 3 seconds, non-configurable for V1)."
-            // Using config.sigintWaitSeconds as per previous logic, which is 2s by default. Spec mentions 3s as
-            // example.
-            // Let's stick to config.sigintWaitSeconds for now.
-            _ = ProcessUtilities.killProcessGroup(pgid: foundPgid, signal: SIGINT)
-            Logger.log(
-                level: .debug,
-                "[AppleTerminalControl] Sent SIGINT to PGID \(foundPgid) on TTY \(tty). Waiting \(config.sigintWaitSeconds)s."
-            )
-            Thread.sleep(forTimeInterval: Double(config.sigintWaitSeconds))
-
-            if ProcessUtilities.isProcessGroupRunning(pgid: foundPgid) {
+            
+            // Check if it's a shell process
+            let commonShells = ["bash", "zsh", "fish", "sh", "tcsh", "csh", "login", "-bash", "-zsh", "-sh"]
+            let isShell = commonShells.contains { processInfo.command.lowercased().contains($0) }
+            
+            if isShell {
                 Logger.log(
-                    level: .warn,
-                    "[AppleTerminalControl] Busy process with PGID \(foundPgid) did not terminate after SIGINT and wait. Command execution might fail or be delayed."
-                )
-                // SDD 3.2.5: "If process still exists after timeout, execute fails with error code 4"
-                // Throwing error here to adhere to spec.
-                throw TerminalControllerError.internalError(
-                    details: "Failed to stop busy process (PGID: \(foundPgid)) on TTY \(tty) before command execution."
+                    level: .debug,
+                    "[AppleTerminalControl] Session TTY \(tty) has shell '\(processInfo.command)' (PGID: \(foundPgid)). Proceeding without interruption."
                 )
             } else {
                 Logger.log(
                     level: .info,
-                    "[AppleTerminalControl] Busy process with PGID \(foundPgid) terminated successfully."
+                    "[AppleTerminalControl] Session TTY \(tty) for tag \(params.tag) is busy with command '\(processInfo.command)' (PGID: \(foundPgid)). Attempting to interrupt."
                 )
+                // SDD 3.2.5: "Attempt to stop the foreground process group by sending SIGINT via killpg(). Wait for a fixed
+                // internal timeout (e.g., 3 seconds, non-configurable for V1)."
+                // Using config.sigintWaitSeconds as per previous logic, which is 2s by default. Spec mentions 3s as
+                // example.
+                // Let's stick to config.sigintWaitSeconds for now.
+                _ = ProcessUtilities.killProcessGroup(pgid: foundPgid, signal: SIGINT)
+                Logger.log(
+                    level: .debug,
+                    "[AppleTerminalControl] Sent SIGINT to PGID \(foundPgid) on TTY \(tty). Waiting \(config.sigintWaitSeconds)s."
+                )
+                Thread.sleep(forTimeInterval: Double(config.sigintWaitSeconds))
+
+                if ProcessUtilities.isProcessGroupRunning(pgid: foundPgid) {
+                    Logger.log(
+                        level: .warn,
+                        "[AppleTerminalControl] Busy process with PGID \(foundPgid) did not terminate after SIGINT and wait. Command execution might fail or be delayed."
+                    )
+                    // SDD 3.2.5: "If process still exists after timeout, execute fails with error code 4"
+                    // Throwing error here to adhere to spec.
+                    throw TerminalControllerError.internalError(
+                        details: "Failed to stop busy process (PGID: \(foundPgid)) on TTY \(tty) before command execution."
+                    )
+                } else {
+                    Logger.log(
+                        level: .info,
+                        "[AppleTerminalControl] Busy process with PGID \(foundPgid) terminated successfully."
+                    )
+                }
             }
         }
 

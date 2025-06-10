@@ -104,13 +104,24 @@ enum AppleTerminalWindowScripts {
 
             -- Create a new tab
             tell application "System Events" to keystroke "t" using command down
+            
+            -- Wait a moment for the tab to be created
+            delay 0.5
 
             -- The newly created tab becomes the selected tab
             set newTab to selected tab of targetWindow
             set custom title of newTab to "\(newSessionTitle)"
+            
+            -- Wait for the tab to be fully initialized
+            delay 0.2
 
             -- Get the tab's index (which we'll use as ID)
-            set tabID to index of newTab
+            try
+                set tabID to index of newTab
+            on error
+                -- If index is not available, count tabs to get the index
+                set tabID to count of tabs of targetWindow
+            end try
 
             -- Get the TTY device
             set ttyDevice to tty of newTab
@@ -118,7 +129,7 @@ enum AppleTerminalWindowScripts {
             -- Get the title
             set tabTitle to custom title of newTab
 
-            return {windowID as string, tabID as string, ttyDevice, tabTitle}
+            return {\(windowID) as string, tabID as string, ttyDevice, tabTitle}
         end tell
         """
     }
