@@ -6,6 +6,7 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { debugLog } from './config.js';
 import { SdkCallContext } from './types.js';
+import { parseAndLogSwiftOutput, createSwiftLogProcessor } from './swift-log-parser.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,6 +22,9 @@ export interface SwiftCLIResult {
     internalTimeoutHit: boolean;
 }
 
+// Note: We now use responsibility_spawnattrs_setdisclaim in the Swift CLI
+// to make it self-responsible, which should trigger the permission dialog properly
+
 export async function invokeSwiftCLI(
     cliArgs: string[], 
     terminatorEnv: Record<string, string>, 
@@ -28,6 +32,8 @@ export async function invokeSwiftCLI(
     wrapperTimeoutMs: number
 ): Promise<SwiftCLIResult> {
     debugLog(`Invoking Swift CLI: ${SWIFT_CLI_PATH} ${cliArgs.join(' ')} with env:`, terminatorEnv);
+    
+    // Swift CLI now handles permission dialog triggering internally via responsibility disclaimer
     
     const controller = new AbortController();
     let mcpCancelled = false;
@@ -62,8 +68,14 @@ export async function invokeSwiftCLI(
             cwd: path.resolve(__dirname, '..'),
             cancelSignal: controller.signal, // Changed from 'signal' to 'cancelSignal' in newer execa versions
             reject: false, // Don't throw on non-zero exit codes
-            all: true, // Combine stdout and stderr for easier debugging
+            all: false, // Keep stdout and stderr separate for log parsing
+            buffer: true,
         });
+        
+        // Parse and forward Swift logs from stderr to pino
+        if (result.stderr) {
+            parseAndLogSwiftOutput(result.stderr);
+        }
         
         clearTimeout(timeoutId);
         
