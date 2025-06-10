@@ -109,12 +109,8 @@ enum Logger {
         let fileName = (file as NSString).lastPathComponent
         let logEntry = "[\(timestamp()) \(level.rawValue.uppercased()) \(fileName):\(line) \(function)] \(message)\n"
 
-        // Print to stdout (or stderr for errors) regardless of file logging success
-        if level.intValue >= AppConfig.LogLevel.error.intValue {
-            fputs(logEntry, stderr)
-        } else {
-            fputs(logEntry, stdout)
-        }
+        // Always print to stderr to avoid polluting command output
+        fputs(logEntry, stderr)
 
         fileHandleQueue.async {
             if let handle = fileHandle, let data = logEntry.data(using: .utf8) {

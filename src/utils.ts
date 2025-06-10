@@ -201,9 +201,9 @@ export function formatCliOutputForAI(
             return `Terminator: Command timed out after ${timeoutVal}s in session '${tag}'. Output (if any):
 ${stdoutTrimmed}`.trim();
         }
-        // Standard successful exec
-        return `Terminator: Command executed in session '${tag}'. Output:
-${stdoutTrimmed || (stderrTrimmed ? "Error Output: " + stderrTrimmed : "No output")}`.trim();
+        // Standard successful exec - only return stdout (command output)
+        // Logs go to stderr and shouldn't be included in the output
+        return stdoutTrimmed || `Terminator: Command executed in session '${tag}'. No output captured.`;
     }
     
     // Default for other successful actions or if stdout is present
