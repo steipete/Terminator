@@ -10,10 +10,7 @@ vi.mock('../swift-cli.js', () => ({
 }));
 
 // Get a typed reference to the mock
-export const mockedInvokeSwiftCLI = invokeSwiftCLI as Mock<
-  [string[], Record<string, string>, SdkCallContext, number],
-  Promise<SwiftCLIResult>
->;
+export const mockedInvokeSwiftCLI = invokeSwiftCLI as Mock;
 
 // Create a standard mock context
 export function createMockContext(): SdkCallContext {
