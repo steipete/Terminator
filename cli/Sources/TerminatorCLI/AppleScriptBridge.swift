@@ -4,6 +4,8 @@ import Foundation
 import UniformTypeIdentifiers // Import for UTType
 import ApplicationServices // For AEDeterminePermissionToAutomateTarget
 
+// Use Logger from the same module
+
 // Define AppleScript type constants using their FourCharCode UInt32 literal values
 let typeText: DescType = 0x5445_5854 // 'TEXT' = kAEText
 let typeBoolean: DescType = 0x626F_6F6C // 'bool' = kAEBoolean
@@ -13,6 +15,7 @@ let typeAEList: DescType = 0x6C69_7374 // 'list' = kAEList
 let typeApplicationBundleID: DescType = 0x62756E64 // 'bund' = typeApplicationBundleID
 let typeWildCard: DescType = 0x2A2A2A2A // '****' = typeWildCard
 let errAEEventNotPermitted: OSStatus = -1743 // Permission denied
+let procNotFound: OSStatus = -600 // Process not found
 
 enum AppleScriptError: Error, Sendable {
     case scriptCompilationFailed(errorInfo: String) // Changed from [String: Any] to String
@@ -24,21 +27,54 @@ enum AppleScriptError: Error, Sendable {
 
 enum AppleScriptBridge {
     static func checkAndRequestPermission(for bundleIdentifier: String) -> Bool {
-        Logger.log(level: .debug, "Checking Apple Events permission for \(bundleIdentifier)")
+        Logger.log(level: .info, "Checking Apple Events permission for \(bundleIdentifier)")
+        
+        // Launch the target app if it's not running
+        let workspace = NSWorkspace.shared
+        if let app = workspace.runningApplications.first(where: { $0.bundleIdentifier == bundleIdentifier }) {
+            Logger.log(level: .debug, "Target app is running with PID: \(app.processIdentifier)")
+        } else {
+            Logger.log(level: .info, "Target app not running, attempting to launch...")
+            if let appURL = workspace.urlForApplication(withBundleIdentifier: bundleIdentifier) {
+                Logger.log(level: .debug, "Launching app at URL: \(appURL)")
+                
+                if #available(macOS 11.0, *) {
+                    let configuration = NSWorkspace.OpenConfiguration()
+                    configuration.activates = false
+                    
+                    workspace.openApplication(at: appURL, configuration: configuration) { _, error in
+                        if let error = error {
+                            Logger.log(level: .error, "Failed to launch app: \(error)")
+                        } else {
+                            Logger.log(level: .debug, "Launched target app")
+                        }
+                    }
+                    Thread.sleep(forTimeInterval: 1.0) // Give app time to launch
+                } else {
+                    // Fallback for older macOS versions
+                    do {
+                        try workspace.launchApplication(at: appURL, options: .withoutActivation, configuration: [:])
+                        Logger.log(level: .debug, "Launched target app")
+                        Thread.sleep(forTimeInterval: 1.0) // Give app time to launch
+                    } catch {
+                        Logger.log(level: .error, "Failed to launch app: \(error)")
+                    }
+                }
+            }
+        }
         
         // Create AEAddressDesc for the target application
         var targetAddress = AEAddressDesc()
         defer { AEDisposeDesc(&targetAddress) }
         
-        // Convert bundle identifier to data
-        let bundleIDData = bundleIdentifier.data(using: .utf8)!
+        // Convert bundle identifier to CFString and use it properly
+        var err: OSErr = OSErr(noErr)
         
-        // Create the address descriptor for the target app
-        let err = bundleIDData.withUnsafeBytes { bytes in
-            AECreateDesc(
+        bundleIdentifier.withCString { cString in
+            err = AECreateDesc(
                 typeApplicationBundleID,
-                bytes.baseAddress!,
-                bytes.count,
+                cString,
+                bundleIdentifier.count,
                 &targetAddress
             )
         }
@@ -56,9 +92,11 @@ enum AppleScriptBridge {
             true // askUserIfNeeded
         )
         
+        Logger.log(level: .info, "Permission check result: \(permissionStatus)")
+        
         switch permissionStatus {
         case noErr:
-            Logger.log(level: .debug, "Apple Events permission granted for \(bundleIdentifier)")
+            Logger.log(level: .info, "Apple Events permission granted for \(bundleIdentifier)")
             return true
         case OSStatus(errAEEventNotPermitted):
             Logger.log(level: .error, "Apple Events permission denied for \(bundleIdentifier)")
@@ -72,7 +110,39 @@ enum AppleScriptBridge {
         }
     }
     
+    private static let permissionCheckQueue = DispatchQueue(label: "com.steipete.terminator.permissionCheck")
+    private nonisolated(unsafe) static var hasCheckedPermission = false
+    
     static func runAppleScript(script: String) -> Result<Any, AppleScriptError> {
+        // Check permissions on first AppleScript execution
+        var shouldCheckPermission = false
+        permissionCheckQueue.sync {
+            if !hasCheckedPermission {
+                hasCheckedPermission = true
+                shouldCheckPermission = true
+            }
+        }
+        
+        if shouldCheckPermission {
+            // Determine which app we're targeting from the script
+            let bundleID: String
+            if script.contains("tell application \"Terminal\"") {
+                bundleID = "com.apple.Terminal"
+            } else if script.contains("tell application \"iTerm\"") {
+                bundleID = "com.googlecode.iterm2"
+            } else {
+                bundleID = ""
+            }
+            
+            if !bundleID.isEmpty {
+                Logger.log(level: .info, "First AppleScript execution - checking permissions for \(bundleID)")
+                if !checkAndRequestPermission(for: bundleID) {
+                    Logger.log(level: .error, "Apple Events permission not granted for \(bundleID)")
+                    return .failure(.permissionDenied)
+                }
+            }
+        }
+        
         Logger.log(level: .debug, "Attempting to run AppleScript:")
         // Log the script itself only at debug for PII
         Logger.log(level: .debug, "\\n--BEGIN APPLE SCRIPT--\\n\(script)\\n--END APPLE SCRIPT--\\n")
