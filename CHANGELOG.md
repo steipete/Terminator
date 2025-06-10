@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-beta.3] - 2025-01-10
+
+### Fixed
+- **Apple Events Permission Dialog**: Resolved permission dialog not appearing
+  - Implemented AEDeterminePermissionToAutomateTarget with askUserIfNeeded flag
+  - Fixed thread-safe access to permission check state using DispatchQueue
+  - Fixed OSErr/OSStatus type mismatch in AECreateDesc
+  - Updated deprecated NSWorkspace APIs for macOS 11.0+
+  - Properly embedded Info.plist with NSAppleEventsUsageDescription
+  - Added entitlements for com.apple.security.automation.apple-events
+
+### Changed
+- **Path Resolution**: Enhanced path handling for better compatibility
+  - Added tilde expansion support for paths like ~/Desktop
+  - Fixed symlink handling by using statSync instead of lstatSync
+  - Added automatic directory creation for non-existent paths
+  - Added comprehensive E2E tests for path resolution
+
+### Updated
+- **Dependencies**: Updated all dependencies to latest versions
+  - Updated vitest from 1.6.0 to 3.2.3 (fixed security vulnerability)
+  - Fixed Mock type compatibility issues with updated vitest
+
+## [1.0.0-beta.2] - 2025-01-09
+
+### Changed
+- **Swift CLI Alignment**: Renamed 'list' command to 'sessions' for consistency
+- **Documentation**: Added log file location details to README
+
 ## [1.0.0-beta.1] - 2025-01-06
 
 ### Changed
