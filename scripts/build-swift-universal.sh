@@ -53,13 +53,25 @@ strip -Sx "$FINAL_BINARY_PATH.tmp"
 mv "$FINAL_BINARY_PATH.tmp" "$FINAL_BINARY_PATH"
 
 # Code sign with entitlements
-if [ -f "$SWIFT_PROJECT_PATH/terminator.entitlements" ]; then
-    echo "🔏 Code signing with entitlements for Apple Events..."
-    codesign --force --sign - --entitlements "$SWIFT_PROJECT_PATH/terminator.entitlements" "$FINAL_BINARY_PATH"
-    echo "✅ Code signing complete with Apple Events entitlement"
+# Source signing configuration for consistent TCC permissions
+CODESIGN_CONFIG="$SWIFT_PROJECT_PATH/.codesign-config"
+if [ -f "$CODESIGN_CONFIG" ]; then
+    source "$CODESIGN_CONFIG"
+    SIGNING_IDENTITY="$DEFAULT_SIGNING_IDENTITY"
+    echo "📋 Using signing identity from config: $SIGNING_IDENTITY"
 else
-    echo "⚠️  No entitlements file found, signing without entitlements"
-    codesign --force --sign - "$FINAL_BINARY_PATH"
+    # Fallback to Apple Development certificate
+    SIGNING_IDENTITY="Apple Development: Peter Steinberger (2ZAC4GM7GD)"
+    echo "⚠️  No codesign config found, using default: $SIGNING_IDENTITY"
+fi
+
+if [ -f "$SWIFT_PROJECT_PATH/terminator.entitlements" ]; then
+    echo "🔏 Code signing with Apple Development certificate and entitlements..."
+    codesign --force --sign "$SIGNING_IDENTITY" --entitlements "$SWIFT_PROJECT_PATH/terminator.entitlements" "$FINAL_BINARY_PATH"
+    echo "✅ Code signing complete with Apple Development certificate"
+else
+    echo "⚠️  No entitlements file found, signing with Apple Development certificate only"
+    codesign --force --sign "$SIGNING_IDENTITY" "$FINAL_BINARY_PATH"
 fi
 
 echo "🗑️ Cleaning up temporary architecture-specific binaries..."

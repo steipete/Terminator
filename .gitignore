@@ -13,4 +13,7 @@ yarn-error.log*
 .DS_Store
 
 # LLVM bitcode files
-*.bc 
+*.bc
+
+# Standard output files
+stdout 

@@ -1,0 +1,12 @@
+# Code Signing Configuration for Terminator CLI
+# This file ensures consistent code signing across builds to prevent TCC permission issues
+
+# Use Apple Development certificate for local development builds
+# This prevents TCC database thrashing that occurs with ad-hoc signing
+DEVELOPMENT_SIGNING_IDENTITY="Apple Development: Peter Steinberger (2ZAC4GM7GD)"
+
+# Use Developer ID for distribution builds (when needed)
+DISTRIBUTION_SIGNING_IDENTITY="Developer ID Application: Peter Steinberger (Y5PE65HELJ)"
+
+# Default to development signing for all local builds
+DEFAULT_SIGNING_IDENTITY="$DEVELOPMENT_SIGNING_IDENTITY"
