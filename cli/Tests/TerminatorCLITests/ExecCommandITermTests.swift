@@ -3,7 +3,7 @@ import Foundation
 @testable import TerminatorCLI
 import Testing
 
-@Suite("Exec Command iTerm Tests", .tags(.exec, .iTerm))
+@Suite("Exec Command iTerm Tests", .tags(.exec, .iTerm), .serialized)
 struct ExecCommandITermTests {
     init() {
         TestUtilities.clearEnvironment()

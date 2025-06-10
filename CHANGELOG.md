@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-beta.6] - 2025-01-10
+
+### Added
+- **Accessibility Permission Handling**: Proactive check for accessibility permissions
+  - Checks for accessibility permissions before attempting System Events operations
+  - Automatically prompts user to grant permissions if not already granted
+  - Added `NSAccessibilityUsageDescription` to Info.plist with clear explanation
+  - Custom message explains that accessibility is needed for controlling terminals via AppleScript
+
+### Changed
+- **Logging Output**: Fixed log pollution in command output
+  - All logs now go to stderr instead of stdout
+  - Command output is clean and only contains actual command results
+  - Debug information no longer appears in tool responses
+
+## [1.0.0-beta.5] - 2025-01-10
+
+### Changed
+- **Process Responsibility Handling**: Enhanced implementation with better documentation and error handling
+  - Added comprehensive documentation explaining the "responsible process" concept
+  - Defined `POSIX_SPAWN_SETDISCLAIM` constant instead of using magic number
+  - Improved error handling for spawn attributes initialization and disclaimer setting
+  - Added references to Qt blog, LLVM, and Chromium implementations
+  - Made disclaimer failures non-fatal with appropriate warnings
+  - Added logger flushing before parent process exits
+
+## [1.0.0-beta.4] - 2025-01-10
+
+### Changed
+- **Permission Dialog Handling**: Moved osascript permission hack from Swift to TypeScript layer
+  - Now runs before Swift CLI invocation for better reliability
+  - Works regardless of how the Swift CLI is called
+  - Properly detects and uses the correct terminal app (Terminal, iTerm, or Ghostty)
+  - Caches permission checks per terminal app to avoid repeated prompts
+
 ## [1.0.0-beta.3] - 2025-01-10
 
 ### Fixed

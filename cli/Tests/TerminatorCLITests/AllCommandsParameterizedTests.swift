@@ -3,7 +3,7 @@ import Foundation
 @testable import TerminatorCLI
 import Testing
 
-@Suite("All Commands Parameterized Tests", .timeLimit(.minutes(1)))
+@Suite("All Commands Parameterized Tests", .timeLimit(.minutes(1)), .serialized)
 struct AllCommandsParameterizedTests {
     init() {
         TestUtilities.clearEnvironment()

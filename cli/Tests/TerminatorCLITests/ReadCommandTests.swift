@@ -3,7 +3,7 @@ import Foundation
 @testable import TerminatorCLI
 import Testing
 
-@Suite("Read Command Tests", .tags(.read))
+@Suite("Read Command Tests", .tags(.read), .serialized)
 struct ReadCommandTests {
     init() {
         TestUtilities.clearEnvironment()

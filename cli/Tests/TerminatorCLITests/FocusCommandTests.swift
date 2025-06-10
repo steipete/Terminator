@@ -3,7 +3,7 @@ import Foundation
 @testable import TerminatorCLI
 import Testing
 
-@Suite("Focus Command Tests", .tags(.focus))
+@Suite("Focus Command Tests", .tags(.focus), .serialized)
 struct FocusCommandTests {
     init() {
         TestUtilities.clearEnvironment()

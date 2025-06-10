@@ -3,7 +3,7 @@ import Foundation
 @testable import TerminatorCLI
 import Testing
 
-@Suite("List Command Tests", .tags(.list))
+@Suite("List Command Tests", .tags(.list), .serialized)
 struct ListCommandTests {
     // MARK: - Test Support Types
 

@@ -24,6 +24,12 @@ enum ProcessResponsibility {
     /// Attempt to disclaim parent responsibility for the current process
     /// This ensures that Apple Events permission dialogs appear correctly
     static func disclaimParentResponsibility() {
+        // Check if we should skip responsibility disclaiming (for tests)
+        if ProcessInfo.processInfo.environment["TERMINATOR_SKIP_RESPONSIBILITY"] != nil {
+            Logger.log(level: .debug, "Skipping process responsibility disclaiming (TERMINATOR_SKIP_RESPONSIBILITY set)")
+            return
+        }
+        
         // Check if we're already running as a self-responsible process
         guard ProcessInfo.processInfo.environment["TERMINATOR_SELF_RESPONSIBLE"] == nil else {
             Logger.log(level: .info, "Already running as self-responsible process (PID: \(getpid()))")

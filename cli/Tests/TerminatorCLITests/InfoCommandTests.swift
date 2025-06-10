@@ -3,7 +3,7 @@ import Foundation
 @testable import TerminatorCLI
 import Testing
 
-@Suite("Info Command Tests", .tags(.info))
+@Suite("Info Command Tests", .tags(.info), .serialized)
 struct InfoCommandTests {
     // MARK: - Test Output Structures
 

@@ -12,6 +12,11 @@ enum TestUtilities {
         process.executableURL = productsDirectory.appendingPathComponent("terminator")
         process.arguments = arguments
 
+        // Set environment to skip process responsibility for tests
+        var environment = ProcessInfo.processInfo.environment
+        environment["TERMINATOR_SKIP_RESPONSIBILITY"] = "1"
+        process.environment = environment
+
         let outputPipe = Pipe()
         let errorPipe = Pipe()
         process.standardOutput = outputPipe
@@ -81,10 +86,18 @@ enum TestUtilities {
         unsetenv("TERMINATOR_REUSE_BUSY_SESSIONS")
         unsetenv("TERMINATOR_ITERM_PROFILE_NAME")
     }
+    
+    /// Check if we're running in a CI environment
+    static var isCI: Bool {
+        return ProcessInfo.processInfo.environment["CI"] != nil ||
+               ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] != nil ||
+               ProcessInfo.processInfo.environment["JENKINS"] != nil ||
+               ProcessInfo.processInfo.environment["TRAVIS"] != nil
+    }
 }
 
 /// Base test suite that provides common setup and utilities
-@Suite("Base Terminator Tests")
+@Suite("Base Terminator Tests", .serialized)
 struct BaseTerminatorTests {
     init() {
         // Clear any environment variables that might interfere with tests

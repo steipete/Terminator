@@ -3,7 +3,7 @@ import Foundation
 @testable import TerminatorCLI
 import Testing
 
-@Suite("Kill Command Tests", .tags(.kill))
+@Suite("Kill Command Tests", .tags(.kill), .serialized)
 struct KillCommandTests {
     init() {
         TestUtilities.clearEnvironment()

@@ -2,8 +2,8 @@ import ArgumentParser
 import Foundation
 
 // AUTO-GENERATED VERSION - DO NOT EDIT
-let appVersion = "1.0.0-beta.6"
-let buildTime = "2025-06-10T12:53:20Z"
+let appVersion = "1.0.0-beta.7"
+let buildTime = "2025-06-10T13:49:57Z"
 
 // Attempt to disclaim parent responsibility early if needed
 // This is crucial for Apple Events permission dialogs to appear correctly when
@@ -18,7 +18,7 @@ atexit_b { Logger.shutdown() }
 struct TerminatorCLI: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "A Swift CLI to manage macOS terminal sessions for an MCP plugin.",
-        version: "1.0.0-beta.6", // Updated to reflect significant refactoring
+        version: "1.0.0-beta.7", // Updated to reflect significant refactoring
         subcommands: [Execute.self, Read.self, Sessions.self, Info.self, Focus.self, Kill.self],
         defaultSubcommand: Info.self
     )

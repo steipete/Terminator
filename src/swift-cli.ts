@@ -73,8 +73,15 @@ export async function invokeSwiftCLI(
         });
         
         // Parse and forward Swift logs from stderr to pino
-        if (result.stderr) {
-            parseAndLogSwiftOutput(result.stderr);
+        let filteredStderr = result.stderr || '';
+        if (filteredStderr) {
+            parseAndLogSwiftOutput(filteredStderr);
+            
+            // Filter out Swift log lines from stderr to avoid polluting client output
+            const logPattern = /^\[(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)\s+(\w+)\s+([^:]+):(\d+)\s+([^\]]+)\]\s+(.*)$/;
+            const lines = filteredStderr.split('\n');
+            const nonLogLines = lines.filter(line => !line.match(logPattern));
+            filteredStderr = nonLogLines.join('\n').trim();
         }
         
         clearTimeout(timeoutId);
@@ -103,7 +110,7 @@ export async function invokeSwiftCLI(
         
         return {
             stdout: processedStdout,
-            stderr: result.stderr || '',
+            stderr: filteredStderr,
             exitCode: result.exitCode ?? null,
             cancelled: false,
             internalTimeoutHit: false
@@ -164,9 +171,22 @@ export async function invokeSwiftCLI(
                 isCanceled: execaError.isCanceled
             });
             
+            // Filter Swift logs from error stderr as well
+            let errorStderr = typeof execaError.stderr === 'string' ? execaError.stderr : '';
+            if (errorStderr) {
+                // Parse logs before filtering
+                parseAndLogSwiftOutput(errorStderr);
+                
+                // Filter out Swift log lines
+                const logPattern = /^\[(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)\s+(\w+)\s+([^:]+):(\d+)\s+([^\]]+)\]\s+(.*)$/;
+                const lines = errorStderr.split('\n');
+                const nonLogLines = lines.filter(line => !line.match(logPattern));
+                errorStderr = nonLogLines.join('\n').trim();
+            }
+            
             return {
                 stdout: typeof execaError.stdout === 'string' ? execaError.stdout : '',
-                stderr: (typeof execaError.stderr === 'string' ? execaError.stderr : '') + (errorInfo ? `\n${errorInfo}` : ''),
+                stderr: errorStderr + (errorInfo ? `\n${errorInfo}` : ''),
                 exitCode: execaError.exitCode ?? null,
                 cancelled: false,
                 internalTimeoutHit: false

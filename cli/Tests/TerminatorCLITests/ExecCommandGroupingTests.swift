@@ -3,7 +3,7 @@ import Foundation
 @testable import TerminatorCLI
 import Testing
 
-@Suite("Exec Command Grouping Tests", .tags(.exec, .grouping), .timeLimit(.minutes(1)))
+@Suite("Exec Command Grouping Tests", .tags(.exec, .grouping), .timeLimit(.minutes(1)), .serialized)
 struct ExecCommandGroupingTests {
     init() {
         TestUtilities.clearEnvironment()

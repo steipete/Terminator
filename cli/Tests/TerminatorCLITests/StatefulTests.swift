@@ -115,7 +115,7 @@ struct StatefulTests {
 // MARK: - Integration Test Suite
 
 /// Tests that verify the full command flow
-@Suite("Integration Tests", .tags(.integration), .timeLimit(.minutes(2)))
+@Suite("Integration Tests", .tags(.integration), .timeLimit(.minutes(2)), .serialized)
 struct IntegrationTests {
     init() {
         TestUtilities.clearEnvironment()

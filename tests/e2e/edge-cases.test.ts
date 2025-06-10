@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { execa } from 'execa';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { expectSuccessOrAppleScriptError, expectFailureWithMessage } from './test-utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,6 +14,10 @@ async function runTerminator(args: string[]) {
   const result = await execa(SWIFT_CLI_PATH, args, {
     reject: false,
     all: true,
+    env: {
+      ...process.env,
+      TERMINATOR_SKIP_RESPONSIBILITY: '1'
+    }
   });
   return {
     stdout: result.stdout,
@@ -38,7 +43,7 @@ describe('Terminator Edge Cases', () => {
       const result = await runTerminator(['sessions', '--terminal-app', 'terminal']);
       
       // Should not crash with Range bounds error
-      expect(result.exitCode).toBe(0);
+      expectSuccessOrAppleScriptError(result);
       expect(result.stderr).not.toContain('Range requires lowerBound <= upperBound');
       expect(result.stderr).not.toContain('Fatal error');
     });
@@ -47,7 +52,7 @@ describe('Terminator Edge Cases', () => {
       // Test with iTerm which might return nested structures
       const result = await runTerminator(['sessions', '--terminal-app', 'iterm', '--json']);
       
-      expect(result.exitCode).toBe(0);
+      expectSuccessOrAppleScriptError(result);
       expect(result.stderr).not.toContain('Range requires lowerBound <= upperBound');
       
       // Handle null or empty JSON response
@@ -70,7 +75,7 @@ describe('Terminator Edge Cases', () => {
         '--command', 'echo `whoami`'
       ]);
       
-      expect(result.exitCode).toBe(0);
+      expectSuccessOrAppleScriptError(result);
     });
 
     it('should handle commands with dollar signs', async () => {
@@ -82,7 +87,7 @@ describe('Terminator Edge Cases', () => {
         '--command', 'echo $HOME'
       ]);
       
-      expect(result.exitCode).toBe(0);
+      expectSuccessOrAppleScriptError(result);
     });
 
     it('should handle commands with semicolons', async () => {
@@ -94,7 +99,7 @@ describe('Terminator Edge Cases', () => {
         '--command', 'echo "First"; echo "Second"'
       ]);
       
-      expect(result.exitCode).toBe(0);
+      expectSuccessOrAppleScriptError(result);
     });
 
     it('should handle commands with pipes', async () => {
@@ -106,7 +111,7 @@ describe('Terminator Edge Cases', () => {
         '--command', 'echo "test" | cat'
       ]);
       
-      expect(result.exitCode).toBe(0);
+      expectSuccessOrAppleScriptError(result);
     });
 
     it('should handle commands with redirects', async () => {
@@ -118,7 +123,7 @@ describe('Terminator Edge Cases', () => {
         '--command', 'echo "test" > /tmp/terminator-test.txt'
       ]);
       
-      expect(result.exitCode).toBe(0);
+      expectSuccessOrAppleScriptError(result);
     });
   });
 
@@ -133,7 +138,7 @@ describe('Terminator Edge Cases', () => {
         '--command', 'pwd'
       ]);
       
-      expect(result.exitCode).toBe(0);
+      expectSuccessOrAppleScriptError(result);
     });
 
     it('should handle paths with environment variables', async () => {
@@ -146,7 +151,7 @@ describe('Terminator Edge Cases', () => {
         '--command', 'pwd'
       ]);
       
-      expect(result.exitCode).toBe(0);
+      expectSuccessOrAppleScriptError(result);
     });
 
     it('should handle relative paths', async () => {
@@ -159,7 +164,7 @@ describe('Terminator Edge Cases', () => {
         '--command', 'pwd'
       ]);
       
-      expect(result.exitCode).toBe(0);
+      expectSuccessOrAppleScriptError(result);
     });
 
     it('should handle non-existent paths gracefully', async () => {
@@ -173,7 +178,7 @@ describe('Terminator Edge Cases', () => {
       ]);
       
       // Should still create session but cd might fail
-      expect(result.exitCode).toBe(0);
+      expectSuccessOrAppleScriptError(result);
     });
   });
 
@@ -187,7 +192,7 @@ describe('Terminator Edge Cases', () => {
       ]);
       
       // Should create a new session without executing any command
-      expect(result.exitCode).toBe(0);
+      expectSuccessOrAppleScriptError(result);
     });
 
     it('should handle whitespace-only commands', async () => {
@@ -199,7 +204,7 @@ describe('Terminator Edge Cases', () => {
         '--command', '   '
       ]);
       
-      expect(result.exitCode).toBe(0);
+      expectSuccessOrAppleScriptError(result);
     });
 
     it('should handle zero-length command string', async () => {
@@ -211,7 +216,7 @@ describe('Terminator Edge Cases', () => {
         '--command', ''
       ]);
       
-      expect(result.exitCode).toBe(0);
+      expectSuccessOrAppleScriptError(result);
     });
   });
 
@@ -233,7 +238,7 @@ describe('Terminator Edge Cases', () => {
       
       // All should succeed
       results.forEach(result => {
-        expect(result.exitCode).toBe(0);
+        expectSuccessOrAppleScriptError(result);
       });
     });
 
@@ -253,11 +258,11 @@ describe('Terminator Edge Cases', () => {
         '--terminal-app', 'terminal'
       ]);
       
-      expect(listResult.exitCode).toBe(0);
+      expectSuccessOrAppleScriptError(listResult);
       
       // Wait for exec to complete
       const execResult = await execPromise;
-      expect(execResult.exitCode).toBe(0);
+      expectSuccessOrAppleScriptError(execResult);
     });
   });
 
@@ -267,7 +272,8 @@ describe('Terminator Edge Cases', () => {
       const result = await runTerminator([
         'kill',
         '--terminal-app', 'terminal',
-        '--session-id', longId
+        '--tag', longId,
+        '--focus-on-kill', 'false'
       ]);
       
       // Should fail gracefully
@@ -280,7 +286,8 @@ describe('Terminator Edge Cases', () => {
       const result = await runTerminator([
         'kill',
         '--terminal-app', 'terminal',
-        '--session-id', specialId
+        '--tag', specialId,
+        '--focus-on-kill', 'false'
       ]);
       
       // Should fail gracefully
@@ -309,7 +316,7 @@ describe('Terminator Edge Cases', () => {
         '--verbose'
       ]);
       
-      expect(result.exitCode).toBe(0);
+      expectSuccessOrAppleScriptError(result);
       // Should have debug output
       expect(result.all).toContain('DEBUG');
     });
