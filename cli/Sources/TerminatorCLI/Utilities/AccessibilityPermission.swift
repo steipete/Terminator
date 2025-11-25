@@ -46,4 +46,61 @@ enum AccessibilityPermission {
         // Check if the script contains System Events keystroke commands
         script.contains("System Events") && script.contains("keystroke")
     }
+    
+    /// Check if accessibility permissions are needed
+    static func isAccessibilityNeededForTerminalControl() -> Bool {
+        // We always need accessibility for the new terminal control implementation
+        return true
+    }
+    
+    /// Check all required permissions for the given configuration
+    static func checkAllPermissions(for bundleID: String) -> PermissionStatus {
+        var status = PermissionStatus()
+        
+        // Always need Apple Events
+        status.appleEvents = AppleScriptBridge.checkAndRequestPermission(for: bundleID)
+        
+        // Always check accessibility as it's required for our implementation
+        status.accessibility = checkAccessibilityPermission()
+        status.accessibilityRequired = true
+        
+        return status
+    }
+    
+    /// Request all required permissions
+    static func requestAllPermissions(for bundleID: String) {
+        // Request Apple Events if needed
+        _ = AppleScriptBridge.checkAndRequestPermission(for: bundleID)
+        
+        // Request Accessibility if not granted
+        if !checkAccessibilityPermission() {
+            requestAccessibilityPermission()
+        }
+    }
+    
+    /// Permission status for all required permissions
+    struct PermissionStatus {
+        var appleEvents: Bool = false
+        var accessibility: Bool = false
+        var accessibilityRequired: Bool = false
+        
+        var allGranted: Bool {
+            return appleEvents && (!accessibilityRequired || accessibility)
+        }
+        
+        var missingPermissions: [String] {
+            var missing: [String] = []
+            if !appleEvents { missing.append("Apple Events") }
+            if accessibilityRequired && !accessibility { missing.append("Accessibility") }
+            return missing
+        }
+        
+        var description: String {
+            if allGranted {
+                return "All required permissions granted"
+            } else {
+                return "Missing permissions: \(missingPermissions.joined(separator: ", "))"
+            }
+        }
+    }
 }

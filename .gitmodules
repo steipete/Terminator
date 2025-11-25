@@ -1,0 +1,3 @@
+[submodule "cli/External/AXorcist"]
+	path = cli/External/AXorcist
+	url = https://github.com/steipete/AXorcist.git

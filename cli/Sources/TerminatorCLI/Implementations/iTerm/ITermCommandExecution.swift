@@ -6,7 +6,7 @@ extension ITermControl {
     // MARK: - Main Execute Command Function
 
     // swiftlint:disable:next function_body_length
-    func executeCommand(params: ExecuteCommandParams) throws -> ExecuteCommandResult {
+    func executeCommandImpl(params: ExecuteCommandParams) throws -> ExecuteCommandResult {
         Logger.log(
             level: .info,
             "[ITermControl] Attempting to execute command for tag: \(params.tag), project: \(params.projectPath ?? "nil")",
@@ -15,7 +15,7 @@ extension ITermControl {
             function: #function
         )
 
-        let sessionToUse = try findOrCreateSessionForITerm(
+        let sessionToUse = try findOrCreateSession(
             projectPath: params.projectPath,
             tag: params.tag,
             focusPreference: params.focusPreference // Initial focus applied here

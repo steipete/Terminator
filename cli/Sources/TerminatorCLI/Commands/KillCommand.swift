@@ -82,20 +82,8 @@ struct Kill: ParsableCommand {
     }
 
     private func executeKill(config: AppConfig, params: KillSessionParams) throws -> KillSessionResult {
-        switch config.terminalAppEnum {
-        case .appleTerminal:
-            let controller = AppleTerminalControl(config: config, appName: config.terminalApp)
-            return try controller.killProcessInSession(params: params)
-        case .iterm:
-            let controller = ITermControl(config: config, appName: config.terminalApp)
-            return try controller.killProcessInSession(params: params)
-        case .ghosty:
-            Logger.log(level: .error, "Ghosty kill operation not fully supported")
-            throw ExitCode(ErrorCodes.unsupportedOperationForApp)
-        case .unknown:
-            Logger.log(level: .error, "Unknown terminal application for kill: \(config.terminalApp)")
-            throw ExitCode(ErrorCodes.configurationError)
-        }
+        let controller = TerminalAppController(config: config)
+        return try controller.killProcessInSession(params: params)
     }
 
     private func reportResult(_ result: KillSessionResult) {

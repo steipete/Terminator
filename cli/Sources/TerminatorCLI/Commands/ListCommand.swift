@@ -60,19 +60,8 @@ struct Sessions: ParsableCommand {
 
     private func fetchSessions(config: AppConfig) throws -> [TerminalSessionInfo] {
         do {
-            switch config.terminalAppEnum {
-            case .appleTerminal:
-                let controller = AppleTerminalControl(config: config, appName: config.terminalApp)
-                return try controller.listSessions(filterByTag: tag)
-            case .iterm:
-                let controller = ITermControl(config: config, appName: config.terminalApp)
-                return try controller.listSessions(filterByTag: tag)
-            case .ghosty:
-                let controller = GhostyControl(config: config, appName: config.terminalApp)
-                return try controller.listSessions(filterByTag: tag)
-            case .unknown:
-                throw ExitCode(ErrorCodes.configurationError)
-            }
+            let controller = TerminalAppController(config: config)
+            return try controller.listSessions(filterByTag: tag)
         } catch {
             handleListingError(error)
             throw ExitCode(ErrorCodes.success)

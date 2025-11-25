@@ -136,20 +136,8 @@ struct Execute: ParsableCommand { // Changed from TerminatorSubcommand to Parsab
     }
 
     private func executeCommand(config: AppConfig, params: ExecuteCommandParams) throws -> ExecuteCommandResult {
-        switch config.terminalAppEnum {
-        case .appleTerminal:
-            let controller = AppleTerminalControl(config: config, appName: config.terminalApp)
-            return try controller.executeCommand(params: params)
-        case .iterm:
-            let controller = ITermControl(config: config, appName: config.terminalApp)
-            return try controller.executeCommand(params: params)
-        case .ghosty:
-            Logger.log(level: .error, "Ghosty terminal control not yet implemented")
-            throw TerminalControllerError.unsupportedTerminalApp(appName: config.terminalApp)
-        case .unknown:
-            Logger.log(level: .error, "Unsupported terminal application for exec: \(config.terminalApp)")
-            throw ExitCode(ErrorCodes.configurationError)
-        }
+        let controller = TerminalAppController(config: config)
+        return try controller.executeCommand(params: params)
     }
 
     private func processResult(_ result: ExecuteCommandResult, params: ExecuteCommandParams) throws -> Never {

@@ -1,4 +1,5 @@
 import Foundation
+@preconcurrency import ApplicationServices
 
 protocol TerminalControlling {
     // Initializer for the specific controller.
@@ -41,18 +42,28 @@ struct TerminalAppController {
             if !AppleScriptBridge.checkAndRequestPermission(for: bundleID) {
                 Logger.log(
                     level: .warn,
-                    "Apple Events permission not granted for \(appName). Some operations may fail."
+                    "Apple Events permission not granted for \(appName). Operations will fail."
                 )
+            }
+            
+            // Always check accessibility permission
+            if !AXIsProcessTrusted() {
+                Logger.log(
+                    level: .warn,
+                    "Accessibility permission not granted. Requesting permission..."
+                )
+                // Request permission
+                AccessibilityPermission.requestAccessibilityPermission()
             }
         }
 
-        // Instantiate the specific controller based on appName
+        // Instantiate controllers that use AX for UI and AppleScript for terminal operations
         switch appName.lowercased() {
         case "terminal", "terminal.app":
-            Logger.log(level: .debug, "Instantiating AppleTerminalControl.")
+            Logger.log(level: .debug, "Instantiating AppleTerminalControl with Accessibility support.")
             specificController = AppleTerminalControl(config: config, appName: appName)
         case "iterm", "iterm.app", "iterm2", "iterm2.app":
-            Logger.log(level: .debug, "Instantiating ITermControl.")
+            Logger.log(level: .debug, "Instantiating ITermControl with Accessibility support.")
             specificController = ITermControl(config: config, appName: appName)
         // Add case for "Ghosty" when its controller is ready
         // case "ghosty", "ghosty.app":
@@ -68,6 +79,7 @@ struct TerminalAppController {
             // always supported.
             fatalError(errorMsg)
         }
+        
         Logger.log(
             level: .info,
             "TerminalAppController initialized for \(appName) using \(String(describing: type(of: specificController)))."

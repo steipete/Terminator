@@ -41,30 +41,8 @@ struct Focus: ParsableCommand {
         let focusParams = FocusSessionParams(projectPath: projectPath, tag: tag)
 
         do {
-            let result: FocusSessionResult
-
-            switch config.terminalAppEnum {
-            case .appleTerminal:
-                Logger.log(level: .debug, "Instantiating AppleTerminalControl for focus operation.")
-                let controller = AppleTerminalControl(config: config, appName: config.terminalApp)
-                result = try controller.focusSession(params: focusParams)
-
-            case .iterm:
-                Logger.log(level: .debug, "Instantiating ITermControl for focus operation.")
-                let controller = ITermControl(config: config, appName: config.terminalApp)
-                result = try controller.focusSession(params: focusParams)
-
-            case .ghosty:
-                Logger.log(level: .debug, "Attempting to instantiate GhostyControl for focus operation.")
-                // GhostyControl is not yet implemented
-                Logger.log(level: .error, "GhostyControl is not yet implemented.")
-                throw ExitCode(rawValue: ErrorCodes.configurationError)
-
-            case .unknown:
-                Logger.log(level: .error, "Unknown terminal application: \(config.terminalApp)")
-                throw ExitCode(rawValue: ErrorCodes.configurationError)
-            }
-
+            let controller = TerminalAppController(config: config)
+            let result = try controller.focusSession(params: focusParams)
             print("Terminator: Session '\(result.focusedSessionInfo.sessionIdentifier)' is now focused.")
             throw ExitCode(rawValue: ErrorCodes.success)
         } catch let error as TerminalControllerError {

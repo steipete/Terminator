@@ -1,0 +1,70 @@
+TERMINATOR HYBRID MODE DEMONSTRATION
+====================================
+
+1. HYBRID MODE ACTIVATION
+-------------------------
+When running with TERMINATOR_EXPERIMENTAL_AX=true:
+
+$ TERMINATOR_EXPERIMENTAL_AX=true TERMINATOR_LOG_LEVEL=debug bin/terminator info
+
+Key log messages showing hybrid mode is active:
+→ "Instantiating HybridAppleTerminalControl"
+→ "Initialized hybrid controller for Terminal with AX features: windows=true, focus=true, busy=true"
+→ "TerminalAppController initialized for Terminal using Hybrid HybridAppleTerminalControl"
+
+2. TRADITIONAL MODE (DEFAULT)
+-----------------------------
+When running without the environment variable:
+
+$ TERMINATOR_LOG_LEVEL=debug bin/terminator info
+
+Key log messages showing traditional mode:
+→ "Instantiating AppleTerminalControl"
+→ "TerminalAppController initialized for Terminal using Traditional AppleTerminalControl"
+
+3. PARTIAL FEATURE ACTIVATION
+-----------------------------
+When enabling specific AX features:
+
+$ TERMINATOR_AX_WINDOWS=true TERMINATOR_AX_FOCUS=true bin/terminator info
+
+Key log messages:
+→ "Instantiating HybridAppleTerminalControl"
+→ "AX features: windows=true, focus=true, busy=false"
+
+4. GRACEFUL FALLBACK
+--------------------
+When AX permissions are not granted:
+
+→ "Accessibility permission not granted. Hybrid mode features will be limited"
+→ "Enhanced AX enumeration failed: permissionDenied"
+→ "AX enumeration failed, falling back to AppleScript"
+
+5. UNIFIED CONTROLLER USAGE
+---------------------------
+All commands now use TerminalAppController:
+
+$ bin/terminator sessions --json
+→ "[Controller Facade] Listing sessions for Terminal"
+
+$ bin/terminator execute test-tag --command "echo hello"
+→ "[Controller Facade] Executing command for tag: test-tag"
+
+$ bin/terminator focus --tag test-tag
+→ "[Controller Facade] Focusing session for tag: test-tag"
+
+ENVIRONMENT VARIABLES
+--------------------
+- TERMINATOR_EXPERIMENTAL_AX=true    # Enable all hybrid features
+- TERMINATOR_AX_WINDOWS=true         # Use AX for window enumeration
+- TERMINATOR_AX_FOCUS=true           # Use AX for focus operations
+- TERMINATOR_AX_BUSY=true            # Use AX for busy checking
+- TERMINATOR_USE_HYBRID=true         # Alternative flag to enable hybrid mode
+
+VERIFICATION COMPLETE
+--------------------
+✅ Hybrid mode implementation is working correctly
+✅ Feature flags control individual AX features
+✅ Fallback to AppleScript works seamlessly
+✅ All commands use the unified TerminalAppController
+✅ Backward compatibility is maintained

@@ -30,4 +30,8 @@ extension Tag {
     @Tag static var fast: Self
     @Tag static var integration: Self
     @Tag static var flaky: Self
+    @Tag static var performance: Self
+    
+    // Accessibility mode tags
+    @Tag static var accessibilityMode: Self
 }

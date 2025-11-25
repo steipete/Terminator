@@ -5,7 +5,7 @@ import Foundation
 extension ITermControl {
     // MARK: - Kill Process in Session
 
-    func killProcessInSession(params: KillSessionParams) throws -> KillSessionResult {
+    func killProcessInSessionImpl(params: KillSessionParams) throws -> KillSessionResult {
         Logger.log(
             level: .info,
             "[ITermControl] Killing process in session for tag: \(params.tag), project: \(params.projectPath ?? "nil")",

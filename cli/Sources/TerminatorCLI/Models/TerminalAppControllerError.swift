@@ -14,6 +14,8 @@ enum TerminalControllerError: Error, LocalizedError {
     case outputParsingError(details: String, rawOutput: String?)
     case fileIOError(path: String, operation: String, underlyingError: Error)
     case missingCommandError
+    case processControlError(pgid: pid_t, details: String)
+    case notImplemented(feature: String)
 
     var errorDescription: String? {
         switch self {
@@ -44,6 +46,10 @@ enum TerminalControllerError: Error, LocalizedError {
             return "File I/O error during '\(operation)' on path '\(path)': \(underlyingError.localizedDescription)"
         case .missingCommandError:
             return "No command provided for execution"
+        case let .processControlError(pgid, details):
+            return "Failed to control process group \(pgid): \(details)"
+        case let .notImplemented(feature):
+            return "Feature not implemented: \(feature)"
         }
     }
 
@@ -80,6 +86,10 @@ enum TerminalControllerError: Error, LocalizedError {
             ErrorCodes.generalError
         case .missingCommandError:
             ErrorCodes.invalidArgumentsError
+        case .processControlError:
+            ErrorCodes.processExecutionError
+        case .notImplemented:
+            ErrorCodes.internalError
         }
     }
 }

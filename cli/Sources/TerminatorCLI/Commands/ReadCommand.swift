@@ -58,27 +58,8 @@ struct Read: ParsableCommand {
         )
 
         do {
-            let result: ReadSessionResult
-
-            switch config.terminalAppEnum {
-            case .appleTerminal:
-                let appleTerminalController = AppleTerminalControl(config: config, appName: config.terminalApp)
-                result = try appleTerminalController.readSessionOutput(params: readParams)
-
-            case .iterm:
-                let iTermController = ITermControl(config: config, appName: config.terminalApp)
-                result = try iTermController.readSessionOutput(params: readParams)
-
-            case .ghosty:
-                // GhostyControl may not exist yet, so we'll handle it with a placeholder
-                Logger.log(level: .error, "Ghosty read operation not implemented")
-                throw TerminalControllerError.unsupportedTerminalApp(appName: config.terminalApp)
-
-            case .unknown:
-                Logger.log(level: .error, "Unknown terminal application for read: \(config.terminalApp)")
-                throw TerminalControllerError.unsupportedTerminalApp(appName: config.terminalApp)
-            }
-
+            let controller = TerminalAppController(config: config)
+            let result = try controller.readSessionOutput(params: readParams)
             print(result.output)
             throw ExitCode(ErrorCodes.success)
         } catch let error as TerminalControllerError {

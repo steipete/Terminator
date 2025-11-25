@@ -12,7 +12,8 @@ let package = Package(
         .executable(name: "terminator", targets: ["TerminatorCLI"])
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0")
+        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
+        .package(path: "External/AXorcist")
     ],
     targets: [
         .target(
@@ -23,6 +24,7 @@ let package = Package(
             name: "TerminatorCLI",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                .product(name: "AXorcist", package: "AXorcist"),
                 "CResponsibility"
             ],
             path: "Sources/TerminatorCLI",

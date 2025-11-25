@@ -19,7 +19,7 @@ extension ITermControl {
 
     // MARK: - List Sessions
 
-    func listSessions(filterByTag: String?) throws -> [TerminalSessionInfo] {
+    func listSessionsViaAppleScript(filterByTag: String?) throws -> [TerminalSessionInfo] {
         Logger.log(
             level: .info,
             "[ITermControl] Listing sessions, filter: \(filterByTag ?? "nil")",
@@ -64,72 +64,11 @@ extension ITermControl {
     }
 
     // MARK: - Read Session Output
-
-    func readSessionOutput(params: ReadSessionParams) throws -> ReadSessionResult {
-        Logger.log(
-            level: .info,
-            "[ITermControl] Reading session output for tag: \(params.tag), project: \(params.projectPath ?? "nil")",
-            file: #file,
-            function: #function
-        )
-
-        let existingSessions = try listSessions(filterByTag: params.tag)
-        let targetProjectHash = params.projectPath != nil ? SessionUtilities
-            .generateProjectHash(projectPath: params.projectPath) : "NO_PROJECT"
-
-        guard let sessionInfo = existingSessions
-            .first(where: { ($0.projectPath ?? "NO_PROJECT") == targetProjectHash }) else {
-            throw TerminalControllerError.sessionNotFound(projectPath: params.projectPath, tag: params.tag)
-        }
-
-        guard let compositeTabID = sessionInfo.tabIdentifier,
-              let sessionID = Self.extractSessionID(from: compositeTabID),
-              sessionInfo.windowIdentifier != nil
-        else {
-            throw TerminalControllerError
-                .internalError(
-                    details: "iTerm session found for reading is missing sessionID or windowID. Session: \(sessionInfo)"
-                )
-        }
-
-        let shouldActivateITermForRead = attentesFocus(
-            focusPreference: params.focusPreference,
-            defaultFocusSetting: config.defaultFocusOnAction
-        )
-
-        let script = ITermScripts.readSessionOutputScript(
-            appName: appName,
-            sessionID: sessionID,
-            linesToRead: params.linesToRead,
-            shouldActivateITerm: shouldActivateITermForRead
-        )
-        // Logger.log(level: .debug, "AppleScript for readSessionOutput (iTerm):\n\(script)") // Script content now in ITermScripts
-
-        let appleScriptResult = AppleScriptBridge.runAppleScript(script: script)
-
-        switch appleScriptResult {
-        case let .success(resultData):
-            let outputString = try ITermParser.parseReadSessionOutput(
-                resultData: resultData,
-                scriptContent: script,
-                linesToRead: params.linesToRead
-            )
-            return ReadSessionResult(sessionInfo: sessionInfo, output: outputString)
-
-        case let .failure(error):
-            let errorMsg = "Failed to read iTerm session output for tag \(params.tag): \(error.localizedDescription)"
-            Logger.log(level: .error, errorMsg, file: #file, function: #function)
-            throw TerminalControllerError.appleScriptError(
-                message: errorMsg,
-                scriptContent: script,
-                underlyingError: error
-            )
-        }
-    }
+    // Note: readSessionOutputViaAppleScript is implemented in the main ITermControl class
 
     // MARK: - Focus Session
 
-    func focusSession(params: FocusSessionParams) throws -> FocusSessionResult {
+    func focusSessionViaAppleScript(params: FocusSessionParams) throws -> FocusSessionResult {
         Logger.log(
             level: .info,
             "[ITermControl] Focusing session for tag: \(params.tag), project: \(params.projectPath ?? "nil")",
@@ -137,7 +76,7 @@ extension ITermControl {
             function: #function
         )
 
-        let existingSessions = try listSessions(filterByTag: params.tag)
+        let existingSessions = try listSessionsViaAppleScript(filterByTag: params.tag)
         let targetProjectHash = params.projectPath != nil ? SessionUtilities
             .generateProjectHash(projectPath: params.projectPath) : "NO_PROJECT"
 

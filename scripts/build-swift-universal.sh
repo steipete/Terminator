@@ -24,7 +24,8 @@ fi
 # -Osize: Optimize for binary size.
 # -wmo: Whole Module Optimization, allows more aggressive optimizations.
 # -Xlinker -dead_strip: Remove dead code at the linking stage.
-SWIFT_OPTIMIZATION_FLAGS="-Xswiftc -Osize -Xswiftc -wmo -Xlinker -dead_strip -Xlinker -no_uuid"
+# NOTE: Do not use -no_uuid; it strips LC_UUID and makes the binary fail to launch on macOS 15/16.
+SWIFT_OPTIMIZATION_FLAGS="-Xswiftc -Osize -Xswiftc -wmo -Xlinker -dead_strip"
 
 echo "🧹 Cleaning previous build artifacts..."
 (cd "$SWIFT_PROJECT_PATH" && swift package reset) || echo "'swift package reset' encountered an issue, attempting rm -rf..."

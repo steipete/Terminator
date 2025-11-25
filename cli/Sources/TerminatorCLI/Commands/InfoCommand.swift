@@ -64,63 +64,17 @@ struct Info: ParsableCommand {
     }
 
     private func fetchSessions(config: AppConfig) -> [TerminalSessionInfo] {
-        var sessions: [TerminalSessionInfo] = []
-
-        switch config.terminalAppEnum {
-        case .appleTerminal:
-            sessions = fetchSessionsFromTerminal(
-                controllerType: AppleTerminalControl.self,
-                config: config,
-                appName: config.terminalApp
-            )
-
-        case .iterm:
-            sessions = fetchSessionsFromTerminal(
-                controllerType: ITermControl.self,
-                config: config,
-                appName: config.terminalApp
-            )
-
-        case .ghosty:
-            if !json {
-                fputs("Warning: Ghosty terminal is not yet fully supported for listing sessions.\n", stderr)
-            }
-
-        case .unknown:
-            // Should not reach here due to earlier validation
-            break
-        }
-
-        return sessions
-    }
-
-    private func fetchSessionsFromTerminal<T: TerminalControlling>(
-        controllerType _: T.Type,
-        config: AppConfig,
-        appName: String
-    ) -> [TerminalSessionInfo] {
-        let controller = T(config: config, appName: appName)
-
         do {
+            let controller = TerminalAppController(config: config)
             return try controller.listSessions(filterByTag: nil)
-        } catch let error as TerminalControllerError {
-            if !json {
-                fputs(
-                    "Warning: Failed to list active sessions for info command. Error: \(error.localizedDescription)\n",
-                    stderr
-                )
-            }
         } catch {
             if !json {
-                fputs(
-                    "Warning: An unexpected error occurred while listing sessions: \(error.localizedDescription)\n",
-                    stderr
-                )
+                fputs("Warning: Failed to list sessions: \(error.localizedDescription)\n", stderr)
             }
+            return []
         }
-
-        return []
     }
+
 
     private func outputJSON(config: AppConfig, sessions: [TerminalSessionInfo]) throws {
         let codableSessions = sessions.map { InfoOutput.SessionInfo(from: $0).asDictionary }
