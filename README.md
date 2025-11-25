@@ -1,4 +1,4 @@
-# Terminator MCP: I'll be back... with your terminal output! 🤖
+# Terminator MCP 🛑 - I'll be back... with your terminal output!
 
 ![Terminator Logo](https://raw.githubusercontent.com/steipete/Terminator/main/assets/logo.png)
 
@@ -69,6 +69,30 @@ Customize Terminator's behavior with environment variables:
   }
 }
 ```
+
+### 🚀 Experimental: Hybrid Mode (10x Faster)
+
+Enable Hybrid Mode for significantly improved performance using macOS Accessibility APIs:
+
+```json
+{
+  "mcpServers": {
+    "terminator": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@steipete/terminator-mcp@beta"
+      ],
+      "env": {
+        "TERMINATOR_APP": "Terminal",
+        "TERMINATOR_EXPERIMENTAL_AX": "true"
+      }
+    }
+  }
+}
+```
+
+**Note**: Hybrid Mode requires granting Accessibility permission to Terminator on first use. See [Hybrid Mode Guide](docs/hybrid-mode-guide.md) for details.
 
 ### 📦 Alternative Installation Methods
 
@@ -331,3 +355,5 @@ You should see your configured terminal application open/focus, execute the echo
 * `?` denotes optional.
 * `project_path` is always required.
 * Defaults for `lines`, `timeout`, `focus`, and `background` are taken from environment variables if not specified in the call. 
+
+License: MIT • Peter Steinberger ([steipete](https://twitter.com/steipete))
