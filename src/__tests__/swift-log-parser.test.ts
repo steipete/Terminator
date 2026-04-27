@@ -1,8 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  parseAndLogSwiftOutput,
-  createSwiftLogProcessor,
-} from "../swift-log-parser.js";
+import { parseAndLogSwiftOutput, createSwiftLogProcessor } from "../swift-log-parser.js";
 import { logger } from "../logger.js";
 
 // Mock the logger
@@ -101,9 +98,7 @@ Another regular line`;
       const processor = createSwiftLogProcessor();
 
       // Send incomplete line
-      processor.process(
-        "[2025-06-10T12:53:20.123Z INFO Test.swift:1 test()] Incom",
-      );
+      processor.process("[2025-06-10T12:53:20.123Z INFO Test.swift:1 test()] Incom");
       expect(logger.info).not.toHaveBeenCalled();
 
       // Complete the line
@@ -124,9 +119,7 @@ Another regular line`;
       const processor = createSwiftLogProcessor();
 
       // Send incomplete line
-      processor.process(
-        "[2025-06-10T12:53:20.123Z INFO Test.swift:1 test()] Buffered message",
-      );
+      processor.process("[2025-06-10T12:53:20.123Z INFO Test.swift:1 test()] Buffered message");
       expect(logger.info).not.toHaveBeenCalled();
 
       // Flush should process the buffered content

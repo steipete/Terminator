@@ -23,9 +23,7 @@ describe("terminatorTool", () => {
       },
     };
 
-    vi.mocked(utils.resolveEffectiveProjectPath).mockReturnValue(
-      "/path/to/project",
-    );
+    vi.mocked(utils.resolveEffectiveProjectPath).mockReturnValue("/path/to/project");
     vi.mocked(utils.resolveDefaultTag).mockReturnValue("test-tag");
     vi.mocked(utils.formatCliOutputForAI).mockReturnValue("Formatted output");
     vi.mocked(fs.existsSync).mockReturnValue(true);
@@ -35,9 +33,7 @@ describe("terminatorTool", () => {
   describe("tool definition", () => {
     it("should have correct name and description", () => {
       expect(terminatorTool.name).toBe("execute");
-      expect(terminatorTool.description).toContain(
-        "Manages macOS terminal sessions",
-      );
+      expect(terminatorTool.description).toContain("Manages macOS terminal sessions");
     });
 
     it("should have correct input schema", () => {
@@ -216,12 +212,7 @@ describe("terminatorTool", () => {
 
       expect(result.success).toBe(true);
       expect(swiftCli.invokeSwiftCLI).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          "focus",
-          "my-session",
-          "--focus-mode",
-          "force-focus",
-        ]),
+        expect.arrayContaining(["focus", "my-session", "--focus-mode", "force-focus"]),
         expect.any(Object),
         mockContext,
         expect.any(Number),
@@ -446,13 +437,7 @@ describe("terminatorTool", () => {
 
       expect(result.success).toBe(true);
       expect(swiftCli.invokeSwiftCLI).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          "--command",
-          "echo test",
-          "--background",
-          "--timeout",
-          "30",
-        ]),
+        expect.arrayContaining(["--command", "echo test", "--background", "--timeout", "30"]),
         expect.any(Object),
         mockContext,
         expect.any(Number),

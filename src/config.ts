@@ -1,7 +1,6 @@
 // Manages configuration loading, environment variables, default values,
 // and a.tsliOption parsing for the Terminator MCP tool.
 import { TerminatorOptions } from "./types.js";
-import * as fs from "node:fs"; // Import fs for file operations
 import * as path from "node:path"; // Import path for joining
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -29,8 +28,7 @@ export function getEnvVar(key: string, defaultValue: string): string {
 
 export function getEnvVarInt(key: string, defaultValue: number): number {
   const valStr = process.env[key];
-  if (valStr === undefined || valStr === null || valStr.trim() === "")
-    return defaultValue;
+  if (valStr === undefined || valStr === null || valStr.trim() === "") return defaultValue;
   const parsed = parseInt(valStr, 10);
   return isNaN(parsed) ? defaultValue : parsed;
 }
@@ -51,10 +49,7 @@ export const DEFAULT_FOREGROUND_COMPLETION_SECONDS = getEnvVarInt(
   60,
 );
 export const DEFAULT_LINES = getEnvVarInt("TERMINATOR_DEFAULT_LINES", 100);
-export const DEFAULT_FOCUS_ON_ACTION = getEnvVarBool(
-  "TERMINATOR_DEFAULT_FOCUS_ON_ACTION",
-  true,
-);
+export const DEFAULT_FOCUS_ON_ACTION = getEnvVarBool("TERMINATOR_DEFAULT_FOCUS_ON_ACTION", true);
 export const DEFAULT_BACKGROUND_EXECUTION = getEnvVarBool(
   "TERMINATOR_DEFAULT_BACKGROUND_EXECUTION",
   false,
@@ -115,9 +110,7 @@ export function getCanonicalOptions(
     if (!preferredAliases) continue;
 
     for (const alias of preferredAliases) {
-      const matchingRawKey = rawKeys.find(
-        (rk) => rk.toLowerCase() === alias.toLowerCase(),
-      );
+      const matchingRawKey = rawKeys.find((rk) => rk.toLowerCase() === alias.toLowerCase());
       if (matchingRawKey) {
         if (canonical[canonicalKey] === undefined) {
           // Only take the first matched alias based on priority
@@ -143,19 +136,14 @@ export function getCanonicalOptions(
       const preferredAliases = ALIAS_PRIORITY_MAP[canonicalKey];
       if (
         preferredAliases &&
-        preferredAliases.some(
-          (alias) => alias.toLowerCase() === rawKey.toLowerCase(),
-        )
+        preferredAliases.some((alias) => alias.toLowerCase() === rawKey.toLowerCase())
       ) {
         recognized = true;
         break;
       }
     }
     if (!recognized) {
-      debugLog(
-        `Ignoring unknown parameter: '${rawKey}' with value:`,
-        rawOptions[rawKey],
-      );
+      debugLog(`Ignoring unknown parameter: '${rawKey}' with value:`, rawOptions[rawKey]);
     }
   }
   return canonical;

@@ -2,11 +2,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { terminatorTool } from "../tool.js";
 import type { TerminatorExecuteParams } from "../types.js";
-import {
-  mockedInvokeSwiftCLI,
-  createMockContext,
-  mockResponses,
-} from "./e2e-test-setup.js";
+import { mockedInvokeSwiftCLI, createMockContext, mockResponses } from "./e2e-test-setup.js";
 import type { SdkCallContext } from "../types.js";
 
 describe("Terminator MCP Tool - Error Handling E2E Tests", () => {

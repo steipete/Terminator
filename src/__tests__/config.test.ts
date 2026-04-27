@@ -43,26 +43,20 @@ describe("config", () => {
   });
 
   describe("getEnvVarBool", () => {
-    it.each(["true", "1", "t", "yes", "on"])(
-      'should return true for "%s"',
-      (value) => {
-        process.env.TEST_VAR = value;
-        expect(getEnvVarBool("TEST_VAR", false)).toBe(true);
-      },
-    );
+    it.each(["true", "1", "t", "yes", "on"])('should return true for "%s"', (value) => {
+      process.env.TEST_VAR = value;
+      expect(getEnvVarBool("TEST_VAR", false)).toBe(true);
+    });
 
     it.each(["TRUE", "YES", "ON"])('should handle uppercase "%s"', (value) => {
       process.env.TEST_VAR = value;
       expect(getEnvVarBool("TEST_VAR", false)).toBe(true);
     });
 
-    it.each(["false", "0", "f", "no", "off", "random"])(
-      'should return false for "%s"',
-      (value) => {
-        process.env.TEST_VAR = value;
-        expect(getEnvVarBool("TEST_VAR", true)).toBe(false);
-      },
-    );
+    it.each(["false", "0", "f", "no", "off", "random"])('should return false for "%s"', (value) => {
+      process.env.TEST_VAR = value;
+      expect(getEnvVarBool("TEST_VAR", true)).toBe(false);
+    });
 
     it("should return default when not set", () => {
       expect(getEnvVarBool("TEST_VAR", true)).toBe(true);
@@ -163,7 +157,7 @@ describe("config", () => {
     });
 
     it("should have aliases that exist in PARAM_ALIASES", () => {
-      Object.entries(ALIAS_PRIORITY_MAP).forEach(([key, aliases]) => {
+      Object.entries(ALIAS_PRIORITY_MAP).forEach(([, aliases]) => {
         if (aliases) {
           aliases.forEach((alias) => {
             expect(PARAM_ALIASES).toHaveProperty(alias.toLowerCase());

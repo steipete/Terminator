@@ -6,18 +6,14 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { debugLog } from "./config.js";
 import { SdkCallContext } from "./types.js";
-import {
-  parseAndLogSwiftOutput,
-  createSwiftLogProcessor,
-} from "./swift-log-parser.js";
+import { parseAndLogSwiftOutput } from "./swift-log-parser.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const SWIFT_CLI_NAME = "terminator";
 export const SWIFT_CLI_PATH =
-  process.env.TERMINATOR_CLI_PATH ||
-  path.resolve(__dirname, "..", "bin", SWIFT_CLI_NAME);
+  process.env.TERMINATOR_CLI_PATH || path.resolve(__dirname, "..", "bin", SWIFT_CLI_NAME);
 
 export interface SwiftCLIResult {
   stdout: string;
@@ -36,10 +32,7 @@ export async function invokeSwiftCLI(
   mcpContext: SdkCallContext,
   wrapperTimeoutMs: number,
 ): Promise<SwiftCLIResult> {
-  debugLog(
-    `Invoking Swift CLI: ${SWIFT_CLI_PATH} ${cliArgs.join(" ")} with env:`,
-    terminatorEnv,
-  );
+  debugLog(`Invoking Swift CLI: ${SWIFT_CLI_PATH} ${cliArgs.join(" ")} with env:`, terminatorEnv);
 
   // Swift CLI now handles permission dialog triggering internally via responsibility disclaimer
 
@@ -109,27 +102,17 @@ export async function invokeSwiftCLI(
       const jsonStartIndex = processedStdout.indexOf("{");
       if (jsonStartIndex !== -1) {
         processedStdout = processedStdout.substring(jsonStartIndex);
-        debugLog(
-          "Extracted JSON from Swift CLI stdout:",
-          processedStdout.trim(),
-        );
+        debugLog("Extracted JSON from Swift CLI stdout:", processedStdout.trim());
       } else {
-        debugLog(
-          "Could not find start of JSON ('{') in info command stdout. Using raw.",
-        );
+        debugLog("Could not find start of JSON ('{') in info command stdout. Using raw.");
       }
     } else if (cliArgs.includes("sessions") && cliArgs.includes("--json")) {
       const jsonStartIndex = processedStdout.indexOf("[");
       if (jsonStartIndex !== -1) {
         processedStdout = processedStdout.substring(jsonStartIndex);
-        debugLog(
-          "Extracted JSON array from Swift CLI stdout:",
-          processedStdout.trim(),
-        );
+        debugLog("Extracted JSON array from Swift CLI stdout:", processedStdout.trim());
       } else {
-        debugLog(
-          "Could not find start of JSON array ('[') in sessions command stdout. Using raw.",
-        );
+        debugLog("Could not find start of JSON array ('[') in sessions command stdout. Using raw.");
       }
     }
 
@@ -174,8 +157,7 @@ export async function invokeSwiftCLI(
       let errorInfo = "";
       if ("code" in execaError) {
         // Map errno codes to friendly messages
-        const errnoInfo =
-          errno.code[execaError.code as keyof typeof errno.code];
+        const errnoInfo = errno.code[execaError.code as keyof typeof errno.code];
         const friendlyMessage = errnoInfo
           ? `${errnoInfo.code} - ${errnoInfo.description}`
           : execaError.code;
@@ -204,13 +186,9 @@ export async function invokeSwiftCLI(
         signal: execaError.signal,
         signalDescription: execaError.signalDescription,
         stdout:
-          typeof execaError.stdout === "string"
-            ? execaError.stdout.substring(0, 200)
-            : undefined,
+          typeof execaError.stdout === "string" ? execaError.stdout.substring(0, 200) : undefined,
         stderr:
-          typeof execaError.stderr === "string"
-            ? execaError.stderr.substring(0, 200)
-            : undefined,
+          typeof execaError.stderr === "string" ? execaError.stderr.substring(0, 200) : undefined,
         command: execaError.command,
         escapedCommand: execaError.escapedCommand,
         failed: execaError.failed,
@@ -219,8 +197,7 @@ export async function invokeSwiftCLI(
       });
 
       // Filter Swift logs from error stderr as well
-      let errorStderr =
-        typeof execaError.stderr === "string" ? execaError.stderr : "";
+      let errorStderr = typeof execaError.stderr === "string" ? execaError.stderr : "";
       if (errorStderr) {
         // Parse logs before filtering
         parseAndLogSwiftOutput(errorStderr);
@@ -254,10 +231,7 @@ export async function invokeSwiftCLI(
     // Clean up event listener
     if (mcpContext.abortSignal && mcpCancellationListener) {
       try {
-        mcpContext.abortSignal.removeEventListener(
-          "abort",
-          mcpCancellationListener,
-        );
+        mcpContext.abortSignal.removeEventListener("abort", mcpCancellationListener);
       } catch (e) {
         debugLog("Minor error removing abort listener:", e);
       }

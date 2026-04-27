@@ -1,7 +1,7 @@
 /// <reference types="vitest/globals" />
 import { vi } from "vitest";
 import type { Mock } from "vitest";
-import type { SdkCallContext, SwiftCLIResult } from "../types.js";
+import type { SdkCallContext } from "../types.js";
 import { invokeSwiftCLI } from "../swift-cli.js";
 
 // Mock the swift-cli module

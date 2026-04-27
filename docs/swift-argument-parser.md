@@ -1,6 +1,7 @@
 # https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser llms-full.txt
 
 ## Swift Argument Parser
+
 [Skip Navigation](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser#app-main)
 
 Framework
@@ -9,7 +10,7 @@ Framework
 
 Straightforward, type-safe argument parsing for Swift.
 
-## [Overview](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser\#Overview)
+## [Overview](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser#Overview)
 
 By using `ArgumentParser`, you can create a command-line interface tool by declaring simple Swift types. Begin by declaring a type that defines the information that you need to collect from the command line. Decorate each stored property with one of `ArgumentParser`‘s property wrappers, declare conformance to [`ParsableCommand`](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand), and implement your command’s logic in its `run()` method. For `async` renditions of `run`, declare [`AsyncParsableCommand`](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/asyncparsablecommand) conformance instead.
 
@@ -38,16 +39,15 @@ When a user executes your command, the `ArgumentParser` library parses the comma
 
 ![The output of the Repeat command, declared above.](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/images/ArgumentParser/repeat.png)
 
-#### [Additional Resources](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser\#Additional-Resources)
+#### [Additional Resources](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser#Additional-Resources)
 
 - [`ArgumentParser` on GitHub](https://github.com/apple/swift-argument-parser/)
 
 - [`ArgumentParser` on the Swift Forums](https://forums.swift.org/c/related-projects/argumentparser/60)
 
+## [Topics](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser#topics)
 
-## [Topics](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser\#topics)
-
-### [Essentials](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser\#Essentials)
+### [Essentials](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser#Essentials)
 
 [Getting Started with ArgumentParser](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/gettingstarted)
 
@@ -69,7 +69,7 @@ Break complex command-line tools into a tree of subcommands.
 
 Define your command’s abstract, extended discussion, or usage string, and set the flags used to invoke the help display.
 
-### [Arguments, Options, and Flags](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser\#Arguments-Options-and-Flags)
+### [Arguments, Options, and Flags](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser#Arguments-Options-and-Flags)
 
 [Declaring Arguments, Options, and Flags](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/declaringarguments)
 
@@ -95,7 +95,7 @@ A wrapper that transparently includes a parsable type.
 
 A type that can be parsed from a program’s command-line arguments.
 
-### [Property Customization](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser\#Property-Customization)
+### [Property Customization](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser#Property-Customization)
 
 [Customizing Help](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/customizinghelp)
 
@@ -113,7 +113,7 @@ Visibility level of an argument’s help.
 
 A specification for how to represent a property as a command-line argument label.
 
-### [Custom Types](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser\#Custom-Types)
+### [Custom Types](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser#Custom-Types)
 
 [`protocol ExpressibleByArgument`](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/expressiblebyargument)
 
@@ -123,7 +123,7 @@ A type that can be expressed as a command-line argument.
 
 A type that represents the different possible flags to be used by a `@Flag` property.
 
-### [Validation and Errors](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser\#Validation-and-Errors)
+### [Validation and Errors](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser#Validation-and-Errors)
 
 [Providing Custom Validation](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/validation)
 
@@ -141,7 +141,7 @@ An error type that represents a clean (i.e. non-error state) exit of the utility
 
 An error type that only includes an exit code.
 
-### [Shell Completion Scripts](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser\#Shell-Completion-Scripts)
+### [Shell Completion Scripts](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser#Shell-Completion-Scripts)
 
 [Generating and Installing Completion Scripts](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/installingcompletionscripts)
 
@@ -155,7 +155,7 @@ Provide custom shell completions for your command-line tool’s arguments and op
 
 The type of completion to use for an argument or option.
 
-### [Advanced Topics](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser\#Advanced-Topics)
+### [Advanced Topics](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser#Advanced-Topics)
 
 [Manual Parsing and Testing](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/manualparsing)
 
@@ -165,13 +165,13 @@ Provide your own array of command-line inputs or work directly with parsed comma
 
 Learn about ArgumentParser’s experimental features.
 
-### [Structures](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser\#Structures)
+### [Structures](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser#Structures)
 
 [`struct CommandGroup`](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/commandgroup)
 
 A set of commands grouped together under a common name.
 
-### [Extended Modules](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser\#Extended-Modules)
+### [Extended Modules](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser#Extended-Modules)
 
 [Swift](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/swift)
 
@@ -185,6 +185,7 @@ Current page is ArgumentParser
 |
 
 ## Customizing Completions
+
 [Skip Navigation](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/customizingcompletions#app-main)
 
 - [ArgumentParser](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser)
@@ -196,7 +197,7 @@ Article
 
 Provide custom shell completions for your command-line tool’s arguments and options.
 
-## [Overview](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/customizingcompletions\#Overview)
+## [Overview](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/customizingcompletions#Overview)
 
 `ArgumentParser` provides default completions for any types that it can. For example, an `@Option` property that is a `CaseIterable` type will automatically have the correct values as completion suggestions.
 
@@ -258,9 +259,9 @@ struct SwiftRun {
 
 In this example, when a user requests completions for the `--target` option, the completion script runs the `SwiftRun` command-line tool with a special syntax, calling the `listExecutables` function with an array of the arguments given so far.
 
-## [See Also](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/customizingcompletions\#see-also)
+## [See Also](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/customizingcompletions#see-also)
 
-### [Shell Completion Scripts](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/customizingcompletions\#Shell-Completion-Scripts)
+### [Shell Completion Scripts](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/customizingcompletions#Shell-Completion-Scripts)
 
 [Generating and Installing Completion Scripts](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/installingcompletionscripts)
 
@@ -280,6 +281,7 @@ Current page is Customizing Completions
 |
 
 ## OptionGroup Overview
+
 [Skip Navigation](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup#app-main)
 
 - [ArgumentParser](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser)
@@ -298,7 +300,7 @@ struct OptionGroup<Value> where Value : ParsableArguments
 
 [OptionGroup.swift](https://github.com/apple/swift-argument-parser/blob/1.5.1/Sources/ArgumentParser/Parsable%20Properties/OptionGroup.swift#L34 "Open source file for OptionGroup.swift")
 
-## [Overview](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup\#overview)
+## [Overview](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup#overview)
 
 Use an option group to include a group of options, flags, or arguments declared in a parsable type.
 
@@ -319,23 +321,23 @@ struct Options: ParsableArguments {
 
 The flag and positional arguments declared as part of `GlobalOptions` are included when parsing `Options`.
 
-## [Topics](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup\#topics)
+## [Topics](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup#topics)
 
-### [Creating an Option Group](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup\#Creating-an-Option-Group)
+### [Creating an Option Group](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup#Creating-an-Option-Group)
 
-[`init(title: String, visibility: ArgumentVisibility)`](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup/init(title:visibility:))
+[`init(title: String, visibility: ArgumentVisibility)`](<https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup/init(title:visibility:)>)
 
 Creates a property that represents another parsable type, using the specified title and visibility.
 
-### [Option Group Properties](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup\#Option-Group-Properties)
+### [Option Group Properties](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup#Option-Group-Properties)
 
 [`var title: String`](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup/title)
 
 The title to use in the help screen for this option group.
 
-### [Infrequently Used APIs](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup\#Infrequently-Used-APIs)
+### [Infrequently Used APIs](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup#Infrequently-Used-APIs)
 
-[`init()`](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup/init())
+[`init()`](<https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup/init()>)
 
 Creates a property that represents another parsable type.
 
@@ -347,23 +349,23 @@ The value presented by this property wrapper.
 
 [`var description: String`](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup/description)
 
-### [Default Implementations](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup\#Default-Implementations)
+### [Default Implementations](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup#Default-Implementations)
 
 [API Reference\\
 CustomStringConvertible Implementations](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup/customstringconvertible-implementations)
 
-## [Relationships](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup\#relationships)
+## [Relationships](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup#relationships)
 
-### [Conforms To](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup\#conforms-to)
+### [Conforms To](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup#conforms-to)
 
 - `Swift.Copyable`
 - `Swift.CustomStringConvertible`
 - `Swift.Decodable`
 - `Swift.Sendable`
 
-## [See Also](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup\#see-also)
+## [See Also](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup#see-also)
 
-### [Arguments, Options, and Flags](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup\#Arguments-Options-and-Flags)
+### [Arguments, Options, and Flags](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup#Arguments-Options-and-Flags)
 
 [Declaring Arguments, Options, and Flags](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/declaringarguments)
 
@@ -397,6 +399,7 @@ Current page is OptionGroup
 |
 
 ## ArgumentParser Flag
+
 [Skip Navigation](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/flag/wrappedvalue#app-main)
 
 - [ArgumentParser](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser)
@@ -421,6 +424,7 @@ Current page is wrappedValue
 |
 
 ## chooseLast Flag
+
 [Skip Navigation](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/flagexclusivity/chooselast#app-main)
 
 - [ArgumentParser](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser)
@@ -445,6 +449,7 @@ Current page is chooseLast
 |
 
 ## Exclusive Flag Usage
+
 [Skip Navigation](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/flagexclusivity/exclusive#app-main)
 
 - [ArgumentParser](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser)
@@ -469,6 +474,7 @@ Current page is exclusive
 |
 
 ## ValidationError Message
+
 [Skip Navigation](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/validationerror/message#app-main)
 
 - [ArgumentParser](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser)
@@ -493,7 +499,8 @@ Current page is message
 |
 
 ## Swift Argument Parser
-[Skip Navigation](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand/main()#app-main)
+
+[Skip Navigation](<https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand/main()#app-main>)
 
 - [ArgumentParser](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser)
 - [ParsableCommand](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand)
@@ -511,23 +518,23 @@ static func main()
 
 [ParsableCommand.swift](https://github.com/apple/swift-argument-parser/blob/1.5.1/Sources/ArgumentParser/Parsable%20Types/ParsableCommand.swift#L174 "Open source file for ParsableCommand.swift")
 
-## [Discussion](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand/main()\#discussion)
+## [Discussion](<https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand/main()#discussion>)
 
 Instead of calling this method directly, you can add `@main` to the root command for your command-line tool.
 
 This method parses an instance of this type, one of its subcommands, or another built-in `ParsableCommand` type, from command-line arguments, and then calls its `run()` method, exiting with a relevant error message if necessary.
 
-## [See Also](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand/main()\#see-also)
+## [See Also](<https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand/main()#see-also>)
 
-### [Starting the Program](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand/main()\#Starting-the-Program)
+### [Starting the Program](<https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand/main()#Starting-the-Program>)
 
-[`static func main([String]?)`](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand/main(_:))
+[`static func main([String]?)`](<https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand/main(_:)>)
 
 Executes this command, or one of its subcommands, with the given arguments.
 
-- [main()](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand/main()#app-top)
-- [Discussion](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand/main()#discussion)
-- [See Also](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand/main()#see-also)
+- [main()](<https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand/main()#app-top>)
+- [Discussion](<https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand/main()#discussion>)
+- [See Also](<https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand/main()#see-also>)
 
 Current page is main()
 
@@ -535,7 +542,8 @@ Current page is main()
 |
 
 ## Extended Grapheme Initializer
-[Skip Navigation](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/init(extendedgraphemeclusterliteral:)#app-main)
+
+[Skip Navigation](<https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/init(extendedgraphemeclusterliteral:)#app-main>)
 
 - [ArgumentParser](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser)
 - [ArgumentHelp](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp)
@@ -561,7 +569,8 @@ Current page is init(extendedGraphemeClusterLiteral:)
 |
 
 ## ArgumentHelp Initializer
-[Skip Navigation](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/init(stringliteral:)#app-main)
+
+[Skip Navigation](<https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/init(stringliteral:)#app-main>)
 
 - [ArgumentParser](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser)
 - [ArgumentHelp](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp)
@@ -585,7 +594,8 @@ Current page is init(stringLiteral:)
 |
 
 ## Swift run() Method
-[Skip Navigation](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand/run()-20aoy#app-main)
+
+[Skip Navigation](<https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand/run()-20aoy#app-main>)
 
 - [ArgumentParser](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser)
 - [ParsableCommand](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/parsablecommand)
@@ -609,7 +619,8 @@ Current page is run()
 |
 
 ## FlagInversion Operator
-[Skip Navigation](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/flaginversion/!=(_:_:)#app-main)
+
+[Skip Navigation](<https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/flaginversion/!=(_:_:)#app-main>)
 
 - [ArgumentParser](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser)
 - [FlagInversion](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/flaginversion)
@@ -633,7 +644,8 @@ Current page is !=(\_:\_:)
 |
 
 ## Argument Help Initializer
-[Skip Navigation](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/init(_:discussion:valuename:visibility:)#app-main)
+
+[Skip Navigation](<https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/init(_:discussion:valuename:visibility:)#app-main>)
 
 - [ArgumentParser](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser)
 - [ArgumentHelp](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp)
@@ -662,6 +674,7 @@ Current page is init(\_:discussion:valueName:visibility:)
 |
 
 ## CustomStringConvertible Implementations
+
 [Skip Navigation](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup/customstringconvertible-implementations#app-main)
 
 - [ArgumentParser](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser)
@@ -672,9 +685,9 @@ API Collection
 
 # CustomStringConvertible Implementations
 
-## [Topics](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup/customstringconvertible-implementations\#topics)
+## [Topics](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup/customstringconvertible-implementations#topics)
 
-### [Instance Properties](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup/customstringconvertible-implementations\#Instance-Properties)
+### [Instance Properties](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup/customstringconvertible-implementations#Instance-Properties)
 
 [`var description: String`](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/optiongroup/description)
 
@@ -684,6 +697,7 @@ Current page is CustomStringConvertible Implementations
 |
 
 ## Grapheme Cluster Implementations
+
 [Skip Navigation](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/expressiblebyextendedgraphemeclusterliteral-implementations#app-main)
 
 - [ArgumentParser](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser)
@@ -694,11 +708,11 @@ API Collection
 
 # ExpressibleByExtendedGraphemeClusterLiteral Implementations
 
-## [Topics](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/expressiblebyextendedgraphemeclusterliteral-implementations\#topics)
+## [Topics](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/expressiblebyextendedgraphemeclusterliteral-implementations#topics)
 
-### [Initializers](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/expressiblebyextendedgraphemeclusterliteral-implementations\#Initializers)
+### [Initializers](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/expressiblebyextendedgraphemeclusterliteral-implementations#Initializers)
 
-[`init(unicodeScalarLiteral: Self.ExtendedGraphemeClusterLiteralType)`](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/init(unicodescalarliteral:))
+[`init(unicodeScalarLiteral: Self.ExtendedGraphemeClusterLiteralType)`](<https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/init(unicodescalarliteral:)>)
 
 Current page is ExpressibleByExtendedGraphemeClusterLiteral Implementations
 
@@ -706,6 +720,7 @@ Current page is ExpressibleByExtendedGraphemeClusterLiteral Implementations
 |
 
 ## String Literal Implementations
+
 [Skip Navigation](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/expressiblebystringliteral-implementations#app-main)
 
 - [ArgumentParser](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser)
@@ -716,16 +731,15 @@ API Collection
 
 # ExpressibleByStringLiteral Implementations
 
-## [Topics](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/expressiblebystringliteral-implementations\#topics)
+## [Topics](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/expressiblebystringliteral-implementations#topics)
 
-### [Initializers](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/expressiblebystringliteral-implementations\#Initializers)
+### [Initializers](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/expressiblebystringliteral-implementations#Initializers)
 
-[`init(extendedGraphemeClusterLiteral: Self.StringLiteralType)`](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/init(extendedgraphemeclusterliteral:))
+[`init(extendedGraphemeClusterLiteral: Self.StringLiteralType)`](<https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/init(extendedgraphemeclusterliteral:)>)
 
-[`init(stringLiteral: String)`](https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/init(stringliteral:))
+[`init(stringLiteral: String)`](<https://swiftpackageindex.com/apple/swift-argument-parser/1.5.1/documentation/argumentparser/argumenthelp/init(stringliteral:)>)
 
 Current page is ExpressibleByStringLiteral Implementations
 
 |
 |
-

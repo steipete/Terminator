@@ -2,114 +2,114 @@ name: AppleScript CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test-applescript:
     runs-on: macos-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Check AppleScript syntax
-      run: |
-        echo "🍎 Checking AppleScript syntax with osacompile..."
-        
-        # Check main terminator script
-        echo "📋 Checking terminator.scpt..."
-        osacompile -o /tmp/terminator_syntax_check.scpt terminator.scpt
-        if [ $? -eq 0 ]; then
-          echo "✅ terminator.scpt syntax OK"
-          rm -f /tmp/terminator_syntax_check.scpt
-        else
-          echo "❌ terminator.scpt syntax error"
-          exit 1
-        fi
-        
-        # Check test script
-        echo "📋 Checking test_terminator.scpt..."
-        osacompile -o /tmp/test_syntax_check.scpt test_terminator.scpt
-        if [ $? -eq 0 ]; then
-          echo "✅ test_terminator.scpt syntax OK"
-          rm -f /tmp/test_syntax_check.scpt
-        else
-          echo "❌ test_terminator.scpt syntax error"
-          exit 1
-        fi
-        
-        # Check cleanup script
-        echo "📋 Checking cleanup_terminator_tests.scpt..."
-        osacompile -o /tmp/cleanup_syntax_check.scpt cleanup_terminator_tests.scpt
-        if [ $? -eq 0 ]; then
-          echo "✅ cleanup_terminator_tests.scpt syntax OK"
-          rm -f /tmp/cleanup_syntax_check.scpt
-        else
-          echo "❌ cleanup_terminator_tests.scpt syntax error"
-          exit 1
-        fi
-        
-        echo "🎉 All AppleScript files passed syntax check!"
-        
-    - name: Compile AppleScript files
-      run: |
-        echo "🔨 Compiling AppleScript files to .scptd bundles..."
-        
-        # Compile main script to verify it's complete and valid
-        echo "📋 Compiling terminator.scpt..."
-        osacompile -o terminator.scptd terminator.scpt
-        if [ $? -eq 0 ]; then
-          echo "✅ terminator.scpt compiled successfully"
-        else
-          echo "❌ terminator.scpt compilation failed"
-          exit 1
-        fi
-        
-        # Compile test script
-        echo "📋 Compiling test_terminator.scpt..."
-        osacompile -o test_terminator.scptd test_terminator.scpt
-        if [ $? -eq 0 ]; then
-          echo "✅ test_terminator.scpt compiled successfully"
-        else
-          echo "❌ test_terminator.scpt compilation failed"
-          exit 1
-        fi
-        
-        # Compile cleanup script
-        echo "📋 Compiling cleanup_terminator_tests.scpt..."
-        osacompile -o cleanup_terminator_tests.scptd cleanup_terminator_tests.scpt
-        if [ $? -eq 0 ]; then
-          echo "✅ cleanup_terminator_tests.scpt compiled successfully"
-        else
-          echo "❌ cleanup_terminator_tests.scpt compilation failed"
-          exit 1
-        fi
-        
-        echo "🎉 All AppleScript files compiled successfully!"
 
-    - name: Check for common AppleScript issues
-      run: |
-        echo "🔍 Checking for common AppleScript issues..."
-        
-        # Check for proper error handling
-        if grep -q "on error" *.scpt; then
-          echo "✅ Error handling found in scripts"
-        else
-          echo "⚠️  No error handling found - consider adding try/catch blocks"
-        fi
-        
-        # Check for proper quoting
-        if grep -q "quoted form" *.scpt; then
-          echo "✅ Proper shell quoting found"
-        else
-          echo "⚠️  No shell quoting found - ensure shell commands are properly quoted"
-        fi
-        
-        # Check for hardcoded paths (should use variables)
-        if grep -q "/tmp/" *.scpt; then
-          echo "ℹ️  Temporary paths found - ensure they're appropriate"
-        fi
-        
-        echo "🎉 AppleScript quality check completed!"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check AppleScript syntax
+        run: |
+          echo "🍎 Checking AppleScript syntax with osacompile..."
+
+          # Check main terminator script
+          echo "📋 Checking terminator.scpt..."
+          osacompile -o /tmp/terminator_syntax_check.scpt terminator.scpt
+          if [ $? -eq 0 ]; then
+            echo "✅ terminator.scpt syntax OK"
+            rm -f /tmp/terminator_syntax_check.scpt
+          else
+            echo "❌ terminator.scpt syntax error"
+            exit 1
+          fi
+
+          # Check test script
+          echo "📋 Checking test_terminator.scpt..."
+          osacompile -o /tmp/test_syntax_check.scpt test_terminator.scpt
+          if [ $? -eq 0 ]; then
+            echo "✅ test_terminator.scpt syntax OK"
+            rm -f /tmp/test_syntax_check.scpt
+          else
+            echo "❌ test_terminator.scpt syntax error"
+            exit 1
+          fi
+
+          # Check cleanup script
+          echo "📋 Checking cleanup_terminator_tests.scpt..."
+          osacompile -o /tmp/cleanup_syntax_check.scpt cleanup_terminator_tests.scpt
+          if [ $? -eq 0 ]; then
+            echo "✅ cleanup_terminator_tests.scpt syntax OK"
+            rm -f /tmp/cleanup_syntax_check.scpt
+          else
+            echo "❌ cleanup_terminator_tests.scpt syntax error"
+            exit 1
+          fi
+
+          echo "🎉 All AppleScript files passed syntax check!"
+
+      - name: Compile AppleScript files
+        run: |
+          echo "🔨 Compiling AppleScript files to .scptd bundles..."
+
+          # Compile main script to verify it's complete and valid
+          echo "📋 Compiling terminator.scpt..."
+          osacompile -o terminator.scptd terminator.scpt
+          if [ $? -eq 0 ]; then
+            echo "✅ terminator.scpt compiled successfully"
+          else
+            echo "❌ terminator.scpt compilation failed"
+            exit 1
+          fi
+
+          # Compile test script
+          echo "📋 Compiling test_terminator.scpt..."
+          osacompile -o test_terminator.scptd test_terminator.scpt
+          if [ $? -eq 0 ]; then
+            echo "✅ test_terminator.scpt compiled successfully"
+          else
+            echo "❌ test_terminator.scpt compilation failed"
+            exit 1
+          fi
+
+          # Compile cleanup script
+          echo "📋 Compiling cleanup_terminator_tests.scpt..."
+          osacompile -o cleanup_terminator_tests.scptd cleanup_terminator_tests.scpt
+          if [ $? -eq 0 ]; then
+            echo "✅ cleanup_terminator_tests.scpt compiled successfully"
+          else
+            echo "❌ cleanup_terminator_tests.scpt compilation failed"
+            exit 1
+          fi
+
+          echo "🎉 All AppleScript files compiled successfully!"
+
+      - name: Check for common AppleScript issues
+        run: |
+          echo "🔍 Checking for common AppleScript issues..."
+
+          # Check for proper error handling
+          if grep -q "on error" *.scpt; then
+            echo "✅ Error handling found in scripts"
+          else
+            echo "⚠️  No error handling found - consider adding try/catch blocks"
+          fi
+
+          # Check for proper quoting
+          if grep -q "quoted form" *.scpt; then
+            echo "✅ Proper shell quoting found"
+          else
+            echo "⚠️  No shell quoting found - ensure shell commands are properly quoted"
+          fi
+
+          # Check for hardcoded paths (should use variables)
+          if grep -q "/tmp/" *.scpt; then
+            echo "ℹ️  Temporary paths found - ensure they're appropriate"
+          fi
+
+          echo "🎉 AppleScript quality check completed!"

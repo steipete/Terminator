@@ -30,9 +30,7 @@ describe("utils integration tests", () => {
       const homeDir = os.homedir();
       expect(expandTilde("~")).toBe("~"); // Just tilde without slash
       expect(expandTilde("~/")).toBe(homeDir);
-      expect(expandTilde("~/Documents/Projects")).toBe(
-        path.join(homeDir, "Documents", "Projects"),
-      );
+      expect(expandTilde("~/Documents/Projects")).toBe(path.join(homeDir, "Documents", "Projects"));
     });
   });
 
@@ -64,13 +62,7 @@ describe("utils integration tests", () => {
     });
 
     it("should create deeply nested directories", () => {
-      const deepDir = path.join(
-        testDir,
-        "level1",
-        "level2",
-        "level3",
-        "level4",
-      );
+      const deepDir = path.join(testDir, "level1", "level2", "level3", "level4");
       expect(fs.existsSync(deepDir)).toBe(false);
 
       const result = resolveEffectiveProjectPath(deepDir);

@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
-    "target": "es2022", 
-    "module": "nodenext", 
+    "target": "es2022",
+    "module": "nodenext",
     "lib": ["es2022"],
     "declaration": true,
-    "outDir": "./dist", 
-    "rootDir": "./src", 
-    "strict": true, 
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true, 
+    "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
@@ -17,4 +17,4 @@
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]
-} 
+}

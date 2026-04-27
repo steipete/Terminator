@@ -68,18 +68,18 @@ class HybridTerminalControl: TerminalControlling {
     private let axProvider: AccessibilityProviding
     private let scriptBridge: AppleScriptBridge
     private let terminalType: TerminalType
-    
+
     enum TerminalType {
         case appleTerminal(bundleID: String = "com.apple.Terminal")
         case iTerm(bundleID: String = "com.googlecode.iterm2")
         case ghosty(bundleID: String = "com.mitchellh.ghostty")
     }
-    
+
     // Use AX for UI operations, AppleScript for terminal-specific operations
     func listSessions(filterByTag: String?) async throws -> [TerminalSessionInfo] {
         // 1. Use AXorcist to enumerate windows and tabs
         let windows = try await axProvider.findWindows(for: terminalType.bundleID)
-        
+
         // 2. Extract session info from tab titles using AX
         var sessions: [TerminalSessionInfo] = []
         for window in windows {
@@ -91,7 +91,7 @@ class HybridTerminalControl: TerminalControlling {
                 }
             }
         }
-        
+
         // 3. Use AppleScript only for TTY/process info if needed
         return sessions
     }
@@ -101,19 +101,22 @@ class HybridTerminalControl: TerminalControlling {
 ### 3. Migration Strategy
 
 #### Phase 1: Infrastructure Setup
+
 1. Add AXorcist dependency
 2. Create `AccessibilityProviding` protocol and implementation
 3. Add permission checks for Accessibility alongside AppleEvents
 4. Create `HybridTerminalControl` base class
 
 #### Phase 2: UI Operations Migration
+
 1. Window enumeration → AXorcist
-2. Tab enumeration → AXorcist  
+2. Tab enumeration → AXorcist
 3. Focus operations → AXorcist
 4. Application activation → AXorcist
 5. Busy state checking → AXorcist (where supported)
 
 #### Phase 3: Hybrid Implementation
+
 1. Keep AppleScript for:
    - Command execution (`do script`)
    - Output/history reading
@@ -128,6 +131,7 @@ class HybridTerminalControl: TerminalControlling {
    - State monitoring
 
 #### Phase 4: Terminal-Specific Optimizations
+
 1. Apple Terminal: Use AX `AXBusy` attribute
 2. iTerm: Combine AX for UI + AppleScript for `write text`
 3. Ghosty: Evaluate AX support quality
@@ -135,11 +139,12 @@ class HybridTerminalControl: TerminalControlling {
 ### 4. Performance Optimization
 
 #### Caching Strategy
+
 ```swift
 class AXElementCache {
     private var windowCache: [String: (element: AXUIElement, timestamp: Date)] = [:]
     private let cacheTimeout: TimeInterval = 2.0
-    
+
     func getCachedWindow(id: String) -> AXUIElement? {
         guard let cached = windowCache[id],
               Date().timeIntervalSince(cached.timestamp) < cacheTimeout else {
@@ -151,12 +156,13 @@ class AXElementCache {
 ```
 
 #### Concurrent Operations
+
 ```swift
 func listAllSessions() async throws -> [TerminalSessionInfo] {
     // Parallel window enumeration
     async let terminalSessions = listTerminalSessions()
     async let iTermSessions = listITermSessions()
-    
+
     return try await terminalSessions + iTermSessions
 }
 ```
@@ -164,6 +170,7 @@ func listAllSessions() async throws -> [TerminalSessionInfo] {
 ### 5. Error Handling
 
 #### Permission Handling
+
 ```swift
 enum PermissionError: Error {
     case appleEventsNotGranted(bundleID: String)
@@ -174,7 +181,7 @@ enum PermissionError: Error {
 func checkPermissions() throws {
     let hasAppleEvents = AppleScriptBridge.hasPermission(for: bundleID)
     let hasAccessibility = AXIsProcessTrusted()
-    
+
     if !hasAppleEvents && !hasAccessibility {
         throw PermissionError.bothPermissionsRequired
     }
@@ -182,6 +189,7 @@ func checkPermissions() throws {
 ```
 
 #### Fallback Mechanism
+
 ```swift
 func executeOperation() async throws -> Result {
     do {
@@ -197,26 +205,29 @@ func executeOperation() async throws -> Result {
 ### 6. Testing Strategy
 
 #### Unit Tests
+
 - Mock `AccessibilityProviding` for isolated testing
 - Test permission handling logic
 - Verify fallback mechanisms
 
 #### Integration Tests
+
 - Test hybrid operations against real terminals
 - Verify performance improvements
 - Ensure feature parity with AppleScript-only approach
 
 #### Performance Benchmarks
+
 ```swift
 func benchmarkWindowEnumeration() async throws {
     let appleScriptTime = try await measureTime {
         try listWindowsViaAppleScript()
     }
-    
+
     let axorcistTime = try await measureTime {
         try await listWindowsViaAXorcist()
     }
-    
+
     print("AppleScript: \(appleScriptTime)ms, AXorcist: \(axorcistTime)ms")
 }
 ```
@@ -224,6 +235,7 @@ func benchmarkWindowEnumeration() async throws {
 ### 7. Configuration
 
 Add new environment variables:
+
 ```bash
 TERMINATOR_USE_ACCESSIBILITY=true  # Enable hybrid mode
 TERMINATOR_AX_CACHE_TIMEOUT=2.0   # Cache timeout in seconds
@@ -240,12 +252,12 @@ TERMINATOR_AX_FALLBACK=true       # Enable AppleScript fallback
 
 ### 9. Risks and Mitigations
 
-| Risk | Mitigation |
-|------|------------|
-| AX API limitations | Keep AppleScript for unsupported operations |
-| Permission complexity | Clear user guidance, automatic prompts |
-| Breaking changes | Comprehensive test suite |
-| Performance regression | Benchmarking, selective migration |
+| Risk                   | Mitigation                                  |
+| ---------------------- | ------------------------------------------- |
+| AX API limitations     | Keep AppleScript for unsupported operations |
+| Permission complexity  | Clear user guidance, automatic prompts      |
+| Breaking changes       | Comprehensive test suite                    |
+| Performance regression | Benchmarking, selective migration           |
 
 ### 10. Implementation Timeline
 

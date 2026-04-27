@@ -2,10 +2,7 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { execa } from "execa";
 import path from "path";
 import { fileURLToPath } from "url";
-import {
-  expectSuccessOrAppleScriptError,
-  expectFailureWithMessage,
-} from "./test-utils.js";
+import { expectSuccessOrAppleScriptError } from "./test-utils.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,43 +32,28 @@ describe("Terminator Edge Cases", () => {
     // Check if Swift CLI exists
     try {
       await execa(SWIFT_CLI_PATH, ["--version"], { timeout: 5000 });
-    } catch (error) {
-      throw new Error(
-        `Swift CLI not found at ${SWIFT_CLI_PATH}. Run 'npm run build:swift' first.`,
-      );
+    } catch {
+      throw new Error(`Swift CLI not found at ${SWIFT_CLI_PATH}. Run 'npm run build:swift' first.`);
     }
   });
 
   describe("Range Bounds Edge Cases", () => {
     it("should handle empty AppleScript lists without crashing", async () => {
       // This specifically tests the Range bounds fix
-      const result = await runTerminator([
-        "sessions",
-        "--terminal-app",
-        "terminal",
-      ]);
+      const result = await runTerminator(["sessions", "--terminal-app", "terminal"]);
 
       // Should not crash with Range bounds error
       expectSuccessOrAppleScriptError(result);
-      expect(result.stderr).not.toContain(
-        "Range requires lowerBound <= upperBound",
-      );
+      expect(result.stderr).not.toContain("Range requires lowerBound <= upperBound");
       expect(result.stderr).not.toContain("Fatal error");
     });
 
     it("should handle nested empty lists in AppleScript results", async () => {
       // Test with iTerm which might return nested structures
-      const result = await runTerminator([
-        "sessions",
-        "--terminal-app",
-        "iterm",
-        "--json",
-      ]);
+      const result = await runTerminator(["sessions", "--terminal-app", "iterm", "--json"]);
 
       expectSuccessOrAppleScriptError(result);
-      expect(result.stderr).not.toContain(
-        "Range requires lowerBound <= upperBound",
-      );
+      expect(result.stderr).not.toContain("Range requires lowerBound <= upperBound");
 
       // Handle null or empty JSON response
       if (result.stdout.trim() === "null" || result.stdout.trim() === "") {
@@ -225,12 +207,7 @@ describe("Terminator Edge Cases", () => {
   describe("Null and Undefined Handling", () => {
     it("should handle completely empty exec command", async () => {
       const tag = `test-empty-exec-${Date.now()}`;
-      const result = await runTerminator([
-        "execute",
-        tag,
-        "--terminal-app",
-        "terminal",
-      ]);
+      const result = await runTerminator(["execute", tag, "--terminal-app", "terminal"]);
 
       // Should create a new session without executing any command
       expectSuccessOrAppleScriptError(result);
@@ -304,11 +281,7 @@ describe("Terminator Edge Cases", () => {
       ]);
 
       // Immediately query sessions
-      const listResult = await runTerminator([
-        "sessions",
-        "--terminal-app",
-        "terminal",
-      ]);
+      const listResult = await runTerminator(["sessions", "--terminal-app", "terminal"]);
 
       expectSuccessOrAppleScriptError(listResult);
 

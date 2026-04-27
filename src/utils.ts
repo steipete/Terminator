@@ -9,12 +9,11 @@ import {
 } from "./config.js"; // For logging and defaults
 import * as path from "node:path"; // For path.basename, path.sep, path.isAbsolute
 import * as os from "node:os";
-import { RequestContextMeta } from "./types.js";
 
 export function sanitizeTag(rawTag: string): string {
   if (!rawTag) return "";
   // SDD 3.1.2: Alphanumeric, underscore, hyphen, max 64 chars.
-  return rawTag.replace(/[^a-zA-Z0-9_\-]/g, "_").substring(0, 64);
+  return rawTag.replace(/[^a-zA-Z0-9_-]/g, "_").substring(0, 64);
 }
 
 export function expandTilde(filePath: string): string {
@@ -40,24 +39,18 @@ export function resolveEffectiveProjectPath(
   const expandedPath = expandTilde(pathToCheck);
 
   // Handle relative paths
-  const absolutePath = path.isAbsolute(expandedPath)
-    ? expandedPath
-    : path.resolve(expandedPath);
+  const absolutePath = path.isAbsolute(expandedPath) ? expandedPath : path.resolve(expandedPath);
 
   // Check if path exists
   if (!fs.existsSync(absolutePath)) {
-    debugLog(
-      `[Utils] Path '${absolutePath}' does not exist. Attempting to create it...`,
-    );
+    debugLog(`[Utils] Path '${absolutePath}' does not exist. Attempting to create it...`);
 
     try {
       // Create directory recursively
       fs.mkdirSync(absolutePath, { recursive: true });
       debugLog(`[Utils] Successfully created directory: ${absolutePath}`);
     } catch (e: any) {
-      debugLog(
-        `[Utils] Failed to create directory '${absolutePath}'. Error: ${e.message}`,
-      );
+      debugLog(`[Utils] Failed to create directory '${absolutePath}'. Error: ${e.message}`);
       return null;
     }
   }
@@ -101,29 +94,19 @@ export function resolveDefaultTag(
     let base = path.basename(projectPath);
     if (base === "/" || base === "") {
       const parts = projectPath.split(path.sep).filter((p) => p !== "");
-      base =
-        parts.length > 1
-          ? parts[parts.length - 2]
-          : parts.length === 1
-            ? parts[0]
-            : "";
+      base = parts.length > 1 ? parts[parts.length - 2] : parts.length === 1 ? parts[0] : "";
     }
     resolvedTag = sanitizeTag(base);
     if (!resolvedTag || resolvedTag === "_") {
       resolvedTag = "default_project_tag";
     }
-    debugLog(
-      `[Utils] Derived tag '${resolvedTag}' from projectPath '${projectPath}'`,
-    );
+    debugLog(`[Utils] Derived tag '${resolvedTag}' from projectPath '${projectPath}'`);
   }
 
   return resolvedTag || null;
 }
 
-export function extractOutputForAction(
-  action: string,
-  jsonData: any,
-): string | null {
+export function extractOutputForAction(action: string, jsonData: any): string | null {
   switch (action) {
     case "read":
       return jsonData.readOutput || null;
@@ -155,8 +138,7 @@ export function formatCliOutputForAI(
     try {
       const sessions = JSON.parse(stdoutTrimmed);
       if (Array.isArray(sessions)) {
-        if (sessions.length === 0)
-          return "Terminator: No active sessions found.";
+        if (sessions.length === 0) return "Terminator: No active sessions found.";
         const sessionDescriptions = sessions
           .map(
             (s: any, index: number) =>
@@ -167,18 +149,14 @@ export function formatCliOutputForAI(
         return `Terminator: Found ${sessions.length} session(s). ${sessionDescriptions}.`;
       }
     } catch (e) {
-      debugLog(
-        `[Utils] Failed to parse JSON for ${action}: ${e}. Raw: ${stdoutTrimmed}`,
-      );
+      debugLog(`[Utils] Failed to parse JSON for ${action}: ${e}. Raw: ${stdoutTrimmed}`);
       return `Terminator: '${action}' completed, but output parsing failed. Raw: ${stdoutTrimmed}`;
     }
   }
 
   if (action === "info") {
     try {
-      debugLog(
-        `[Utils] info action: raw stdoutTrimmed: >>>${stdoutTrimmed}<<<`,
-      );
+      debugLog(`[Utils] info action: raw stdoutTrimmed: >>>${stdoutTrimmed}<<<`);
       const infoData = JSON.parse(stdoutTrimmed);
       debugLog(`[Utils] info action: parsed infoData:`, infoData);
 
@@ -189,14 +167,8 @@ export function formatCliOutputForAI(
       debugLog(`[Utils] info action: infoData.configuration:`, config);
 
       const sessionsArray = infoData.sessions || [];
-      debugLog(
-        `[Utils] info action: infoData.sessions (or default []):`,
-        sessionsArray,
-      );
-      debugLog(
-        `[Utils] info action: sessionsArray.length:`,
-        sessionsArray.length,
-      );
+      debugLog(`[Utils] info action: infoData.sessions (or default []):`, sessionsArray);
+      debugLog(`[Utils] info action: sessionsArray.length:`, sessionsArray.length);
 
       let msg = `Terminator v${version}.`;
       if (config) {
@@ -206,29 +178,16 @@ export function formatCliOutputForAI(
       msg += ` Sessions: ${sessionsArray.length}.`;
 
       if (sessionsArray.length > 0) {
-        debugLog(
-          `[Utils] info action: Processing ${sessionsArray.length} sessions.`,
-        );
+        debugLog(`[Utils] info action: Processing ${sessionsArray.length} sessions.`);
         const sessionDescriptions = sessionsArray
           .map((sessionDetails: any, index: number) => {
-            debugLog(
-              `[Utils] info action: Processing session ${index + 1}:`,
-              sessionDetails,
-            );
+            debugLog(`[Utils] info action: Processing session ${index + 1}:`, sessionDetails);
             const projectName = sessionDetails.project_name || "General";
             const taskTag =
-              sessionDetails.task_tag ||
-              sessionDetails.session_identifier ||
-              "UnknownSession";
-            const isBusy =
-              sessionDetails.is_busy === undefined
-                ? false
-                : sessionDetails.is_busy;
+              sessionDetails.task_tag || sessionDetails.session_identifier || "UnknownSession";
+            const isBusy = sessionDetails.is_busy === undefined ? false : sessionDetails.is_busy;
             const description = `${index + 1}. 🤖💥 ${projectName} / ${taskTag} (${isBusy ? "Busy" : "Idle"})`;
-            debugLog(
-              `[Utils] info action: Session ${index + 1} description:`,
-              description,
-            );
+            debugLog(`[Utils] info action: Session ${index + 1} description:`, description);
             return description;
           })
           .join(". ");
@@ -263,22 +222,15 @@ export function formatCliOutputForAI(
     if (outputIndicatesTimeout) {
       const timeoutVal =
         timeoutOverride ??
-        (isBackground
-          ? DEFAULT_BACKGROUND_STARTUP_SECONDS
-          : DEFAULT_FOREGROUND_COMPLETION_SECONDS);
+        (isBackground ? DEFAULT_BACKGROUND_STARTUP_SECONDS : DEFAULT_FOREGROUND_COMPLETION_SECONDS);
       return `Terminator: Command timed out after ${timeoutVal}s in session '${tag}'. Output (if any):
 ${stdoutTrimmed}`.trim();
     }
     // Standard successful exec - only return stdout (command output)
     // Logs go to stderr and shouldn't be included in the output
-    return (
-      stdoutTrimmed ||
-      `Terminator: Command executed in session '${tag}'. No output captured.`
-    );
+    return stdoutTrimmed || `Terminator: Command executed in session '${tag}'. No output captured.`;
   }
 
   // Default for other successful actions or if stdout is present
-  return (
-    stdoutTrimmed || `Terminator: Action '${action}' completed successfully.`
-  );
+  return stdoutTrimmed || `Terminator: Action '${action}' completed successfully.`;
 }

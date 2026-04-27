@@ -1,16 +1,11 @@
-import { pino } from "pino";
+import pino, { destination, multistream, transport } from "pino";
 import type { Logger } from "pino";
 import path from "path";
 import fs from "fs";
 import os from "os";
 
 const PROJECT_NAME = "TERMINATOR";
-const DEFAULT_LOG_DIR = path.join(
-  os.homedir(),
-  "Library",
-  "Logs",
-  "terminator-mcp",
-);
+const DEFAULT_LOG_DIR = path.join(os.homedir(), "Library", "Logs", "terminator-mcp");
 const DEFAULT_LOG_FILE = "terminator.log";
 const DEFAULT_LOG_LEVEL = "info";
 
@@ -18,7 +13,7 @@ function ensureDirectoryExists(dirPath: string): boolean {
   try {
     fs.mkdirSync(dirPath, { recursive: true });
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -89,7 +84,7 @@ function createLogger(): Logger {
   const streams: any[] = [
     {
       level: logLevel,
-      stream: pino.destination({
+      stream: destination({
         dest: logFilePath,
         sync: false,
         mkdir: true,
@@ -100,7 +95,7 @@ function createLogger(): Logger {
   if (logToConsole) {
     streams.push({
       level: logLevel,
-      stream: pino.transport({
+      stream: transport({
         target: "pino-pretty",
         options: {
           colorize: true,
@@ -120,7 +115,7 @@ function createLogger(): Logger {
         },
       },
     },
-    pino.multistream(streams),
+    multistream(streams),
   );
 }
 
@@ -147,18 +142,14 @@ export function getLoggerConfig() {
       : path.join(process.cwd(), envLogFile);
 
     if (!canWriteToPath(absolutePath)) {
-      issues.push(
-        `Cannot write to log file path: ${absolutePath}. Using: ${actualLogFile}`,
-      );
+      issues.push(`Cannot write to log file path: ${absolutePath}. Using: ${actualLogFile}`);
     }
   }
 
   // Check if using temp directory fallback
   const defaultPath = path.join(DEFAULT_LOG_DIR, DEFAULT_LOG_FILE);
   if (actualLogFile.includes(os.tmpdir()) && !canWriteToPath(defaultPath)) {
-    issues.push(
-      `Cannot write to default log directory. Using temp directory: ${actualLogFile}`,
-    );
+    issues.push(`Cannot write to default log directory. Using temp directory: ${actualLogFile}`);
   }
 
   // Check log level
@@ -166,9 +157,7 @@ export function getLoggerConfig() {
     const normalized = envLogLevel.toLowerCase();
     const validLevels = ["fatal", "error", "warn", "info", "debug", "trace"];
     if (!validLevels.includes(normalized)) {
-      issues.push(
-        `Invalid log level "${envLogLevel}". Using default: ${DEFAULT_LOG_LEVEL}`,
-      );
+      issues.push(`Invalid log level "${envLogLevel}". Using default: ${DEFAULT_LOG_LEVEL}`);
     }
   }
 

@@ -1,6 +1,7 @@
 ================================================
 FILE: README.md
 ================================================
+
 # The Swift Concurrency Migration Guide
 
 This repository contains the source for [The Swift Concurrency Migration Guide][scmg],
@@ -34,25 +35,30 @@ open the link that `docc` outputs to display a local preview in your browser.
 [conduct]: https://www.swift.org/code-of-conduct
 [scmg]: https://www.swift.org/migration/documentation/migrationguide
 
-
 ================================================
 FILE: CODEOWNERS
 ================================================
+
 # Lines starting with '#' are comments.
+
 # Each line is a case-sensitive file pattern followed by one or more owners.
+
 # Order is important. The last matching pattern has the most precedence.
+
 # More information: https://docs.github.com/en/articles/about-code-owners
+
 #
+
 # Please mirror the repository's file hierarchy in case-sensitive lexicographic
+
 # order.
 
-* @hborla @mattmassicotte @shahmishal @ktoso
-
-
+- @hborla @mattmassicotte @shahmishal @ktoso
 
 ================================================
 FILE: CONTRIBUTING.md
 ================================================
+
 # Contributing to the Swift Migration Guide
 
 ## Welcome the Swift community!
@@ -69,14 +75,15 @@ Swift community welcoming to everyone.
 
 To give clarity of what is expected of our members, Swift has adopted the code
 of conduct defined by the Contributor Covenant. This document is used across
-many open source communities, and we think it articulates our values well. 
+many open source communities, and we think it articulates our values well.
 For more, see the [Code of Conduct](https://www.swift.org/code-of-conduct/).
 
 ## Contributing to swift-migration-guide
- 
+
 ### How you can help
 
 We would love your contributions in the form of:
+
 - Filing issues to cover specific code patterns or additional sections of the
   guide
 - Opening pull requests to improve existing content or add new content
@@ -116,7 +123,7 @@ preview in your browser.
 
 Pull requests must pass CI testing via `@swift-ci please test` before the change is merged.
 
-### Getting your PR reviewed 
+### Getting your PR reviewed
 
 Reviewers will be tagged automatically when you open a pull request. You may
 be asked to make changes during code review. When you are ready, use the
@@ -124,13 +131,12 @@ request re-review feature of github or mention the reviewers by name in a commen
 
 [bugs]: https://github.com/apple/swift-migration-guide/issues
 
-
 ================================================
 FILE: LICENSE.txt
 ================================================
-                                 Apache License
-                           Version 2.0, January 2004
-                        http://www.apache.org/licenses/
+Apache License
+Version 2.0, January 2004
+http://www.apache.org/licenses/
 
     TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 
@@ -330,17 +336,12 @@ FILE: LICENSE.txt
     See the License for the specific language governing permissions and
     limitations under the License.
 
-
-
-## Runtime Library Exception to the Apache 2.0 License: ##
-
+## Runtime Library Exception to the Apache 2.0 License:
 
     As an exception, if you use this Software to compile your source code and
     portions of this Software are embedded into the binary product as a result,
     you may redistribute such product without providing attribution as would
     otherwise be required by Sections 4(a), 4(b) and 4(d) of the License.
-
-
 
 ================================================
 FILE: Package.swift
@@ -350,51 +351,49 @@ FILE: Package.swift
 import PackageDescription
 
 let package = Package(
-    name: "MigrationGuide",
-    platforms: [
-        .macOS(.v10_15),
-        .iOS(.v13),
-        .watchOS(.v6),
-        .tvOS(.v13),
-        .macCatalyst(.v13),
-        .visionOS(.v1),
-    ],
-    products: [
-        .library(
-            name: "Library",
-            targets: ["Library"]
-        ),
-        .executable(name: "swift5_examples", targets: ["Swift5Examples"]),
-        .executable(name: "swift6_examples", targets: ["Swift6Examples"]),
-    ],
-    targets: [
-        .target(
-            name: "Library"
-        ),
-        .testTarget(
-            name: "LibraryXCTests",
-            dependencies: ["ObjCLibrary", "Library"]
-        ),
-        .target(
-            name: "ObjCLibrary",
-            publicHeadersPath: "."
-        ),
-        .executableTarget(
-            name: "Swift5Examples",
-            dependencies:  ["Library", "ObjCLibrary"],
-            swiftSettings: [
-                .swiftLanguageMode(.v5),
-                .enableUpcomingFeature("StrictConcurrency"),
-            ]
-        ),
-        .executableTarget(
-            name: "Swift6Examples",
-            dependencies: ["Library", "ObjCLibrary"]
-        )
-    ]
+name: "MigrationGuide",
+platforms: [
+.macOS(.v10_15),
+.iOS(.v13),
+.watchOS(.v6),
+.tvOS(.v13),
+.macCatalyst(.v13),
+.visionOS(.v1),
+],
+products: [
+.library(
+name: "Library",
+targets: ["Library"]
+),
+.executable(name: "swift5_examples", targets: ["Swift5Examples"]),
+.executable(name: "swift6_examples", targets: ["Swift6Examples"]),
+],
+targets: [
+.target(
+name: "Library"
+),
+.testTarget(
+name: "LibraryXCTests",
+dependencies: ["ObjCLibrary", "Library"]
+),
+.target(
+name: "ObjCLibrary",
+publicHeadersPath: "."
+),
+.executableTarget(
+name: "Swift5Examples",
+dependencies: ["Library", "ObjCLibrary"],
+swiftSettings: [
+.swiftLanguageMode(.v5),
+.enableUpcomingFeature("StrictConcurrency"),
+]
+),
+.executableTarget(
+name: "Swift6Examples",
+dependencies: ["Library", "ObjCLibrary"]
 )
-
-
+]
+)
 
 ================================================
 FILE: .editorconfig
@@ -408,8 +407,6 @@ end_of_line = lf
 charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
-
-
 
 ================================================
 FILE: bin/local.sh
@@ -426,8 +423,6 @@ pushd migration-guide
 
 ruby -run -e httpd -- . -p 8000
 
-
-
 ================================================
 FILE: bin/publish.sh
 ================================================
@@ -440,15 +435,15 @@ export DOCC_JSON_PRETTYPRINT="YES"
 output="./migration-guide"
 
 docc convert \
-    --experimental-enable-custom-templates \
-    --hosting-base-path migration-guide \
-    --output-path "$output" \
-    MigrationGuide.docc
-
+ --experimental-enable-custom-templates \
+ --hosting-base-path migration-guide \
+ --output-path "$output" \
+ MigrationGuide.docc
 
 ================================================
 FILE: bin/redirects/index.html
 ================================================
+
 <html>
 <head>
     <title>The Swift Concurrency Migration Guide: Redirect</title>
@@ -473,14 +468,14 @@ var newURL = baseURL;
 document.getElementById("redirect").setAttribute("href", newURL);
 window.location = newURL;
 </script>
+
 </body>
 </html>
-
-
 
 ================================================
 FILE: Guide.docc/CommonProblems.md
 ================================================
+
 # Common Compiler Errors
 
 Identify, understand, and address common problems you can encounter while
@@ -497,7 +492,7 @@ After enabling complete checking, many projects can contain a large
 number of warnings and errors.
 _Don't_ get overwhelmed!
 Most of these can be tracked down to a much smaller set of root causes.
-And these causes, frequently, are a result of common patterns which aren't 
+And these causes, frequently, are a result of common patterns which aren't
 just easy to fix, but can also be very instructive while learning about
 Swift's concurrency system.
 
@@ -511,7 +506,7 @@ carefully accessing global state in ways that avoided data-races
 without any help from the compiler.
 
 > Experiment: These code examples are available in package form.
-Try them out yourself in [Globals.swift][Globals].
+> Try them out yourself in [Globals.swift][Globals].
 
 [Globals]: https://github.com/apple/swift-migration-guide/blob/main/Sources/Examples/Globals.swift
 
@@ -577,7 +572,7 @@ let supportedStyleCount = 42
 
 A global value can also be expressed with a computed property.
 If such property consistently returns the same constant value,
-this is semantically equivalent to a `let` constant as far as 
+this is semantically equivalent to a `let` constant as far as
 observable values/effects are concerned:
 
 ```swift
@@ -655,7 +650,7 @@ Choosing an appropriate approach first requires understanding _why_ there is a
 mismatch in the first place.
 
 > Experiment: These code examples are available in package form.
-Try them out yourself in [ConformanceMismatches.swift][ConformanceMismatches].
+> Try them out yourself in [ConformanceMismatches.swift][ConformanceMismatches].
 
 [ConformanceMismatches]: https://github.com/apple/swift-migration-guide/blob/main/Sources/Examples/ConformanceMismatches.swift
 
@@ -705,7 +700,7 @@ protocol Styler {
     func applyStyle()
 }
 
-// A conforming type, which is now correctly isolated, has exposed 
+// A conforming type, which is now correctly isolated, has exposed
 // a mismatch.
 @MainActor
 class WindowStyler: Styler {
@@ -754,7 +749,7 @@ protocol using [`@preconcurrency`][Preconcurrency].
 This will preserve source compatibility with clients that have not yet
 begun adopting concurrency.
 
-[Preconcurrency]: <doc:LibraryEvolution#Preconcurrency-annotations>
+[Preconcurrency]: doc:LibraryEvolution#Preconcurrency-annotations
 
 ```swift
 @preconcurrency @MainActor
@@ -824,9 +819,9 @@ This inserts runtime checks to ensure that that static isolation
 of the conforming class is always enforced.
 
 > Note: To learn more about incremental adoption and dynamic isolation,
-see [Dynamic Isolation][]
+> see [Dynamic Isolation][]
 
-[Dynamic Isolation]: <doc:IncrementalAdoption#Dynamic-Isolation>
+[Dynamic Isolation]: doc:IncrementalAdoption#Dynamic-Isolation
 
 ### Isolated Conforming Type
 
@@ -905,7 +900,7 @@ concurrency features, these issues can come up even when your code hasn't
 changed.
 
 > Experiment: These code examples are available in package form.
-Try them out yourself in [Boundaries.swift][Boundaries].
+> Try them out yourself in [Boundaries.swift][Boundaries].
 
 [Boundaries]: https://github.com/apple/swift-migration-guide/blob/main/Sources/Examples/Boundaries.swift
 
@@ -938,13 +933,13 @@ conform to `Sendable`.
 This will result in the following error:
 
 ```
- 6 | 
+ 6 |
  7 | func updateStyle(backgroundColor: ColorComponents) async {
  8 |     await applyBackground(backgroundColor)
    |           |- error: sending 'backgroundColor' risks causing data races
    |           `- note: sending task-isolated 'backgroundColor' to main actor-isolated global function 'applyBackground' risks causing data races between main actor-isolated and task-isolated uses
  9 | }
-10 | 
+10 |
 ```
 
 A straightforward solution is to make the type's `Sendable`
@@ -1123,7 +1118,7 @@ actor Style {
 }
 ```
 
-By moving both the non-Sendable data *and* operations on that data into the
+By moving both the non-Sendable data _and_ operations on that data into the
 actor, no isolation boundaries need to be crossed.
 This provides a `Sendable` interface to those operations that can be freely
 accessed from any asynchronous context.
@@ -1170,7 +1165,7 @@ Further, you should be _particularly_ careful about using this technique
 for types that are part of your system's public API.
 
 > Note: To learn more about retroactive conformances,
-see the associated [Swift evolution proposal][SE-0364].
+> see the associated [Swift evolution proposal][SE-0364].
 
 [SE-0364]: https://github.com/swiftlang/swift-evolution/blob/main/proposals/0364-retroactive-conformance-warning.md
 
@@ -1232,8 +1227,8 @@ This frequently occurs when the type is used in a default value expression or
 as a property initializer.
 
 > Note: These problems could also be a symptom of
-[latent isolation](#Latent-Isolation) or an
-[under-specified protocol](#Under-Specified-Protocol).
+> [latent isolation](#Latent-Isolation) or an
+> [under-specified protocol](#Under-Specified-Protocol).
 
 Here the non-isolated `Stylers` type is making a call to a
 `MainActor`-isolated initializer.
@@ -1253,19 +1248,19 @@ struct Stylers {
 This code results in the following error:
 
 ```
- 7 | 
+ 7 |
  8 | struct Stylers {
  9 |     static let window = WindowStyler()
    |                `- error: main actor-isolated default value in a nonisolated context
 10 | }
-11 | 
+11 |
 ```
 
 Globally-isolated types sometimes don't actually need to reference any global
 actor state in their initializers.
 By making the `init` method `nonisolated`, it is free to be called from any
 isolation domain.
-This remains safe as the compiler still guarantees that any state that *is*
+This remains safe as the compiler still guarantees that any state that _is_
 isolated will only be accessible from the `MainActor`.
 
 ```swift
@@ -1280,7 +1275,6 @@ class WindowStyler {
     }
 }
 ```
-
 
 All `Sendable` properties can still be safely accessed in this `init` method.
 And while any non-`Sendable` properties cannot,
@@ -1340,13 +1334,12 @@ actor BackgroundStyler {
 ```
 
 > Important: **Never** extend the life-time of `self` from within
-`deinit`. Doing so will crash at runtime.
-
-
+> `deinit`. Doing so will crash at runtime.
 
 ================================================
 FILE: Guide.docc/CompleteChecking.md
 ================================================
+
 # Enabling Complete Concurrency Checking
 
 Incrementally address data-race safety issues by enabling diagnostics as warnings in your project.
@@ -1389,7 +1382,7 @@ section.
 ### Package manifest
 
 To enable complete concurrency checking for a target in a Swift package using
-Swift 5.9 or Swift 5.10 tools, use [`SwiftSetting.enableExperimentalFeature`](https://developer.apple.com/documentation/packagedescription/swiftsetting/enableexperimentalfeature(_:_:))
+Swift 5.9 or Swift 5.10 tools, use [`SwiftSetting.enableExperimentalFeature`](<https://developer.apple.com/documentation/packagedescription/swiftsetting/enableexperimentalfeature(_:_:)>)
 in the Swift settings for the given target:
 
 ```swift
@@ -1401,7 +1394,7 @@ in the Swift settings for the given target:
 )
 ```
 
-When using Swift 6.0 tools or later, use [`SwiftSetting.enableUpcomingFeature`](https://developer.apple.com/documentation/packagedescription/swiftsetting/enableupcomingfeature(_:_:))
+When using Swift 6.0 tools or later, use [`SwiftSetting.enableUpcomingFeature`](<https://developer.apple.com/documentation/packagedescription/swiftsetting/enableupcomingfeature(_:_:)>)
 in the Swift settings for a pre-Swift 6 language mode target:
 
 ```swift
@@ -1435,11 +1428,10 @@ in an xcconfig file:
 SWIFT_STRICT_CONCURRENCY = complete;
 ```
 
-
-
 ================================================
 FILE: Guide.docc/DataRaceSafety.md
 ================================================
+
 # Data Race Safety
 
 Learn about the fundamental concepts Swift uses to enable data-race-free
@@ -1462,8 +1454,8 @@ The Swift 6 language mode eliminates these problems by preventing data races
 at compile time.
 
 > Important: You may have encountered constructs like `async`/`await`
-and actors in other languages. Pay extra attention, as similarities to
-these concepts in Swift may only be superficial.
+> and actors in other languages. Pay extra attention, as similarities to
+> these concepts in Swift may only be superficial.
 
 ## Data Isolation
 
@@ -1481,7 +1473,7 @@ statically and dynamically.
 
 The term _static_ is used to describe program elements that are unaffected by
 runtime state. These elements, such as a function definition,
-are made up of keywords and annotations. Swift's concurrency system is 
+are made up of keywords and annotations. Swift's concurrency system is
 an extension of its type system. When you declare functions and types,
 you are doing so statically. Isolation can be a part of these static
 declarations.
@@ -1497,7 +1489,7 @@ Data isolation, be it static or dynamic, allows the
 compiler to guarantee Swift code you write is free of data races.
 
 > Note: For more information about using dynamic isolation,
-see <doc:IncrementalAdoption#Dynamic-Isolation>
+> see <doc:IncrementalAdoption#Dynamic-Isolation>
 
 ### Isolation Domains
 
@@ -1618,7 +1610,7 @@ func addToFlock(of island: isolated Island) {
 ```
 
 > Note: For an overview of actors, please see the [Actors][] section of
-The Swift Programming Language.
+> The Swift Programming Language.
 
 [Actors]: https://docs.swift.org/swift-book/documentation/the-swift-programming-language/concurrency#Actors
 
@@ -1693,7 +1685,7 @@ There will only ever be one task running synchronous code for any given
 isolation domain.
 
 > Note: For more information see the [Tasks][] section of
-The Swift Programming Language.
+> The Swift Programming Language.
 
 [Tasks]: https://docs.swift.org/swift-book/documentation/the-swift-programming-language/concurrency#Tasks-and-Task-Groups
 
@@ -1722,7 +1714,7 @@ Not only that, it also cannot be changed by a subclass.
 All `Animal` instances have been declared to be `MainActor`-isolated, which
 means all `Chicken` instances must be as well.
 
-The static isolation of a type will also be inferred for its properties and 
+The static isolation of a type will also be inferred for its properties and
 methods by default.
 
 ```swift
@@ -1738,7 +1730,7 @@ class Animal {
 ```
 
 > Note: For more information, see the [Inheritance][] section of
-The Swift Programming Language.
+> The Swift Programming Language.
 
 [Inheritance]: https://docs.swift.org/swift-book/documentation/the-swift-programming-language/inheritance
 
@@ -1776,11 +1768,11 @@ protocol Feedable {
 
 Regardless of how a protocol is defined and conformance added, you cannot alter
 other mechanisms of static isolation.
-If a type is globally-isolated, either explicitly or via inference from a 
+If a type is globally-isolated, either explicitly or via inference from a
 superclass, a protocol conformance cannot be used to change it.
 
 > Note: For more information, see the [Protocols][] section of
-The Swift Programming Language.
+> The Swift Programming Language.
 
 [Protocols]: https://docs.swift.org/swift-book/documentation/the-swift-programming-language/protocols
 
@@ -1849,7 +1841,7 @@ Function types offer a number of mechanisms for controlling their
 isolation behavior, but by default they behave identically to other types.
 
 > Note: For more information, see the [Closures][] section of
-The Swift Programming Language.
+> The Swift Programming Language.
 
 [Closures]: https://docs.swift.org/swift-book/documentation/the-swift-programming-language/closures
 
@@ -1910,7 +1902,7 @@ Here, both the `Ripeness` and `Pineapple` types are implicitly `Sendable`,
 since they are composed entirely of `Sendable` value types.
 
 > Note: For more information see the [Sendable Types][] section of
-The Swift Programming Language.
+> The Swift Programming Language.
 
 [Sendable Types]: https://docs.swift.org/swift-book/documentation/the-swift-programming-language/concurrency#Sendable-Types
 
@@ -2080,16 +2072,15 @@ change between asynchronous calls.
 Critical sections should always be structured to run synchronously.
 
 > Note: For more information, see the
-[Defining and Calling Asynchronous Functions][] section of
-The Swift Programming Language.
+> [Defining and Calling Asynchronous Functions][] section of
+> The Swift Programming Language.
 
 [Defining and Calling Asynchronous Functions]: https://docs.swift.org/swift-book/documentation/the-swift-programming-language/concurrency/#Defining-and-Calling-Asynchronous-Functions
-
-
 
 ================================================
 FILE: Guide.docc/FeatureMigration.md
 ================================================
+
 # Migrating to upcoming language features
 
 Migrate your project to upcoming language features.
@@ -2110,19 +2101,22 @@ for more details.
 `swift package migrate` builds and applies migration fix-its to allow for semi-automated migration.
 Make sure to start with a clean working tree (no current changes staged or otherwise) and a working
 build - applying the fix-its requires there to be no build errors and will modify files in the
-package *in place*.
+package _in place_.
 
 To eg. migrate all targets in your package to `NonisolatedNonsendingByDefault`:
+
 ```sh
 swift package migrate --to-feature NonisolatedNonsendingByDefault
 ```
 
 Or a target at a time with `--targets`:
+
 ```sh
 swift package migrate --targets TargetA --to-feature NonisolatedNonsendingByDefault
 ```
 
 This will start a build, apply any migration fix-its, and then update the manifest:
+
 ```
 > Starting the build.
 ... regular build output with migration diagnostics ...
@@ -2131,6 +2125,7 @@ This will start a build, apply any migration fix-its, and then update the manife
 ```
 
 Check out the changes with your usual version control tooling, e.g., `git diff`:
+
 ```diff
 diff --git a/Package.swift b/Package.swift
 index a1e587c..11097be 100644
@@ -2160,12 +2155,14 @@ index 85253f5..8498bb5 100644
 In some cases, the automated application of upcoming features to a target in the package manifest
 can fail for more complicated packages, e.g., if settings have been factored out into a variable
 that's then applied to multiple targets:
+
 ```
 error: Could not update manifest for 'TargetA' (unable to find array literal for 'swiftSettings' argument). Please enable 'NonisolatedNonsendingByDefault' features manually.
 ```
 
 If this happens, manually add a `.enableUpcomingFeature("SomeFeature")` Swift setting to complete
 the migration:
+
 ```swift
 // swift-tools-version: 6.2
 
@@ -2189,11 +2186,10 @@ let package = Package(
 )
 ```
 
-
-
 ================================================
 FILE: Guide.docc/IncrementalAdoption.md
 ================================================
+
 # Incremental Adoption
 
 Learn how you can introduce Swift concurrency features into your project
@@ -2213,7 +2209,7 @@ make incremental adoption easier.
 
 APIs that accept and invoke a single function on completion are an extremely
 common pattern in Swift.
-It's possible to make a version of such a function that is usable directly from 
+It's possible to make a version of such a function that is usable directly from
 an asynchronous context.
 
 ```swift
@@ -2260,9 +2256,9 @@ The `withCheckedContinuation` function is one of a [suite of standard library
 APIs][continuation-apis] that exist to make interfacing non-async and async code possible.
 
 > Note: Introducing asynchronous code into a project can surface data isolation
-checking violations. To understand and address these, see [Crossing Isolation Boundaries][]
+> checking violations. To understand and address these, see [Crossing Isolation Boundaries][]
 
-[Crossing Isolation Boundaries]: <doc:CommonProblems#Crossing-Isolation-Boundaries>
+[Crossing Isolation Boundaries]: doc:CommonProblems#Crossing-Isolation-Boundaries
 [continuation-apis]: https://developer.apple.com/documentation/swift/concurrency#continuations
 
 ## Dynamic Isolation
@@ -2340,7 +2336,7 @@ class WindowStyler {
 class UIStyler {
     @MainActor
     private let windowStyler: WindowStyler
-    
+
     func applyStyle() {
         MainActor.assumeIsolated {
             windowStyler.applyStyle()
@@ -2368,7 +2364,7 @@ class PersonalTransportation {
 await MainActor.run {
     // isolated to the MainActor here
     let transport = PersonalTransportation()
-    
+
     // ...
 }
 ```
@@ -2427,7 +2423,7 @@ actor inference.
 This code will compile without issue but crash at runtime.
 
 > Note: It is not possible for the compiler to detect or diagnose the
-_lack_ of compiler-visible information.
+> _lack_ of compiler-visible information.
 
 To workaround this, you can manually annotate the closure with `@Sendable.`
 This will prevent the compiler from inferring `MainActor` isolation.
@@ -2457,7 +2453,7 @@ for the module with the `-disable-dynamic-actor-isolation` compiler flag.
 This will suppress all runtime enforcement of dynamic actor isolation.
 
 > Warning: This flag should be used with caution.
-Disabling these runtime checks will permit data isolation violations.
+> Disabling these runtime checks will permit data isolation violations.
 
 ## Integrating DispatchSerialQueue with Actors
 
@@ -2488,7 +2484,7 @@ while maintaining compatibility with code that depends on `DispatchQueue`.
 It's important to keep in mind that static isolation, being part of the type
 system, affects your public API.
 But you can migrate your own modules in a way that improves their APIs for
-Swift 6 *without* breaking any existing clients.
+Swift 6 _without_ breaking any existing clients.
 
 Suppose the `WindowStyler` is public API.
 You have determined that it really should be `MainActor`-isolated, but want to
@@ -2519,8 +2515,8 @@ The `@preconcurrency` annotation can help with many of these situations:
 - [Non-Sendable types][]
 - Mismatches in [protocol-conformance isolation][]
 
-[Non-Sendable types]: <doc:CommonProblems#Non-Sendable-Types>
-[protocol-conformance isolation]: <doc:CommonProblems#Protocol-Conformance-Isolation-Mismatch>
+[Non-Sendable types]: doc:CommonProblems#Non-Sendable-Types
+[protocol-conformance isolation]: doc:CommonProblems#Protocol-Conformance-Isolation-Mismatch
 
 ## C/Objective-C
 
@@ -2571,14 +2567,14 @@ they will often go through the exercise of codifying contracts which were only e
 documentation. For example, before Swift concurrency, APIs frequently had to document their
 threading behavior with comments like "this will always be called on the main thread".
 
-Swift concurrency enables us to turn these code comments, into compiler and runtime 
+Swift concurrency enables us to turn these code comments, into compiler and runtime
 enforced isolation checks, that Swift will then verify when you adopt such APIs.
 
 For example, the fictional `NSJetPack` protocol generally invokes all of its delegate methods
-on the main thread, and therefore has now become MainActor-isolated. 
+on the main thread, and therefore has now become MainActor-isolated.
 
 The library author can mark as MainActor isolated using the `NS_SWIFT_UI_ACTOR` attribute,
-which is equivalent to annotating a type using `@MainActor` in Swift: 
+which is equivalent to annotating a type using `@MainActor` in Swift:
 
 ```swift
 NS_SWIFT_UI_ACTOR
@@ -2587,8 +2583,8 @@ NS_SWIFT_UI_ACTOR
 @end
 ```
 
-Thanks to this, all member methods of this protocol inherit the `@MainActor` isolation, 
-and for most methods this is correct. 
+Thanks to this, all member methods of this protocol inherit the `@MainActor` isolation,
+and for most methods this is correct.
 
 However, in this example, let us consider a method which was previously documented as follows:
 
@@ -2596,7 +2592,7 @@ However, in this example, let us consider a method which was previously document
 NS_SWIFT_UI_ACTOR // SDK author annotated using MainActor in recent SDK audit
 @protocol NSJetPack // fictional protocol
 /* Return YES if this jetpack supports flying at really high altitude!
- 
+
  JetPackKit invokes this method at a variety of times, and not always on the main thread. For example, ...
 */
 @property(readonly) BOOL supportsHighAltitude;
@@ -2606,9 +2602,9 @@ NS_SWIFT_UI_ACTOR // SDK author annotated using MainActor in recent SDK audit
 
 This method's isolation was accidentally inferred as `@MainActor`, because of the annotation on the enclosing type.
 Although it has specifically documented a different threading strategy - it may or may not
-be invoked on the main actor - annotating these semantics on the method was accidentally missed. 
+be invoked on the main actor - annotating these semantics on the method was accidentally missed.
 
-This is an annotation problem in the fictional JetPackKit library. 
+This is an annotation problem in the fictional JetPackKit library.
 Specifically, it is missing a `nonisolated` annotation on the method,
 which would inform Swift about the correct and expected execution semantics.
 
@@ -2623,11 +2619,11 @@ final class MyJetPack: NSJetPack {
 }
 ```
 
-The above code will crash with a runtime check, which aims to ensure we are actually 
+The above code will crash with a runtime check, which aims to ensure we are actually
 executing on the main actor as we're crossing from objective-c's non-swift-concurrency
 land into Swift.
 
-It is a Swift 6 feature to detect such issues automatically and crash at runtime 
+It is a Swift 6 feature to detect such issues automatically and crash at runtime
 when such expectations are violated. Leaving such issues un-diagnosed, could lead
 to actual hard-to-detect data races, and undermine Swift 6's promise about data-race safety.
 
@@ -2647,10 +2643,10 @@ Such failure would include a similar backtrace to this:
 ```
 
 > Note: When encountering such an issue, and by investigating the documentation and API annotations you determine something
->  was incorrectly annotated, the best way to resolve the root cause of the problem is to report the issue back to the 
->  library maintainer.
+> was incorrectly annotated, the best way to resolve the root cause of the problem is to report the issue back to the
+> library maintainer.
 
-As you can see, the runtime injected an executor check into the call, and the dispatch queue assertion (of it running on the MainActor), 
+As you can see, the runtime injected an executor check into the call, and the dispatch queue assertion (of it running on the MainActor),
 has failed. This prevents sneaky and hard to debug data-races.
 
 The correct long-term solution to this issue is the library fixing the method's annotation, by marking it as `nonisolated`:
@@ -2658,7 +2654,7 @@ The correct long-term solution to this issue is the library fixing the method's 
 ```objc
 // Solution in the library providing the API:
 @property(readonly) BOOL supportsHighAltitude NS_SWIFT_NONISOLATED;
-````
+```
 
 Until the library fixes its annotation issue, you are able to witness the method using a correctly `nonisolated` method, like this:
 
@@ -2675,12 +2671,10 @@ final class MyJetPack: NSJetPack {
 
 This way Swift knows not to check for the not-correct assumption that the method requires main actor isolation.
 
-
-
-
 ================================================
 FILE: Guide.docc/Info.plist
 ================================================
+
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -2694,10 +2688,10 @@ FILE: Guide.docc/Info.plist
 </dict>
 </plist>
 
-
 ================================================
 FILE: Guide.docc/LibraryEvolution.md
 ================================================
+
 # Library Evolution
 
 Annotate library APIs for concurrency while preserving source and ABI
@@ -2787,7 +2781,7 @@ public func generic<T> where T: Sendable { ... }
 
 ### Function types
 
-Like generic requirements, adding `@Sendable` to a function type is a 
+Like generic requirements, adding `@Sendable` to a function type is a
 source and ABI incompatible change:
 
 **Source and ABI incompatible:**
@@ -2941,28 +2935,27 @@ public class C {
 }
 ```
 
-
-
 ================================================
 FILE: Guide.docc/MigrationGuide.md
 ================================================
+
 # Migrating to Swift 6
 
 @Metadata {
-  @TechnologyRoot
+@TechnologyRoot
 }
 
 @Options(scope: global) {
-  @AutomaticSeeAlso(disabled)
-  @AutomaticTitleHeading(disabled)
-  @AutomaticArticleSubheading(disabled)
+@AutomaticSeeAlso(disabled)
+@AutomaticTitleHeading(disabled)
+@AutomaticArticleSubheading(disabled)
 }
 
 ## Overview
 
 Swift's concurrency system, introduced in [Swift 5.5](https://www.swift.org/blog/swift-5.5-released/),
 makes asynchronous and parallel code easier to write and understand.
-With the Swift 6 language mode, the compiler can now 
+With the Swift 6 language mode, the compiler can now
 guarantee that concurrent programs are free of data races.
 When enabled, compiler safety checks that were
 previously optional become required.
@@ -2989,11 +2982,11 @@ You will find articles and code examples here that:
 - Provide techniques for incremental adoption.
 
 > Important: The Swift 6 language mode is _opt-in_.
-Existing projects will not switch to this mode without configuration changes.
+> Existing projects will not switch to this mode without configuration changes.
 >
 > There is a distinction between the _compiler version_ and _language mode_.
-The Swift 6 compiler supports four distinct language modes: "6", "5", "4.2",
-and "4".
+> The Swift 6 compiler supports four distinct language modes: "6", "5", "4.2",
+> and "4".
 
 ### Contributing
 
@@ -3027,11 +3020,10 @@ For more information, see the [contributing][] document.
 
 - <doc:RuntimeBehavior>
 
-
-
 ================================================
 FILE: Guide.docc/MigrationStrategy.md
 ================================================
+
 # Migration Strategy
 
 Get started migrating your project to the Swift 6 language mode.
@@ -3051,7 +3043,7 @@ And as you do, your mental model of how the Swift concurrency system works
 will develop just as rapidly.
 
 > Important: This guidance should not be interpreted as a recommendation.
-You should feel confident about using other approaches.
+> You should feel confident about using other approaches.
 
 ## Strategy
 
@@ -3081,8 +3073,8 @@ Dependencies under your control that have [unsafe global state][Global] or
 across your project.
 These can often be the best things to focus on first.
 
-[Global]: <doc:CommonProblems#Unsafe-Global-and-Static-Variables>
-[Sendable]: <doc:CommonProblems#Implicitly-Sendable-Types>
+[Global]: doc:CommonProblems#Unsafe-Global-and-Static-Variables
+[Sendable]: doc:CommonProblems#Implicitly-Sendable-Types
 
 ## Use the Swift 5 Language Mode
 
@@ -3096,11 +3088,11 @@ keeping your build and tests functional as you progress.
 To start, enable a single upcoming concurrency feature.
 This allows you to focus on one _specific type_ of problem at a time.
 
-Proposal    | Description | Feature Flag 
-:-----------|-------------|-------------
-[SE-0401][] | Remove Actor Isolation Inference caused by Property Wrappers | `DisableOutwardActorInference`
-[SE-0412][] | Strict concurrency for global variables | `GlobalConcurrency`
-[SE-0418][] | Inferring `Sendable` for methods and key path literals | `InferSendableFromCaptures`
+| Proposal    | Description                                                  | Feature Flag                   |
+| :---------- | ------------------------------------------------------------ | ------------------------------ |
+| [SE-0401][] | Remove Actor Isolation Inference caused by Property Wrappers | `DisableOutwardActorInference` |
+| [SE-0412][] | Strict concurrency for global variables                      | `GlobalConcurrency`            |
+| [SE-0418][] | Inferring `Sendable` for methods and key path literals       | `InferSendableFromCaptures`    |
 
 [SE-0401]: https://github.com/swiftlang/swift-evolution/blob/main/proposals/0401-remove-property-wrapper-isolation.md
 [SE-0412]: https://github.com/swiftlang/swift-evolution/blob/main/proposals/0412-strict-concurrency-for-global-variables.md
@@ -3112,7 +3104,7 @@ After you have addressed issues uncovered by upcoming feature flags,
 the next step is to [enable complete checking][CompleteChecking] for the module.
 This will turn on all of the compiler's remaining data isolation checks.
 
-[CompleteChecking]: <doc:CompleteChecking>
+[CompleteChecking]: doc:CompleteChecking
 
 ## Address Warnings
 
@@ -3139,11 +3131,10 @@ Remember that sometimes very minor changes can have a significant impact.
 You can always return to a module once one of its dependencies has been
 updated.
 
-
-
 ================================================
 FILE: Guide.docc/RuntimeBehavior.md
 ================================================
+
 # Runtime Behavior
 
 Learn how Swift concurrency runtime semantics differ from other runtimes you may
@@ -3187,7 +3178,7 @@ While the amount of memory for each task isn't large, it can be significant when
 When faced with such a situation, you can manually throttle the number of concurrently added tasks in the group, as follows:
 
 ```swift
-let lotsOfWork: [Work] = ... 
+let lotsOfWork: [Work] = ...
 let maxConcurrentWorkTasks = min(lotsOfWork.count, 10)
 assert(maxConcurrentWorkTasks > 0)
 
@@ -3195,31 +3186,30 @@ await withTaskGroup(of: Something.self) { group in
     var submittedWork = 0
     for _ in 0..<maxConcurrentWorkTasks {
         group.addTask { // or 'addTaskUnlessCancelled'
-            await lotsOfWork[submittedWork].work() 
+            await lotsOfWork[submittedWork].work()
         }
         submittedWork += 1
     }
-    
+
     for await result in group {
         process(result) // process the result somehow, depends on your needs
-    
+
         // Every time we get a result back, check if there's more work we should submit and do so
-        if submittedWork < lotsOfWork.count, 
+        if submittedWork < lotsOfWork.count,
            let remainingWorkItem = lotsOfWork[submittedWork] {
             group.addTask { // or 'addTaskUnlessCancelled'
-                await remainingWorkItem.work() 
-            }  
+                await remainingWorkItem.work()
+            }
             submittedWork += 1
         }
     }
 }
 ```
 
-
-
 ================================================
 FILE: Guide.docc/SourceCompatibility.md
 ================================================
+
 # Source Compatibility
 
 See an overview of potential source compatibility issues.
@@ -3266,8 +3256,8 @@ Will introduce errors for any code that risks data races.
 [SE-0337]: https://github.com/swiftlang/swift-evolution/blob/main/proposals/0337-support-incremental-migration-to-concurrency-checking.md
 
 > Note: This feature implicitly also enables [`IsolatedDefaultValues`](#Isolated-default-value-expressions),
-[`GlobalConcurrency`](#Strict-concurrency-for-global-variables),
-and [`RegionBasedIsolation`](#Region-based-Isolation).
+> [`GlobalConcurrency`](#Strict-concurrency-for-global-variables),
+> and [`RegionBasedIsolation`](#Region-based-Isolation).
 
 ## Implicitly Opened Existentials
 
@@ -3319,7 +3309,7 @@ Will introduce errors for code that risks data races.
 
 [SE-0411]: https://github.com/swiftlang/swift-evolution/blob/main/proposals/0411-isolated-default-values.md
 
-##  Strict concurrency for global variables
+## Strict concurrency for global variables
 
 [SE-0412][]: `GlobalConcurrency`
 
@@ -3357,15 +3347,14 @@ isolation does not match expectations.
 [SE-0434][]: `GlobalActorIsolatedTypesUsability`
 
 Could affect type inference and overload resolution for functions that are
-globally-isolated but not `@Sendable`. 
+globally-isolated but not `@Sendable`.
 
 [SE-0434]: https://github.com/swiftlang/swift-evolution/blob/main/proposals/0434-global-actor-isolated-types-usability.md
-
-
 
 ================================================
 FILE: Guide.docc/Swift6Mode.md
 ================================================
+
 # Enabling The Swift 6 Language Mode
 
 Guarantee your code is free of data races by enabling the Swift 6 language mode.
@@ -3426,6 +3415,7 @@ Note that if your package needs to continue supporting earlier Swift toolchain v
 to use per-target `swiftLanguageMode`, you will need to create a version-specific manifest for pre-6
 toolchains. For example, if you'd like to continue supporting 5.9 toolchains and up, you could have
 one manifest `Package@swift-5.9.swift`:
+
 ```swift
 // swift-tools-version: 5.9
 
@@ -3446,6 +3436,7 @@ let package = Package(
 ```
 
 And another `Package.swift` for Swift toolchains 6.0+:
+
 ```swift
 // swift-tools-version: 6.0
 
@@ -3473,6 +3464,7 @@ let package = Package(
 If instead you would just like to use Swift 6 language mode when it's available (while still
 continuing to support older modes) you can keep a single `Package.swift` and specify the version in
 a compatible manner:
+
 ```swift
 // swift-tools-version: 5.9
 
@@ -3491,7 +3483,6 @@ let package = Package(
 )
 ```
 
-
 ## Using Xcode
 
 ### Build Settings
@@ -3509,8 +3500,6 @@ You can also set the `SWIFT_VERSION` setting to `6` in an xcconfig file:
 SWIFT_VERSION = 6;
 ```
 
-
-
 ================================================
 FILE: Sources/Examples/Boundaries.swift
 ================================================
@@ -3520,25 +3509,25 @@ import Library
 
 /// A `MainActor`-isolated function that accepts non-`Sendable` parameters.
 @MainActor
-func applyBackground(_ color: ColorComponents) {
+func applyBackground(\_ color: ColorComponents) {
 }
 
 #if swift(<6.0)
 /// A non-isolated function that accepts non-`Sendable` parameters.
 func updateStyle(backgroundColor: ColorComponents) async {
-    // the `backgroundColor` parameter is being moved from the
-    // non-isolated domain to the `MainActor` here.
-    //
-    // Swift 5 Warning: passing argument of non-sendable type 'ColorComponents' into main actor-isolated context may introduce data races
-    // Swift 6 Error: sending 'backgroundColor' risks causing data races
-    await applyBackground(backgroundColor)
+// the `backgroundColor` parameter is being moved from the
+// non-isolated domain to the `MainActor` here.
+//
+// Swift 5 Warning: passing argument of non-sendable type 'ColorComponents' into main actor-isolated context may introduce data races
+// Swift 6 Error: sending 'backgroundColor' risks causing data races
+await applyBackground(backgroundColor)
 }
 #endif
 
 #if swift(>=6.0)
 /// A non-isolated function that accepts non-`Sendable` parameters which must be safe to use at callsites.
 func sending_updateStyle(backgroundColor: sending ColorComponents) async {
-    await applyBackground(backgroundColor)
+await applyBackground(backgroundColor)
 }
 #endif
 
@@ -3547,59 +3536,59 @@ func sending_updateStyle(backgroundColor: sending ColorComponents) async {
 /// MainActor-isolated function that accepts non-`Sendable` parameters.
 @MainActor
 func isolatedFunction_updateStyle(backgroundColor: ColorComponents) async {
-    // This is safe because backgroundColor cannot change domains. It also
-    // now no longer necessary to await the call to `applyBackground`.
-    applyBackground(backgroundColor)
+// This is safe because backgroundColor cannot change domains. It also
+// now no longer necessary to await the call to `applyBackground`.
+applyBackground(backgroundColor)
 }
 
 // MARK: Explicit Sendable
 
 /// An overload used by `sendable_updateStyle` to match types.
 @MainActor
-func applyBackground(_ color: SendableColorComponents) {
+func applyBackground(\_ color: SendableColorComponents) {
 }
 
 /// The Sendable variant is safe to pass across isolation domains.
 func sendable_updateStyle(backgroundColor: SendableColorComponents) async {
-    await applyBackground(backgroundColor)
+await applyBackground(backgroundColor)
 }
 
 // MARK: Computed Value
 
 /// A Sendable function is used to compute the value in a different isolation domain.
 func computedValue_updateStyle(using backgroundColorProvider: @Sendable () -> ColorComponents) async {
-    // The Swift 6 compiler can automatically determine this value is
-    // being transferred in a safe way
-    let components = backgroundColorProvider()
-    await applyBackground(components)
+// The Swift 6 compiler can automatically determine this value is
+// being transferred in a safe way
+let components = backgroundColorProvider()
+await applyBackground(components)
 }
 
 #if swift(>=6.0)
 /// A function that uses a sending parameter to leverage region-based isolation.
 func sendingValue_updateStyle(backgroundColor: sending ColorComponents) async {
-    await applyBackground(backgroundColor)
+await applyBackground(backgroundColor)
 }
 #endif
 
 // MARK: Global Isolation
 /// An overload used by `globalActorIsolated_updateStyle` to match types.
 @MainActor
-func applyBackground(_ color: GlobalActorIsolatedColorComponents) {
+func applyBackground(\_ color: GlobalActorIsolatedColorComponents) {
 }
 
 /// MainActor-isolated function that accepts non-`Sendable` parameters.
 @MainActor
 func globalActorIsolated_updateStyle(backgroundColor: GlobalActorIsolatedColorComponents) async {
-    // This is safe because backgroundColor cannot change domains. It also
-    // now no longer necessary to await the call to `applyBackground`.
-    applyBackground(backgroundColor)
+// This is safe because backgroundColor cannot change domains. It also
+// now no longer necessary to await the call to `applyBackground`.
+applyBackground(backgroundColor)
 }
 
 // MARK: actor isolation
 
 /// An actor that assumes the responsibility of managing the non-Sendable data.
 actor Style {
-    private var background: ColorComponents
+private var background: ColorComponents
 
     init(background: ColorComponents) {
         self.background = background
@@ -3608,6 +3597,7 @@ actor Style {
     func applyBackground() {
         // make use of background here
     }
+
 }
 
 // MARK: Manual Synchronization
@@ -3617,26 +3607,27 @@ extension RetroactiveColorComponents: @retroactive @unchecked Sendable {
 
 /// An overload used by `retroactive_updateStyle` to match types.
 @MainActor
-func applyBackground(_ color: RetroactiveColorComponents	) {
+func applyBackground(\_ color: RetroactiveColorComponents ) {
 }
 
 /// A non-isolated function that accepts retroactively-`Sendable` parameters.
 func retroactive_updateStyle(backgroundColor: RetroactiveColorComponents) async {
-    await applyBackground(backgroundColor)
+await applyBackground(backgroundColor)
 }
 
 func exerciseBoundaryCrossingExamples() async {
-    print("Isolation Boundary Crossing Examples")
+print("Isolation Boundary Crossing Examples")
 
 #if swift(<6.0)
-    print("  - updateStyle(backgroundColor:) passing its argument unsafely")
+print(" - updateStyle(backgroundColor:) passing its argument unsafely")
 #endif
 
 #if swift(>=6.0)
-    print("  - using sending to allow safe usage of ColorComponents")
-    let nonSendableComponents = ColorComponents()
+print(" - using sending to allow safe usage of ColorComponents")
+let nonSendableComponents = ColorComponents()
 
     await sending_updateStyle(backgroundColor: nonSendableComponents)
+
 #endif
 
     print("  - using ColorComponents only from the main actor")
@@ -3656,10 +3647,11 @@ func exerciseBoundaryCrossingExamples() async {
     })
 
 #if swift(>=6.0)
-    print("  - enable region-based isolation with a sending argument")
-    let capturableComponents = ColorComponents()
+print(" - enable region-based isolation with a sending argument")
+let capturableComponents = ColorComponents()
 
     await sendingValue_updateStyle(backgroundColor: capturableComponents)
+
 #endif
 
     print("  - using a globally-isolated type")
@@ -3678,9 +3670,8 @@ func exerciseBoundaryCrossingExamples() async {
     let retroactiveComponents = RetroactiveColorComponents()
 
     await retroactive_updateStyle(backgroundColor: retroactiveComponents)
+
 }
-
-
 
 ================================================
 FILE: Sources/Examples/ConformanceMismatches.swift
@@ -3693,33 +3684,34 @@ import Library
 /// A conforming type that has now adopted global isolation.
 @MainActor
 class WindowStyler: Styler {
-    // Swift 5 Warning: main actor-isolated instance method 'applyStyle()' cannot be used to satisfy nonisolated protocol requirement
-    // Swift 6 Error: main actor-isolated instance method 'applyStyle()' cannot be used to satisfy nonisolated protocol requirement
-    func applyStyle() {
-    }
+// Swift 5 Warning: main actor-isolated instance method 'applyStyle()' cannot be used to satisfy nonisolated protocol requirement
+// Swift 6 Error: main actor-isolated instance method 'applyStyle()' cannot be used to satisfy nonisolated protocol requirement
+func applyStyle() {
+}
 }
 #endif
 
 // MARK: Globally-Isolated Protocol
 
 /// A type conforming to the global actor annotated `GloballyIsolatedStyler` protocol,
-///  will infer the protocol's global actor isolation.
+/// will infer the protocol's global actor isolation.
 class GloballyIsolatedWindowStyler: GloballyIsolatedStyler {
-    func applyStyle() {
-    }
+func applyStyle() {
+}
 }
 
 /// A type conforming to `PerRequirementIsolatedStyler` which has MainActor isolated protocol requirements,
-/// will infer the protocol's requirements isolation for methods witnessing those protocol requirements *only*
+/// will infer the protocol's requirements isolation for methods witnessing those protocol requirements _only_
 /// for the satisfying methods.
 class PerRequirementIsolatedWindowStyler: PerRequirementIsolatedStyler {
-    func applyStyle() {
-        // only this is MainActor-isolated
-    }
+func applyStyle() {
+// only this is MainActor-isolated
+}
 
     func checkStyle() {
         // this method is non-isolated; it is not witnessing any isolated protocol requirement
     }
+
 }
 
 // MARK: Asynchronous Requirements
@@ -3727,17 +3719,17 @@ class PerRequirementIsolatedWindowStyler: PerRequirementIsolatedStyler {
 /// A conforming type that can have arbitrary isolation and
 /// still matches the async requirement.
 class AsyncWindowStyler: AsyncStyler {
-    func applyStyle() {
-    }
+func applyStyle() {
+}
 }
 
 // MARK: Using preconcurrency
 
-/// A conforming type that will infer the protocol's global isolation *but*
+/// A conforming type that will infer the protocol's global isolation _but_
 /// with downgraded diagnostics in Swift 6 mode and Swift 5 + complete checking
 class StagedGloballyIsolatedWindowStyler: StagedGloballyIsolatedStyler {
-    func applyStyle() {
-    }
+func applyStyle() {
+}
 }
 
 // MARK: Using Dynamic Isolation
@@ -3746,19 +3738,19 @@ class StagedGloballyIsolatedWindowStyler: StagedGloballyIsolatedStyler {
 /// with dynamic isolation in the method body.
 @MainActor
 class DynamicallyIsolatedStyler: Styler {
-    nonisolated func applyStyle() {
-        MainActor.assumeIsolated {
-            // MainActor state is available here
-        }
-    }
+nonisolated func applyStyle() {
+MainActor.assumeIsolated {
+// MainActor state is available here
+}
+}
 }
 
 /// A conforming type that uses a preconcurency conformance, which
 /// is a safer and more ergonomic version of DynamicallyIsolatedStyler.
 @MainActor
 class PreconcurrencyConformanceStyler: @preconcurrency Styler {
-    func applyStyle() {
-    }
+func applyStyle() {
+}
 }
 
 // MARK: Non-Isolated
@@ -3767,9 +3759,9 @@ class PreconcurrencyConformanceStyler: @preconcurrency Styler {
 /// still performs useful work.
 @MainActor
 class NonisolatedWindowStyler: StylerConfiguration {
-    nonisolated var primaryColorComponents: ColorComponents {
-        ColorComponents(red: 0.2, green: 0.3, blue: 0.4)
-    }
+nonisolated var primaryColorComponents: ColorComponents {
+ColorComponents(red: 0.2, green: 0.3, blue: 0.4)
+}
 }
 
 // MARK: Conformance by Proxy
@@ -3777,30 +3769,32 @@ class NonisolatedWindowStyler: StylerConfiguration {
 /// An intermediary type that conforms to the protocol so it can be
 /// used by an actor
 struct CustomWindowStyle: Styler {
-    func applyStyle() {
-    }
+func applyStyle() {
+}
 }
 
 /// An actor that interacts with the Style protocol indirectly.
 actor ActorWindowStyler {
-    private let internalStyle = CustomWindowStyle()
+private let internalStyle = CustomWindowStyle()
 
     func applyStyle() {
         // forward the call through to the conforming type
         internalStyle.applyStyle()
     }
+
 }
 
 func exerciseConformanceMismatchExamples() async {
-    print("Protocol Conformance Isolation Mismatch Examples")
+print("Protocol Conformance Isolation Mismatch Examples")
 
     // Could also all be done with async calls, but this
     // makes the isolation, and the ability to invoke them
     // from a synchronous context explicit.
     await MainActor.run {
+
 #if swift(<6.0)
-        print("  - using a mismatched conformance")
-        WindowStyler().applyStyle()
+print(" - using a mismatched conformance")
+WindowStyler().applyStyle()
 #endif
 
         print("  - using a MainActor-isolated type")
@@ -3827,9 +3821,8 @@ func exerciseConformanceMismatchExamples() async {
 
     print("  - using an actor with a proxy conformance")
     await ActorWindowStyler().applyStyle()
+
 }
-
-
 
 ================================================
 FILE: Sources/Examples/DispatchQueue+PendingWork.swift
@@ -3837,18 +3830,16 @@ FILE: Sources/Examples/DispatchQueue+PendingWork.swift
 import Dispatch
 
 extension DispatchQueue {
-    /// Returns once any pending work has been completed.
-    func pendingWorkComplete() async {
-        // TODO: update to withCheckedContinuation https://github.com/apple/swift/issues/74206
-        await withUnsafeContinuation { continuation in
-            self.async(flags: .barrier) {
-                continuation.resume()
-            }
-        }
-    }
+/// Returns once any pending work has been completed.
+func pendingWorkComplete() async {
+// TODO: update to withCheckedContinuation https://github.com/apple/swift/issues/74206
+await withUnsafeContinuation { continuation in
+self.async(flags: .barrier) {
+continuation.resume()
 }
-
-
+}
+}
+}
 
 ================================================
 FILE: Sources/Examples/Globals.swift
@@ -3871,7 +3862,7 @@ let constant_supportedStyleCount = 42
 
 /// Version of `supportedStyleCount` that uses a computed property.
 var computed_supportedStyleCount: Int {
-    42
+42
 }
 
 /// Version of `supportedStyleCount` that uses manual synchronization via `sharedQueue`
@@ -3879,20 +3870,21 @@ nonisolated(unsafe) var queueProtected_supportedStyleCount = 42
 
 /// A non-isolated async function used to exercise all of the global mutable state examples.
 func exerciseGlobalExamples() async {
-    print("Global Variable Examples")
+print("Global Variable Examples")
 #if swift(<6.0)
-    // Here is how we access `supportedStyleCount` concurrently in an unsafe way
-    for _ in 0..<10 {
-        DispatchQueue.global().async {
-            supportedStyleCount += 1
-        }
-    }
+// Here is how we access `supportedStyleCount` concurrently in an unsafe way
+for \_ in 0..<10 {
+DispatchQueue.global().async {
+supportedStyleCount += 1
+}
+}
 
     print("  - accessing supportedStyleCount unsafely:", supportedStyleCount)
 
     await DispatchQueue.global().pendingWorkComplete()
+
 #endif
-    
+
     print("  - accessing globallyIsolated_supportedStyleCount")
     // establish a MainActor context to access the globally-isolated version
     await MainActor.run {
@@ -3919,9 +3911,8 @@ func exerciseGlobalExamples() async {
     }
 
     await manualSerialQueue.pendingWorkComplete()
+
 }
-
-
 
 ================================================
 FILE: Sources/Examples/IncrementalMigration.swift
@@ -3932,22 +3923,24 @@ import ObjCLibrary
 /// Example that backs an actor with a queue.
 ///
 /// > Note: `DispatchSerialQueue`'s initializer was only made available in more recent OS versions.
-@available(macOS 14.0, iOS 17.0, macCatalyst 17.0, tvOS 17.0, watchOS 10.0, *)
+@available(macOS 14.0, iOS 17.0, macCatalyst 17.0, tvOS 17.0, watchOS 10.0, \*)
 actor LandingSite {
-    private let queue = DispatchSerialQueue(label: "SerialQueue")
+private let queue = DispatchSerialQueue(label: "SerialQueue")
 
-	// this currently failed to build because of the @available usage, rdar://116684282
-//    nonisolated var unownedExecutor: UnownedSerialExecutor {
-//        queue.asUnownedSerialExecutor()
-//    }
+    // this currently failed to build because of the @available usage, rdar://116684282
+
+// nonisolated var unownedExecutor: UnownedSerialExecutor {
+// queue.asUnownedSerialExecutor()
+// }
 
     func acceptTransport(_ transport: JPKJetPack) {
         // this function will be running on queue
     }
+
 }
 
 func exerciseIncrementalMigrationExamples() async {
-    print("Incremental Migration Examples")
+print("Incremental Migration Examples")
 
     if #available(macOS 14.0, iOS 17.0, macCatalyst 17.0, tvOS 17.0, watchOS 10.0, *) {
         print("  - using an actor with a DispatchSerialQueue executor")
@@ -3957,9 +3950,8 @@ func exerciseIncrementalMigrationExamples() async {
 
         await site.acceptTransport(transport)
     }
+
 }
-
-
 
 ================================================
 FILE: Sources/Examples/main.swift
@@ -3975,21 +3967,17 @@ await exerciseBoundaryCrossingExamples()
 await exerciseConformanceMismatchExamples()
 await exerciseIncrementalMigrationExamples()
 
-
-
 ================================================
 FILE: Sources/Examples/PreconcurrencyImport.swift
 ================================================
 @preconcurrency import Library
 
-/// A non-isolated function  that accepts non-`Sendable` parameters.
+/// A non-isolated function that accepts non-`Sendable` parameters.
 func preconcurrency_updateStyle(backgroundColor: ColorComponents) async {
-    // Swift 5: no diagnostics
-    // Swift 6 Warning: sending 'backgroundColor' risks causing data races
-    await applyBackground(backgroundColor)
+// Swift 5: no diagnostics
+// Swift 6 Warning: sending 'backgroundColor' risks causing data races
+await applyBackground(backgroundColor)
 }
-
-
 
 ================================================
 FILE: Sources/Library/Library.swift
@@ -4000,9 +3988,9 @@ import Foundation
 ///
 /// This type is **not** Sendable because it is public. If we want a public type to be `Sendable`, we must annotate it explicitly.
 public struct ColorComponents {
-    public let red: Float
-    public let green: Float
-    public let blue: Float
+public let red: Float
+public let green: Float
+public let blue: Float
 
     public init(red: Float, green: Float, blue: Float) {
         self.red = red
@@ -4015,70 +4003,72 @@ public struct ColorComponents {
         self.green = 1.0
         self.blue = 1.0
     }
+
 }
 
 /// A variant of `ColorComponents` that could be marked as Sendable
 public struct RetroactiveColorComponents {
-    public let red: Float = 1.0
-    public let green: Float = 1.0
-    public let blue: Float = 1.0
+public let red: Float = 1.0
+public let green: Float = 1.0
+public let blue: Float = 1.0
 
     public init() {}
+
 }
 
 /// Explicitly-Sendable variant of `ColorComponents`.
 public struct SendableColorComponents : Sendable {
-    public let red: Float = 1.0
-    public let green: Float = 1.0
-    public let blue: Float = 1.0
+public let red: Float = 1.0
+public let green: Float = 1.0
+public let blue: Float = 1.0
 
     public init() {}
+
 }
 
 @MainActor
 public struct GlobalActorIsolatedColorComponents : Sendable {
-    public let red: Float = 1.0
-    public let green: Float = 1.0
-    public let blue: Float = 1.0
+public let red: Float = 1.0
+public let green: Float = 1.0
+public let blue: Float = 1.0
 
     public init() {}
+
 }
 
 public protocol Styler {
-    func applyStyle()
+func applyStyle()
 }
 
 @MainActor
 public protocol GloballyIsolatedStyler {
-    func applyStyle()
+func applyStyle()
 }
 
 public protocol PerRequirementIsolatedStyler {
-    @MainActor
-    func applyStyle()
+@MainActor
+func applyStyle()
 }
 
 @preconcurrency @MainActor
 public protocol StagedGloballyIsolatedStyler {
-    func applyStyle()
+func applyStyle()
 }
 
 public protocol AsyncStyler {
-    func applyStyle() async
+func applyStyle() async
 }
 
 open class UIStyler {
 }
 
 public protocol InheritingStyler: UIStyler {
-    func applyStyle()
+func applyStyle()
 }
 
 public protocol StylerConfiguration {
-    var primaryColorComponents: ColorComponents { get }
+var primaryColorComponents: ColorComponents { get }
 }
-
-
 
 ================================================
 FILE: Sources/ObjCLibrary/JPKJetPack.h
@@ -4090,13 +4080,12 @@ NS_ASSUME_NONNULL_BEGIN
 @interface JPKJetPack : NSObject
 
 /// Disable async to show how completion handlers work explicitly.
-+ (void)jetPackConfiguration:(void (NS_SWIFT_SENDABLE ^)(void))completionHandler NS_SWIFT_DISABLE_ASYNC;
+
+- (void)jetPackConfiguration:(void (NS_SWIFT_SENDABLE ^)(void))completionHandler NS_SWIFT_DISABLE_ASYNC;
 
 @end
 
 NS_ASSUME_NONNULL_END
-
-
 
 ================================================
 FILE: Sources/ObjCLibrary/JPKJetPack.m
@@ -4105,15 +4094,13 @@ FILE: Sources/ObjCLibrary/JPKJetPack.m
 
 @implementation JPKJetPack
 
-+ (void)jetPackConfiguration:(void (^)(void))completionHandler {
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        completionHandler();
-    });
-}
+- (void)jetPackConfiguration:(void (^)(void))completionHandler {
+  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+  completionHandler();
+  });
+  }
 
 @end
-
-
 
 ================================================
 FILE: Sources/ObjCLibrary/ObjCLibrary.h
@@ -4131,8 +4118,6 @@ NS_SWIFT_UI_ACTOR
 
 #import "JPKJetPack.h"
 
-
-
 ================================================
 FILE: Sources/ObjCLibrary/ObjCLibrary.m
 ================================================
@@ -4148,19 +4133,13 @@ FILE: Sources/ObjCLibrary/ObjCLibrary.m
 
 @end
 
-
-
 ================================================
 SYMLINK: Sources/Swift5Examples -> Examples
 ================================================
 
-
-
 ================================================
 SYMLINK: Sources/Swift6Examples -> Examples
 ================================================
-
-
 
 ================================================
 FILE: Tests/Library/LibraryTests.swift
@@ -4170,8 +4149,8 @@ import ObjCLibrary
 import Testing
 
 struct LibraryTest {
-    @Test func testNonIsolated() throws {
-        let color = ColorComponents()
+@Test func testNonIsolated() throws {
+let color = ColorComponents()
 
         #expect(color.red == 1.0)
     }
@@ -4188,24 +4167,23 @@ struct LibraryTest {
 
         await #expect(color.red == 1.0)
     }
+
 }
 
 extension LibraryTest {
-    @Test func testCallbackOperation() async {
-        await confirmation() { completion in
-            // function explicitly opts out of an generated async version
-            // so it requires a continuation here
-            await withCheckedContinuation { continuation in
-                JPKJetPack.jetPackConfiguration {
-                    completion()
-                    continuation.resume()
-                }
-            }
-        }
-    }
+@Test func testCallbackOperation() async {
+await confirmation() { completion in
+// function explicitly opts out of an generated async version
+// so it requires a continuation here
+await withCheckedContinuation { continuation in
+JPKJetPack.jetPackConfiguration {
+completion()
+continuation.resume()
 }
-
-
+}
+}
+}
+}
 
 ================================================
 FILE: Tests/Library/LibraryXCTests.swift
@@ -4215,8 +4193,8 @@ import Library
 import XCTest
 
 final class LibraryXCTests: XCTestCase {
-    func testNonIsolated() throws {
-        let color = ColorComponents()
+func testNonIsolated() throws {
+let color = ColorComponents()
 
         XCTAssertEqual(color.red, 1.0)
     }
@@ -4234,11 +4212,12 @@ final class LibraryXCTests: XCTestCase {
 
         XCTAssertEqual(redComponent, 1.0)
     }
+
 }
 
 extension LibraryXCTests {
-    func testCallbackOperation() async {
-        let exp = expectation(description: "config callback")
+func testCallbackOperation() async {
+let exp = expectation(description: "config callback")
 
         JPKJetPack.jetPackConfiguration {
             exp.fulfill()
@@ -4246,6 +4225,5 @@ extension LibraryXCTests {
 
         await fulfillment(of: [exp])
     }
+
 }
-
-

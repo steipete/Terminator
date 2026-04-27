@@ -7,6 +7,7 @@ Terminator's Hybrid Mode combines the power of macOS Accessibility APIs (via AXo
 ## What is Hybrid Mode?
 
 In traditional mode, Terminator uses AppleScript exclusively for all terminal interactions. While reliable, this approach can be slow, especially for operations like:
+
 - Enumerating windows and tabs
 - Focusing specific sessions
 - Checking session state
@@ -17,18 +18,19 @@ Hybrid Mode leverages the AXorcist library to use native Accessibility APIs for 
 
 Expected performance gains in Hybrid Mode:
 
-| Operation | Traditional | Hybrid | Improvement |
-|-----------|------------|--------|-------------|
-| List Windows | ~200ms | ~20ms | 10x faster |
-| Focus Session | ~150ms | ~15ms | 10x faster |
-| Check Busy State | ~100ms | ~10ms | 10x faster |
-| Activate App | ~300ms | ~30ms | 10x faster |
+| Operation        | Traditional | Hybrid | Improvement |
+| ---------------- | ----------- | ------ | ----------- |
+| List Windows     | ~200ms      | ~20ms  | 10x faster  |
+| Focus Session    | ~150ms      | ~15ms  | 10x faster  |
+| Check Busy State | ~100ms      | ~10ms  | 10x faster  |
+| Activate App     | ~300ms      | ~30ms  | 10x faster  |
 
 ## Enabling Hybrid Mode
 
 ### Quick Start
 
 Enable all hybrid features at once:
+
 ```bash
 export TERMINATOR_EXPERIMENTAL_AX=true
 ```
@@ -36,6 +38,7 @@ export TERMINATOR_EXPERIMENTAL_AX=true
 ### Granular Control
 
 Enable specific features individually:
+
 ```bash
 # Use AX for window/tab enumeration
 export TERMINATOR_AX_WINDOWS=true
@@ -69,6 +72,7 @@ When you first enable Hybrid Mode, macOS will prompt you to grant Accessibility 
 ### Operations Using Accessibility APIs
 
 These operations are significantly faster in Hybrid Mode:
+
 - **Window Enumeration**: Directly queries UI hierarchy
 - **Tab Discovery**: Finds tabs without AppleScript iteration
 - **Focus Management**: Sets focus without scripting delays
@@ -77,6 +81,7 @@ These operations are significantly faster in Hybrid Mode:
 ### Operations Still Using AppleScript
 
 These operations have no accessibility equivalents:
+
 - **Command Execution**: `do script` command
 - **Output Reading**: Terminal scrollback access
 - **TTY Information**: Device path retrieval
@@ -90,16 +95,19 @@ If an accessibility operation fails (e.g., due to permissions or API limitations
 ## Terminal-Specific Features
 
 ### Apple Terminal
+
 - Full AX support for window/tab enumeration
 - Native `AXBusy` attribute for busy state checking
 - Reliable tab title access via accessibility
 
 ### iTerm2
+
 - Enhanced tab discovery (handles both tab group and toolbar modes)
 - Session enrichment with iTerm-specific data
 - Optimized focus operations
 
 ### Ghosty
+
 - Limited accessibility support (best-effort)
 - Falls back to AppleScript for most operations
 
@@ -110,6 +118,7 @@ If an accessibility operation fails (e.g., due to permissions or API limitations
 If Hybrid Mode isn't working:
 
 1. Check if Accessibility permission is granted:
+
    ```bash
    # Run Terminator info command with debug logging
    TERMINATOR_LOG_LEVEL=debug terminator info
@@ -124,6 +133,7 @@ If Hybrid Mode isn't working:
 If you don't see performance improvements:
 
 1. Verify Hybrid Mode is actually enabled:
+
    ```bash
    # Check logs for "Hybrid" mentions
    TERMINATOR_EXPERIMENTAL_AX=true TERMINATOR_LOG_LEVEL=debug terminator list
@@ -134,12 +144,14 @@ If you don't see performance improvements:
 ### Debugging
 
 Enable debug logging to see which mode is being used:
+
 ```bash
 export TERMINATOR_LOG_LEVEL=debug
 export TERMINATOR_EXPERIMENTAL_AX=true
 ```
 
 Look for log messages like:
+
 - "Using AX for session enumeration"
 - "Using AX for session focus"
 - "AX operation failed, falling back to AppleScript"
@@ -154,6 +166,7 @@ Look for log messages like:
 ## Future Enhancements
 
 As AXorcist and macOS accessibility APIs evolve, we plan to:
+
 - Migrate more operations from AppleScript to AX
 - Improve Terminal.app integration
 - Add support for more terminal emulators
@@ -172,6 +185,7 @@ For users transitioning to Hybrid Mode:
 For developers and contributors:
 
 ### Architecture
+
 - `HybridTerminalControlBase`: Base class implementing the hybrid logic
 - `HybridAppleTerminalControl`: Terminal.app-specific optimizations
 - `HybridITermControl`: iTerm2-specific optimizations
@@ -191,6 +205,7 @@ To add accessibility support for a new operation:
 ## Feedback
 
 Hybrid Mode is experimental. Please report your experience:
+
 - Performance improvements observed
 - Any compatibility issues
 - Feature requests for AX migration

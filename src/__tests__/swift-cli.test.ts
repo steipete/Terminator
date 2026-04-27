@@ -36,20 +36,16 @@ describe("swift-cli", () => {
       const env = { TERMINATOR_APP: "iTerm" };
 
       // Set up successful execution
-      mockChildProcess.on.mockImplementation(
-        (event: string, handler: Function) => {
-          if (event === "close") {
-            setTimeout(() => handler(0, null), 0);
-          }
-        },
-      );
-      mockChildProcess.stdout.on.mockImplementation(
-        (event: string, handler: Function) => {
-          if (event === "data") {
-            handler(Buffer.from('{"execResult": {"output": "hello"}}'));
-          }
-        },
-      );
+      mockChildProcess.on.mockImplementation((event: string, handler: Function) => {
+        if (event === "close") {
+          setTimeout(() => handler(0, null), 0);
+        }
+      });
+      mockChildProcess.stdout.on.mockImplementation((event: string, handler: Function) => {
+        if (event === "data") {
+          handler(Buffer.from('{"execResult": {"output": "hello"}}'));
+        }
+      });
 
       const result = await invokeSwiftCLI(args, env, mockContext, 120000);
 
@@ -68,20 +64,16 @@ describe("swift-cli", () => {
       const args = ["execute", "test-tag"];
       const errorMessage = "Error: Something went wrong";
 
-      mockChildProcess.on.mockImplementation(
-        (event: string, handler: Function) => {
-          if (event === "close") {
-            setTimeout(() => handler(1, null), 0);
-          }
-        },
-      );
-      mockChildProcess.stderr.on.mockImplementation(
-        (event: string, handler: Function) => {
-          if (event === "data") {
-            handler(Buffer.from(errorMessage));
-          }
-        },
-      );
+      mockChildProcess.on.mockImplementation((event: string, handler: Function) => {
+        if (event === "close") {
+          setTimeout(() => handler(1, null), 0);
+        }
+      });
+      mockChildProcess.stderr.on.mockImplementation((event: string, handler: Function) => {
+        if (event === "data") {
+          handler(Buffer.from(errorMessage));
+        }
+      });
 
       const result = await invokeSwiftCLI(args, {}, mockContext, 120000);
 
@@ -92,15 +84,13 @@ describe("swift-cli", () => {
     it("should handle process errors", async () => {
       const args = ["execute", "test-tag"];
 
-      mockChildProcess.on.mockImplementation(
-        (event: string, handler: Function) => {
-          if (event === "error") {
-            handler(new Error("Spawn error"));
-          } else if (event === "close") {
-            setTimeout(() => handler(null, null), 0);
-          }
-        },
-      );
+      mockChildProcess.on.mockImplementation((event: string, handler: Function) => {
+        if (event === "error") {
+          handler(new Error("Spawn error"));
+        } else if (event === "close") {
+          setTimeout(() => handler(null, null), 0);
+        }
+      });
 
       const result = await invokeSwiftCLI(args, {}, mockContext, 120000);
 
@@ -123,14 +113,12 @@ describe("swift-cli", () => {
         },
       );
 
-      mockChildProcess.on.mockImplementation(
-        (event: string, handler: Function) => {
-          if (event === "close") {
-            // Simulate delayed close
-            setTimeout(() => handler(143, null), 100);
-          }
-        },
-      );
+      mockChildProcess.on.mockImplementation((event: string, handler: Function) => {
+        if (event === "close") {
+          // Simulate delayed close
+          setTimeout(() => handler(143, null), 100);
+        }
+      });
 
       const result = await invokeSwiftCLI(args, {}, mockContext, 120000);
 
@@ -142,14 +130,12 @@ describe("swift-cli", () => {
       const args = ["execute", "test-tag"];
       const timeout = 100; // 100ms timeout
 
-      mockChildProcess.on.mockImplementation(
-        (event: string, handler: Function) => {
-          if (event === "close") {
-            // Never close - simulate hanging process
-            // The timeout should trigger first
-          }
-        },
-      );
+      mockChildProcess.on.mockImplementation((event: string, _handler: Function) => {
+        if (event === "close") {
+          // Never close - simulate hanging process
+          // The timeout should trigger first
+        }
+      });
 
       const result = await invokeSwiftCLI(args, {}, mockContext, timeout);
 
@@ -163,13 +149,11 @@ describe("swift-cli", () => {
       const args = ["sessions"];
       const customEnv = { CUSTOM_VAR: "value" };
 
-      mockChildProcess.on.mockImplementation(
-        (event: string, handler: Function) => {
-          if (event === "close") {
-            handler(0, null);
-          }
-        },
-      );
+      mockChildProcess.on.mockImplementation((event: string, handler: Function) => {
+        if (event === "close") {
+          handler(0, null);
+        }
+      });
 
       await invokeSwiftCLI(args, customEnv, mockContext, 120000);
 
@@ -188,13 +172,11 @@ describe("swift-cli", () => {
     it("should handle signals correctly", async () => {
       const args = ["kill", "test-tag"];
 
-      mockChildProcess.on.mockImplementation(
-        (event: string, handler: Function) => {
-          if (event === "close") {
-            handler(null, "SIGTERM");
-          }
-        },
-      );
+      mockChildProcess.on.mockImplementation((event: string, handler: Function) => {
+        if (event === "close") {
+          handler(null, "SIGTERM");
+        }
+      });
 
       const result = await invokeSwiftCLI(args, {}, mockContext, 120000);
 
@@ -204,31 +186,25 @@ describe("swift-cli", () => {
     it("should accumulate stdout and stderr data", async () => {
       const args = ["read", "test-tag"];
 
-      mockChildProcess.on.mockImplementation(
-        (event: string, handler: Function) => {
-          if (event === "close") {
-            setTimeout(() => handler(0, null), 50);
-          }
-        },
-      );
+      mockChildProcess.on.mockImplementation((event: string, handler: Function) => {
+        if (event === "close") {
+          setTimeout(() => handler(0, null), 50);
+        }
+      });
 
-      mockChildProcess.stdout.on.mockImplementation(
-        (event: string, handler: Function) => {
-          if (event === "data") {
-            handler(Buffer.from("First chunk"));
-            handler(Buffer.from(" Second chunk"));
-          }
-        },
-      );
+      mockChildProcess.stdout.on.mockImplementation((event: string, handler: Function) => {
+        if (event === "data") {
+          handler(Buffer.from("First chunk"));
+          handler(Buffer.from(" Second chunk"));
+        }
+      });
 
-      mockChildProcess.stderr.on.mockImplementation(
-        (event: string, handler: Function) => {
-          if (event === "data") {
-            handler(Buffer.from("Error 1"));
-            handler(Buffer.from(" Error 2"));
-          }
-        },
-      );
+      mockChildProcess.stderr.on.mockImplementation((event: string, handler: Function) => {
+        if (event === "data") {
+          handler(Buffer.from("Error 1"));
+          handler(Buffer.from(" Error 2"));
+        }
+      });
 
       const result = await invokeSwiftCLI(args, {}, mockContext, 120000);
 

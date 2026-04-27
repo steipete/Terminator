@@ -1,11 +1,6 @@
 // Defines the main MCP tool, 'terminator.execute', including its schema,
 // description, and the central handler function that orchestrates calls to other modules.
-import {
-  TerminatorOptions,
-  TerminatorExecuteParams,
-  TerminatorResult,
-  SdkCallContext,
-} from "./types.js";
+import { TerminatorExecuteParams, TerminatorResult, SdkCallContext } from "./types.js";
 import {
   CURRENT_TERMINAL_APP,
   DEFAULT_BACKGROUND_STARTUP_SECONDS,
@@ -18,17 +13,9 @@ import {
 } from "./config.js";
 import { invokeSwiftCLI, SwiftCLIResult, SWIFT_CLI_PATH } from "./swift-cli.js";
 import * as fs from "node:fs";
-import {
-  resolveEffectiveProjectPath,
-  resolveDefaultTag,
-  formatCliOutputForAI,
-} from "./utils.js";
+import { resolveEffectiveProjectPath, resolveDefaultTag, formatCliOutputForAI } from "./utils.js";
 import { logger, getLoggerConfig } from "./logger.js";
-import {
-  validateExecuteParams,
-  validateEnvironmentVariables,
-} from "./validation.js";
-import { SERVER_VERSION } from "./config.js";
+import { validateExecuteParams, validateEnvironmentVariables } from "./validation.js";
 
 export const terminatorTool = {
   name: "execute",
@@ -45,8 +32,7 @@ export const terminatorTool = {
       },
       project_path: {
         type: "string",
-        description:
-          "Absolute path to the project directory. This is a mandatory field.",
+        description: "Absolute path to the project directory. This is a mandatory field.",
       },
       tag: {
         type: "string",
@@ -74,8 +60,7 @@ export const terminatorTool = {
       },
       timeout: {
         type: "number",
-        description:
-          "Timeout in seconds. Defaults depend on background flag (FG: 60s, BG: 5s).",
+        description: "Timeout in seconds. Defaults depend on background flag (FG: 60s, BG: 5s).",
         optional: true,
       },
       focus: {
@@ -115,15 +100,9 @@ export const terminatorTool = {
 
     // Map action names to CLI commands
     const internalAction =
-      action === "execute"
-        ? "execute"
-        : action === "sessions"
-          ? "sessions"
-          : action;
+      action === "execute" ? "execute" : action === "sessions" ? "sessions" : action;
 
-    if (
-      !["execute", "read", "sessions", "info", "focus", "kill"].includes(action)
-    ) {
+    if (!["execute", "read", "sessions", "info", "focus", "kill"].includes(action)) {
       return {
         success: false,
         message: `Error: Invalid action '${action}'. Must be one of execute, read, sessions, info, focus, kill.`,
@@ -134,10 +113,7 @@ export const terminatorTool = {
 
     debugLog(`Canonical options after processing:`, options);
 
-    const effectiveProjectPath = resolveEffectiveProjectPath(
-      params.project_path,
-      undefined,
-    );
+    const effectiveProjectPath = resolveEffectiveProjectPath(params.project_path, undefined);
     if (!effectiveProjectPath) {
       return {
         success: false,
@@ -147,22 +123,17 @@ export const terminatorTool = {
 
     let commandOpt: string | undefined =
       typeof options.command === "string" ? options.command : undefined;
-    if (internalAction === "execute" && options.command === undefined)
-      commandOpt = "";
+    if (internalAction === "execute" && options.command === undefined) commandOpt = "";
 
-    let lines =
-      typeof options.lines === "number" ? options.lines : DEFAULT_LINES;
-    if (typeof options.lines === "string")
-      lines = parseInt(options.lines, 10) || DEFAULT_LINES;
+    let lines = typeof options.lines === "number" ? options.lines : DEFAULT_LINES;
+    if (typeof options.lines === "string") lines = parseInt(options.lines, 10) || DEFAULT_LINES;
 
     let backgroundVal = options.background;
     let background = DEFAULT_BACKGROUND_EXECUTION; // Default value
     if (typeof backgroundVal === "boolean") {
       background = backgroundVal;
     } else if (typeof backgroundVal === "string") {
-      background = ["true", "1", "t", "yes", "on"].includes(
-        backgroundVal.toLowerCase(),
-      );
+      background = ["true", "1", "t", "yes", "on"].includes(backgroundVal.toLowerCase());
     }
 
     let focusVal = options.focus;
@@ -173,8 +144,7 @@ export const terminatorTool = {
       focus = ["true", "1", "t", "yes", "on"].includes(focusVal.toLowerCase());
     }
 
-    let timeoutOverride =
-      typeof options.timeout === "number" ? options.timeout : undefined;
+    let timeoutOverride = typeof options.timeout === "number" ? options.timeout : undefined;
     if (typeof options.timeout === "string")
       timeoutOverride = parseInt(options.timeout, 10) || undefined;
 
@@ -188,10 +158,7 @@ export const terminatorTool = {
     ) {
       const errorMsg =
         "Error: Could not determine a session tag even with a project_path. This indicates an internal issue.";
-      logger.error(
-        { tagVal: options.tag, projPath: effectiveProjectPath },
-        errorMsg,
-      );
+      logger.error({ tagVal: options.tag, projPath: effectiveProjectPath }, errorMsg);
       return { success: false, message: errorMsg };
     }
 
@@ -202,7 +169,11 @@ export const terminatorTool = {
       } else if (internalAction === "execute") {
         // Execute command takes tag as positional argument
         cliArgs.push(tag);
-      } else if (internalAction === "read" || internalAction === "focus" || internalAction === "kill") {
+      } else if (
+        internalAction === "read" ||
+        internalAction === "focus" ||
+        internalAction === "kill"
+      ) {
         // Read, focus and kill commands take tag as --tag option
         cliArgs.push("--tag", tag);
       }
@@ -227,13 +198,13 @@ export const terminatorTool = {
     if (["execute", "read"].includes(internalAction)) {
       cliArgs.push("--focus-mode", focusModeCli);
     }
-    
+
     // Kill command has different focus parameters
     if (internalAction === "kill") {
       cliArgs.push("--focus-mode", focusModeCli);
       cliArgs.push("--focus-on-kill", focus ? "true" : "false");
     }
-    
+
     // Focus command doesn't need focus-mode as it always focuses
 
     if (internalAction === "execute") {
@@ -245,11 +216,7 @@ export const terminatorTool = {
       }
     }
 
-    if (
-      internalAction === "sessions" ||
-      internalAction === "info" ||
-      internalAction === "read"
-    ) {
+    if (internalAction === "sessions" || internalAction === "info" || internalAction === "read") {
       cliArgs.push("--json");
     }
     if (internalAction === "sessions" && tag && options.tag) {
@@ -290,12 +257,9 @@ export const terminatorTool = {
             logLevel: loggerConfig.logLevel,
             consoleLogging: loggerConfig.consoleLogging,
             environmentVariables: {
-              TERMINATOR_LOG_FILE:
-                process.env.TERMINATOR_LOG_FILE || "(not set)",
-              TERMINATOR_LOG_LEVEL:
-                process.env.TERMINATOR_LOG_LEVEL || "(not set)",
-              TERMINATOR_CONSOLE_LOGGING:
-                process.env.TERMINATOR_CONSOLE_LOGGING || "(not set)",
+              TERMINATOR_LOG_FILE: process.env.TERMINATOR_LOG_FILE || "(not set)",
+              TERMINATOR_LOG_LEVEL: process.env.TERMINATOR_LOG_LEVEL || "(not set)",
+              TERMINATOR_CONSOLE_LOGGING: process.env.TERMINATOR_CONSOLE_LOGGING || "(not set)",
             },
             configurationIssues: envIssues,
           };
@@ -329,8 +293,7 @@ export const terminatorTool = {
       if (result.internalTimeoutHit) {
         return {
           success: false,
-          message:
-            "Terminator Swift CLI unresponsive and was terminated by the wrapper.",
+          message: "Terminator Swift CLI unresponsive and was terminated by the wrapper.",
         };
       }
 
@@ -342,17 +305,11 @@ export const terminatorTool = {
         let errorDetails: string[] = [];
 
         // Check for common issues
-        if (
-          errMsg.includes("Permission denied") ||
-          errMsg.includes("not authorized")
-        ) {
+        if (errMsg.includes("Permission denied") || errMsg.includes("not authorized")) {
           errorDetails.push(
             "Missing automation permissions. Grant Terminal/iTerm control in System Settings → Privacy & Security → Automation",
           );
-        } else if (
-          errMsg.includes("command not found") ||
-          errMsg.includes("No such file")
-        ) {
+        } else if (errMsg.includes("command not found") || errMsg.includes("No such file")) {
           errorDetails.push(
             "Swift CLI binary may be missing or corrupt. Try reinstalling the package",
           );
@@ -364,33 +321,23 @@ export const terminatorTool = {
             "Swift CLI crashed. This may be due to architecture mismatch or corrupted binary",
           );
         } else if (errMsg === "") {
-          errorDetails.push(
-            "Swift CLI terminated without output. Possible causes:",
-          );
+          errorDetails.push("Swift CLI terminated without output. Possible causes:");
           errorDetails.push("• Missing automation permissions (most common)");
-          errorDetails.push(
-            "• First run permission prompt waiting for response",
-          );
+          errorDetails.push("• First run permission prompt waiting for response");
           errorDetails.push("• Binary corruption or architecture mismatch");
           errorDetails.push("• Terminal app not installed or not running");
         }
 
         // Add diagnostic info
         errorDetails.push(`Terminal app: ${CURRENT_TERMINAL_APP}`);
-        errorDetails.push(
-          `Action: ${internalAction}, Tag: ${tag || "auto-generated"}`,
-        );
+        errorDetails.push(`Action: ${internalAction}, Tag: ${tag || "auto-generated"}`);
         if (commandOpt) errorDetails.push(`Command: ${commandOpt}`);
         errorDetails.push(`Project: ${effectiveProjectPath}`);
 
         // Add troubleshooting steps
         errorDetails.push("\nTroubleshooting:");
-        errorDetails.push(
-          "1. Check System Settings → Privacy & Security → Automation",
-        );
-        errorDetails.push(
-          "2. Try: tccutil reset AppleEvents com.apple.Terminal",
-        );
+        errorDetails.push("1. Check System Settings → Privacy & Security → Automation");
+        errorDetails.push("2. Try: tccutil reset AppleEvents com.apple.Terminal");
         errorDetails.push("3. Check logs: ~/Library/Logs/terminator-mcp/");
 
         const fullError = errorDetails.join("\n");
@@ -409,10 +356,7 @@ export const terminatorTool = {
         );
         return { success: true, message };
       } else {
-        let errMsg =
-          result.stderr.trim() ||
-          result.stdout.trim() ||
-          "Unknown error from Swift CLI";
+        let errMsg = result.stderr.trim() || result.stdout.trim() || "Unknown error from Swift CLI";
 
         // Handle specific exit codes
         if (result.exitCode === 2) {

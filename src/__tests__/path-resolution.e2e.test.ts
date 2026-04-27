@@ -121,9 +121,7 @@ describe("Path Resolution E2E Tests", () => {
       const projectPathIndex = calledArgs.indexOf("--project-path");
       const expandedPath = calledArgs[projectPathIndex + 1];
 
-      expect(expandedPath).toBe(
-        path.join(os.homedir(), "Documents", "Projects", "my-app"),
-      );
+      expect(expandedPath).toBe(path.join(os.homedir(), "Documents", "Projects", "my-app"));
     });
   });
 
@@ -146,13 +144,7 @@ describe("Path Resolution E2E Tests", () => {
     });
 
     it("should create deeply nested directories", async () => {
-      const deepDir = path.join(
-        testDir,
-        "level1",
-        "level2",
-        "level3",
-        "level4",
-      );
+      const deepDir = path.join(testDir, "level1", "level2", "level3", "level4");
       expect(fs.existsSync(deepDir)).toBe(false);
 
       const params: TerminatorExecuteParams = {

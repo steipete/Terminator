@@ -49,9 +49,7 @@ describe("logger", () => {
       });
 
       // Mock console.error to suppress warning
-      const consoleError = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 
       const { getLoggerConfig } = await import("../logger.js");
       const config = getLoggerConfig();
@@ -91,30 +89,23 @@ describe("logger", () => {
       },
     );
 
-    it.each(["DEBUG", "INFO", "WARN"])(
-      'should handle uppercase log level "%s"',
-      async (level) => {
-        process.env.TERMINATOR_LOG_LEVEL = level;
-        const { getLoggerConfig } = await import("../logger.js");
-        const config = getLoggerConfig();
-        expect(config.logLevel).toBe(level.toLowerCase());
-      },
-    );
+    it.each(["DEBUG", "INFO", "WARN"])('should handle uppercase log level "%s"', async (level) => {
+      process.env.TERMINATOR_LOG_LEVEL = level;
+      const { getLoggerConfig } = await import("../logger.js");
+      const config = getLoggerConfig();
+      expect(config.logLevel).toBe(level.toLowerCase());
+    });
 
     it("should fall back to default for invalid log level", async () => {
       process.env.TERMINATOR_LOG_LEVEL = "invalid";
 
       // Mock console.error to suppress warning
-      const consoleError = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 
       const { getLoggerConfig } = await import("../logger.js");
       const config = getLoggerConfig();
       expect(config.logLevel).toBe("info");
-      expect(consoleError).toHaveBeenCalledWith(
-        expect.stringContaining("Invalid log level"),
-      );
+      expect(consoleError).toHaveBeenCalledWith(expect.stringContaining("Invalid log level"));
 
       consoleError.mockRestore();
     });
@@ -134,15 +125,12 @@ describe("logger", () => {
       expect(config.consoleLogging).toBe(true);
     });
 
-    it.each(["false", "0", "yes", "on"])(
-      'should return false for "%s"',
-      async (value) => {
-        process.env.TERMINATOR_CONSOLE_LOGGING = value;
-        const { getLoggerConfig } = await import("../logger.js");
-        const config = getLoggerConfig();
-        expect(config.consoleLogging).toBe(false);
-      },
-    );
+    it.each(["false", "0", "yes", "on"])('should return false for "%s"', async (value) => {
+      process.env.TERMINATOR_CONSOLE_LOGGING = value;
+      const { getLoggerConfig } = await import("../logger.js");
+      const config = getLoggerConfig();
+      expect(config.consoleLogging).toBe(false);
+    });
   });
 
   describe("logger instance", () => {
@@ -160,9 +148,7 @@ describe("logger", () => {
   describe("flushLogger", () => {
     it("should flush the logger", async () => {
       const { logger, flushLogger } = await import("../logger.js");
-      const flushSpy = vi
-        .spyOn(logger, "flush")
-        .mockImplementation((cb: any) => cb());
+      const flushSpy = vi.spyOn(logger, "flush").mockImplementation((cb: any) => cb());
 
       await flushLogger();
       expect(flushSpy).toHaveBeenCalled();

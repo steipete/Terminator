@@ -11,33 +11,31 @@ The goal is an MCP plugin (`terminator`) providing a terminal utility. Originall
 
 **1.1. Purpose & Scope**
 Terminator is an `npx`-installable Model Context Protocol (MCP) plugin designed to provide AI agents with robust, simplified, and intelligent control over macOS terminal sessions. Its primary goal is to allow AI assistants to execute shell commands, retrieve output, and manage terminal processes in a way that:
-    *   Prevents hanging or long-running commands from breaking the AI's primary execution loop.
-    *   Minimizes user focus disruption, a core design principle.
-    *   Offers a clear, consistent, and minimal interface to the AI agent.
-    *   Leverages existing terminal applications (Apple Terminal, iTerm2, Ghosty) as the display and execution environment.
+_ Prevents hanging or long-running commands from breaking the AI's primary execution loop.
+_ Minimizes user focus disruption, a core design principle.
+_ Offers a clear, consistent, and minimal interface to the AI agent.
+_ Leverages existing terminal applications (Apple Terminal, iTerm2, Ghosty) as the display and execution environment.
 
 **1.2. Goals**
-    *   **Reliability:** Stable operation, especially for process control and session management. Consistent behavior across supported terminal applications.
-    *   **Simplicity for AI:** Minimal set of actions and options for the AI agent; clear, actionable feedback. The primary action, `execute`, is now the default if no action is specified.
-    *   **User Experience:** Minimize focus stealing; respect user's terminal environment and preferences. Provide clear feedback on operations.
-    *   **Robustness:** Handle variations in AI input gracefully, including lenient parsing of options.
-    *   **Configurability (User):** Allow users to set sensible defaults for their environment via environment variables, which are then reflected in the AI tool's description.
+_ **Reliability:** Stable operation, especially for process control and session management. Consistent behavior across supported terminal applications.
+_ **Simplicity for AI:** Minimal set of actions and options for the AI agent; clear, actionable feedback. The primary action, `execute`, is now the default if no action is specified.
+_ **User Experience:** Minimize focus stealing; respect user's terminal environment and preferences. Provide clear feedback on operations.
+_ **Robustness:** Handle variations in AI input gracefully, including lenient parsing of options. \* **Configurability (User):** Allow users to set sensible defaults for their environment via environment variables, which are then reflected in the AI tool's description.
 
 **1.3. Non-Goals (for V1)**
-    *   Building a custom terminal emulator.
-    *   Supporting operating systems other than macOS.
-    *   Providing interactive STDIO sessions for the AI with processes in the terminal (i.e., AI cannot respond to prompts like password requests within a `terminator`-managed session).
-    *   YAML configuration file support (configuration via environment variables and CLI flags only for V1).
-    *   Advanced features like session templating, complex real-time output streaming (beyond initial output for background tasks), or cloud storage integration.
-    *   Shell-agnostic input: The `command` is passed to the user's default shell as configured in the terminal application. `terminator` does not attempt to interpret or transpile commands between shells.
+_ Building a custom terminal emulator.
+_ Supporting operating systems other than macOS.
+_ Providing interactive STDIO sessions for the AI with processes in the terminal (i.e., AI cannot respond to prompts like password requests within a `terminator`-managed session).
+_ YAML configuration file support (configuration via environment variables and CLI flags only for V1).
+_ Advanced features like session templating, complex real-time output streaming (beyond initial output for background tasks), or cloud storage integration.
+_ Shell-agnostic input: The `command` is passed to the user's default shell as configured in the terminal application. `terminator` does not attempt to interpret or transpile commands between shells.
 
 **2. System Architecture**
 
-Terminator consists of two main components:
-    1.  **Node.js MCP Wrapper (`@steipete/terminator-mcp`):** The NPM package that implements the MCP server logic. It interfaces with the AI agent/MCP host and orchestrates calls to the Swift CLI.
-    2.  **Swift CLI (`terminator`):** A native macOS command-line executable bundled within the NPM package. It performs all direct interactions with the macOS system and terminal applications.
+Terminator consists of two main components: 1. **Node.js MCP Wrapper (`@steipete/terminator-mcp`):** The NPM package that implements the MCP server logic. It interfaces with the AI agent/MCP host and orchestrates calls to the Swift CLI. 2. **Swift CLI (`terminator`):** A native macOS command-line executable bundled within the NPM package. It performs all direct interactions with the macOS system and terminal applications.
 
 **Diagram (Conceptual):**
+
 ```
 +---------------------+     MCP      +-------------------------+     Internal     +----------------------+
 | AI Agent / MCP Host | <----------> | Node.js Wrapper         | <--------------> | Swift CLI            |
@@ -50,7 +48,8 @@ Terminator consists of two main components:
                                                                                         AppleScript
                                                                                         (to Terminal Apps)
 ```
-*Note: `stdin` to Swift CLI is not used for V1. Communication is via CLI arguments and environment variables for input, and `stdout` (for JSON or raw output) / `stderr` (for errors) / exit codes for output.*
+
+_Note: `stdin` to Swift CLI is not used for V1. Communication is via CLI arguments and environment variables for input, and `stdout` (for JSON or raw output) / `stderr` (for errors) / exit codes for output._
 
 **3. Detailed Component Specifications**
 

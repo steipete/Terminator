@@ -57,22 +57,16 @@ describe("utils", () => {
 
     it("should handle paths with multiple slashes", () => {
       vi.mocked(os.homedir).mockReturnValue("/Users/testuser");
-      vi.mocked(path.join).mockImplementation((...args) =>
-        args.filter(Boolean).join("/"),
-      );
+      vi.mocked(path.join).mockImplementation((...args) => args.filter(Boolean).join("/"));
 
-      expect(expandTilde("~//Documents//Projects")).toBe(
-        "/Users/testuser/Documents/Projects",
-      );
+      expect(expandTilde("~//Documents//Projects")).toBe("/Users/testuser/Documents/Projects");
     });
 
     it("should handle tilde with spaces", () => {
       vi.mocked(os.homedir).mockReturnValue("/Users/test user");
       vi.mocked(path.join).mockImplementation((...args) => args.join("/"));
 
-      expect(expandTilde("~/My Documents")).toBe(
-        "/Users/test user/My Documents",
-      );
+      expect(expandTilde("~/My Documents")).toBe("/Users/test user/My Documents");
     });
   });
 
@@ -127,9 +121,7 @@ describe("utils", () => {
         isDirectory: () => true,
       } as any);
 
-      expect(resolveEffectiveProjectPath(absolutePath, "/fallback")).toBe(
-        absolutePath,
-      );
+      expect(resolveEffectiveProjectPath(absolutePath, "/fallback")).toBe(absolutePath);
     });
 
     it("should resolve relative path from current directory", () => {
@@ -142,9 +134,7 @@ describe("utils", () => {
         isDirectory: () => true,
       } as any);
 
-      expect(resolveEffectiveProjectPath(relativePath, "/fallback")).toBe(
-        resolvedPath,
-      );
+      expect(resolveEffectiveProjectPath(relativePath, "/fallback")).toBe(resolvedPath);
     });
 
     it("should use fallback path when primary path is null", () => {
@@ -155,9 +145,7 @@ describe("utils", () => {
         isDirectory: () => true,
       } as any);
 
-      expect(resolveEffectiveProjectPath(null as any, fallbackPath)).toBe(
-        fallbackPath,
-      );
+      expect(resolveEffectiveProjectPath(null as any, fallbackPath)).toBe(fallbackPath);
     });
 
     it("should return null when path exists but is not a directory", () => {
@@ -190,10 +178,7 @@ describe("utils", () => {
         isDirectory: () => true,
       } as any);
 
-      const result = resolveEffectiveProjectPath(
-        "~/Documents/Projects/my-app",
-        "/fallback",
-      );
+      const result = resolveEffectiveProjectPath("~/Documents/Projects/my-app", "/fallback");
       expect(result).toBe("/Users/testuser/Documents/Projects/my-app");
     });
 
@@ -234,9 +219,7 @@ describe("utils", () => {
         isDirectory: () => true,
       } as any);
 
-      expect(resolveEffectiveProjectPath(specialPath, "/fallback")).toBe(
-        specialPath,
-      );
+      expect(resolveEffectiveProjectPath(specialPath, "/fallback")).toBe(specialPath);
     });
 
     it("should handle relative paths with tilde", () => {
@@ -249,10 +232,7 @@ describe("utils", () => {
         isDirectory: () => true,
       } as any);
 
-      const result = resolveEffectiveProjectPath(
-        "~/relative/path",
-        "/fallback",
-      );
+      const result = resolveEffectiveProjectPath("~/relative/path", "/fallback");
       expect(result).toBe("/Users/testuser/relative/path");
     });
 
@@ -303,9 +283,7 @@ describe("utils", () => {
         isDirectory: () => true,
       } as any);
 
-      expect(resolveEffectiveProjectPath(networkPath, "/fallback")).toBe(
-        networkPath,
-      );
+      expect(resolveEffectiveProjectPath(networkPath, "/fallback")).toBe(networkPath);
     });
   });
 
@@ -320,9 +298,7 @@ describe("utils", () => {
 
     it("should generate tag from project path when tag is not provided", () => {
       vi.mocked(path.basename).mockReturnValue("project-name");
-      expect(resolveDefaultTag(undefined, "/path/to/project-name")).toBe(
-        "project-name",
-      );
+      expect(resolveDefaultTag(undefined, "/path/to/project-name")).toBe("project-name");
     });
 
     it("should return null when neither tag nor project path is provided", () => {
@@ -347,16 +323,12 @@ describe("utils", () => {
 
     it('should return formatted JSON for action "sessions"', () => {
       const jsonData = { sessions: ["session1", "session2"] };
-      expect(extractOutputForAction("sessions", jsonData)).toBe(
-        JSON.stringify(jsonData, null, 2),
-      );
+      expect(extractOutputForAction("sessions", jsonData)).toBe(JSON.stringify(jsonData, null, 2));
     });
 
     it('should return formatted JSON for action "info"', () => {
       const jsonData = { version: "1.0.0", app: "iTerm" };
-      expect(extractOutputForAction("info", jsonData)).toBe(
-        JSON.stringify(jsonData, null, 2),
-      );
+      expect(extractOutputForAction("info", jsonData)).toBe(JSON.stringify(jsonData, null, 2));
     });
 
     it("should return null for unsupported actions", () => {
@@ -379,14 +351,7 @@ describe("utils", () => {
       });
       const result = { ...mockResult, stdout: jsonOutput };
 
-      const formatted = formatCliOutputForAI(
-        "execute",
-        result,
-        "npm test",
-        "test-tag",
-        false,
-        30,
-      );
+      const formatted = formatCliOutputForAI("execute", result, "npm test", "test-tag", false, 30);
       expect(formatted).toContain("Command output");
       expect(formatted).toContain("npm test");
       expect(formatted).toContain("test-tag");
@@ -396,13 +361,7 @@ describe("utils", () => {
       const jsonOutput = JSON.stringify({ readOutput: "Session output" });
       const result = { ...mockResult, stdout: jsonOutput };
 
-      const formatted = formatCliOutputForAI(
-        "read",
-        result,
-        undefined,
-        "test-tag",
-        false,
-      );
+      const formatted = formatCliOutputForAI("read", result, undefined, "test-tag", false);
       expect(formatted).toContain("Session output");
     });
 
@@ -411,13 +370,7 @@ describe("utils", () => {
       const jsonOutput = JSON.stringify(sessions);
       const result = { ...mockResult, stdout: jsonOutput };
 
-      const formatted = formatCliOutputForAI(
-        "sessions",
-        result,
-        undefined,
-        undefined,
-        false,
-      );
+      const formatted = formatCliOutputForAI("sessions", result, undefined, undefined, false);
       expect(formatted).toContain("session1");
       expect(formatted).toContain("session2");
     });
@@ -425,13 +378,7 @@ describe("utils", () => {
     it("should handle kill action output", () => {
       const result = { ...mockResult, stdout: "Process killed" };
 
-      const formatted = formatCliOutputForAI(
-        "kill",
-        result,
-        undefined,
-        "test-tag",
-        false,
-      );
+      const formatted = formatCliOutputForAI("kill", result, undefined, "test-tag", false);
       expect(formatted).toContain("test-tag");
       expect(formatted).toContain("killed");
     });
@@ -439,13 +386,7 @@ describe("utils", () => {
     it("should handle focus action output", () => {
       const result = { ...mockResult, stdout: "Window focused" };
 
-      const formatted = formatCliOutputForAI(
-        "focus",
-        result,
-        undefined,
-        "test-tag",
-        false,
-      );
+      const formatted = formatCliOutputForAI("focus", result, undefined, "test-tag", false);
       expect(formatted).toContain("test-tag");
       expect(formatted).toContain("focused");
     });
@@ -453,13 +394,7 @@ describe("utils", () => {
     it("should handle JSON parsing errors gracefully", () => {
       const result = { ...mockResult, stdout: "Invalid JSON" };
 
-      const formatted = formatCliOutputForAI(
-        "execute",
-        result,
-        "echo test",
-        "test-tag",
-        false,
-      );
+      const formatted = formatCliOutputForAI("execute", result, "echo test", "test-tag", false);
       expect(formatted).toContain("Invalid JSON");
     });
 
@@ -469,26 +404,14 @@ describe("utils", () => {
       });
       const result = { ...mockResult, stdout: jsonOutput };
 
-      const formatted = formatCliOutputForAI(
-        "execute",
-        result,
-        "npm start",
-        "test-tag",
-        true,
-      );
+      const formatted = formatCliOutputForAI("execute", result, "npm start", "test-tag", true);
       expect(formatted).toContain("background");
     });
 
     it("should handle empty command execution", () => {
       const result = { ...mockResult, stdout: "" };
 
-      const formatted = formatCliOutputForAI(
-        "execute",
-        result,
-        "",
-        "test-tag",
-        false,
-      );
+      const formatted = formatCliOutputForAI("execute", result, "", "test-tag", false);
       expect(formatted).toBe("Terminator: Session 'test-tag' prepared.");
     });
 
@@ -498,40 +421,21 @@ describe("utils", () => {
         stdout: "Execution timed out after 30 seconds",
       };
 
-      const formatted = formatCliOutputForAI(
-        "execute",
-        result,
-        "sleep 100",
-        "test-tag",
-        false,
-        30,
-      );
+      const formatted = formatCliOutputForAI("execute", result, "sleep 100", "test-tag", false, 30);
       expect(formatted).toContain("timed out after 30s");
     });
 
     it("should handle stderr output for exec", () => {
       const result = { ...mockResult, stderr: "Error: Command failed" };
 
-      const formatted = formatCliOutputForAI(
-        "execute",
-        result,
-        "invalid-cmd",
-        "test-tag",
-        false,
-      );
+      const formatted = formatCliOutputForAI("execute", result, "invalid-cmd", "test-tag", false);
       expect(formatted).toContain("Error Output: Error: Command failed");
     });
 
     it("should handle empty list result", () => {
       const result = { ...mockResult, stdout: "[]" };
 
-      const formatted = formatCliOutputForAI(
-        "sessions",
-        result,
-        undefined,
-        undefined,
-        false,
-      );
+      const formatted = formatCliOutputForAI("sessions", result, undefined, undefined, false);
       expect(formatted).toBe("Terminator: No active sessions found.");
     });
 
@@ -546,13 +450,7 @@ describe("utils", () => {
       ];
       const result = { ...mockResult, stdout: JSON.stringify(sessions) };
 
-      const formatted = formatCliOutputForAI(
-        "sessions",
-        result,
-        undefined,
-        undefined,
-        false,
-      );
+      const formatted = formatCliOutputForAI("sessions", result, undefined, undefined, false);
       expect(formatted).toContain("Found 2 session(s)");
       expect(formatted).toContain("🤖💥 Project1 / build (Busy)");
       expect(formatted).toContain("🤖💥 Project2 / test (Idle)");
@@ -569,13 +467,7 @@ describe("utils", () => {
       };
       const result = { ...mockResult, stdout: JSON.stringify(infoData) };
 
-      const formatted = formatCliOutputForAI(
-        "info",
-        result,
-        undefined,
-        undefined,
-        false,
-      );
+      const formatted = formatCliOutputForAI("info", result, undefined, undefined, false);
       expect(formatted).toContain("Terminator v1.0.0");
       expect(formatted).toContain("App=iTerm");
       expect(formatted).toContain("Sessions: 0");
@@ -584,13 +476,7 @@ describe("utils", () => {
     it("should handle malformed JSON gracefully", () => {
       const result = { ...mockResult, stdout: "{invalid json" };
 
-      const formatted = formatCliOutputForAI(
-        "sessions",
-        result,
-        undefined,
-        undefined,
-        false,
-      );
+      const formatted = formatCliOutputForAI("sessions", result, undefined, undefined, false);
       expect(formatted).toContain("output parsing failed");
       expect(formatted).toContain("{invalid json");
     });
@@ -602,13 +488,7 @@ describe("utils", () => {
         stdout: "Process terminated",
       };
 
-      const formatted = formatCliOutputForAI(
-        "kill",
-        result,
-        undefined,
-        "build-tag",
-        false,
-      );
+      const formatted = formatCliOutputForAI("kill", result, undefined, "build-tag", false);
       expect(formatted).toContain("successfully targeted for termination");
       expect(formatted).toContain("build-tag");
     });
@@ -616,13 +496,7 @@ describe("utils", () => {
     it("should handle failed kill action", () => {
       const result = { ...mockResult, exitCode: 1, stdout: "No such process" };
 
-      const formatted = formatCliOutputForAI(
-        "kill",
-        result,
-        undefined,
-        "missing-tag",
-        false,
-      );
+      const formatted = formatCliOutputForAI("kill", result, undefined, "missing-tag", false);
       expect(formatted).toContain("could not be killed");
       expect(formatted).toContain("missing-tag");
     });
@@ -630,13 +504,7 @@ describe("utils", () => {
     it("should handle focus action with output", () => {
       const result = { ...mockResult, stdout: "Window brought to front" };
 
-      const formatted = formatCliOutputForAI(
-        "focus",
-        result,
-        undefined,
-        "ui-tag",
-        false,
-      );
+      const formatted = formatCliOutputForAI("focus", result, undefined, "ui-tag", false);
       expect(formatted).toContain("focused");
       expect(formatted).toContain("ui-tag");
     });
@@ -644,40 +512,21 @@ describe("utils", () => {
     it("should handle unknown action", () => {
       const result = { ...mockResult, stdout: "Some output" };
 
-      const formatted = formatCliOutputForAI(
-        "unknown" as any,
-        result,
-        undefined,
-        undefined,
-        false,
-      );
+      const formatted = formatCliOutputForAI("unknown" as any, result, undefined, undefined, false);
       expect(formatted).toBe("Some output");
     });
 
     it("should handle background timeout correctly", () => {
       const result = { ...mockResult, stdout: "Command execution timed out" };
 
-      const formatted = formatCliOutputForAI(
-        "execute",
-        result,
-        "npm start",
-        "server",
-        true,
-      );
+      const formatted = formatCliOutputForAI("execute", result, "npm start", "server", true);
       expect(formatted).toContain("timed out after 5s"); // DEFAULT_BACKGROUND_STARTUP_SECONDS
     });
 
     it("should handle foreground timeout with custom value", () => {
       const result = { ...mockResult, stderr: "Execution timed out" };
 
-      const formatted = formatCliOutputForAI(
-        "execute",
-        result,
-        "build.sh",
-        "build",
-        false,
-        120,
-      );
+      const formatted = formatCliOutputForAI("execute", result, "build.sh", "build", false, 120);
       expect(formatted).toContain("timed out after 120s");
     });
   });

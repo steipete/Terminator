@@ -11,6 +11,7 @@ npm run prepare-release
 ```
 
 This script performs the following checks:
+
 - **Git Status**: Ensures you're on the main branch with no uncommitted changes
 - **Required Fields**: Validates all required fields in package.json
 - **Dependencies**: Checks for missing or outdated dependencies
@@ -66,8 +67,8 @@ If all checks pass, follow the manual steps below.
 1.  **NPM Publish Dry Run:**
     - This step is crucial to verify what files will be included in the package without actually publishing.
     - `npm publish --access public --tag <your_tag> --dry-run`
-        - Replace `<your_tag>` with the appropriate tag (e.g., `beta`, `latest`). For pre-releases, always use a specific tag like `beta` or `rc`.
-        - `--access public` is needed for scoped packages if they are intended to be public.
+      - Replace `<your_tag>` with the appropriate tag (e.g., `beta`, `latest`). For pre-releases, always use a specific tag like `beta` or `rc`.
+      - `--access public` is needed for scoped packages if they are intended to be public.
     - Carefully review the list of files. Ensure it includes `dist/`, `bin/terminator` (the Swift binary), `package.json`, `README.md`, `CHANGELOG.md`, and `LICENSE`. Ensure no unnecessary files are included.
 
 2.  **Actual NPM Publish:**

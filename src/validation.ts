@@ -1,4 +1,3 @@
-import { TerminatorExecuteParams } from "./types.js";
 import { logger } from "./logger.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -13,20 +12,11 @@ export function validateExecuteParams(params: any): ValidationResult {
 
   // Validate action
   if (params.action !== undefined) {
-    const validActions = [
-      "execute",
-      "read",
-      "sessions",
-      "info",
-      "focus",
-      "kill",
-    ];
+    const validActions = ["execute", "read", "sessions", "info", "focus", "kill"];
     if (typeof params.action !== "string") {
       errors.push(`Action must be a string, got ${typeof params.action}`);
     } else if (!validActions.includes(params.action)) {
-      errors.push(
-        `Invalid action '${params.action}'. Must be one of: ${validActions.join(", ")}`,
-      );
+      errors.push(`Invalid action '${params.action}'. Must be one of: ${validActions.join(", ")}`);
     }
   }
 
@@ -34,9 +24,7 @@ export function validateExecuteParams(params: any): ValidationResult {
   if (!params.project_path) {
     errors.push("project_path is required");
   } else if (typeof params.project_path !== "string") {
-    errors.push(
-      `project_path must be a string, got ${typeof params.project_path}`,
-    );
+    errors.push(`project_path must be a string, got ${typeof params.project_path}`);
   } else if (params.project_path.trim() === "") {
     errors.push("project_path cannot be empty");
   }
@@ -57,13 +45,8 @@ export function validateExecuteParams(params: any): ValidationResult {
 
   // Validate background
   if (params.background !== undefined) {
-    if (
-      typeof params.background !== "boolean" &&
-      typeof params.background !== "string"
-    ) {
-      errors.push(
-        `background must be a boolean or string, got ${typeof params.background}`,
-      );
+    if (typeof params.background !== "boolean" && typeof params.background !== "string") {
+      errors.push(`background must be a boolean or string, got ${typeof params.background}`);
     }
   }
 
@@ -79,9 +62,7 @@ export function validateExecuteParams(params: any): ValidationResult {
         errors.push("lines must be a valid number between 1 and 10000");
       }
     } else {
-      errors.push(
-        `lines must be a number or string, got ${typeof params.lines}`,
-      );
+      errors.push(`lines must be a number or string, got ${typeof params.lines}`);
     }
   }
 
@@ -94,23 +75,17 @@ export function validateExecuteParams(params: any): ValidationResult {
     } else if (typeof params.timeout === "string") {
       const parsed = parseInt(params.timeout, 10);
       if (isNaN(parsed) || parsed < 0 || parsed > 3600) {
-        errors.push(
-          "timeout must be a valid number between 0 and 3600 seconds",
-        );
+        errors.push("timeout must be a valid number between 0 and 3600 seconds");
       }
     } else {
-      errors.push(
-        `timeout must be a number or string, got ${typeof params.timeout}`,
-      );
+      errors.push(`timeout must be a number or string, got ${typeof params.timeout}`);
     }
   }
 
   // Validate focus
   if (params.focus !== undefined) {
     if (typeof params.focus !== "boolean" && typeof params.focus !== "string") {
-      errors.push(
-        `focus must be a boolean or string, got ${typeof params.focus}`,
-      );
+      errors.push(`focus must be a boolean or string, got ${typeof params.focus}`);
     }
   }
 
@@ -123,7 +98,7 @@ export function validateExecuteParams(params: any): ValidationResult {
 export function sanitizePath(inputPath: string): string | null {
   try {
     // Remove any null bytes
-    const cleanPath = inputPath.replace(/\0/g, "");
+    const cleanPath = inputPath.split(String.fromCharCode(0)).join("");
 
     // Normalize the path
     const normalized = path.normalize(cleanPath);
@@ -141,14 +116,11 @@ export function sanitizePath(inputPath: string): string | null {
   }
 }
 
-export function validateFileAccess(
-  filePath: string,
-  mode: number = fs.constants.R_OK,
-): boolean {
+export function validateFileAccess(filePath: string, mode: number = fs.constants.R_OK): boolean {
   try {
     fs.accessSync(filePath, mode);
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -186,9 +158,7 @@ export function validateEnvironmentVariables(): string[] {
   if (terminalApp) {
     const validApps = ["iTerm", "Terminal", "Ghostty"];
     if (!validApps.includes(terminalApp)) {
-      issues.push(
-        `Invalid TERMINATOR_APP: ${terminalApp}. Valid apps: ${validApps.join(", ")}`,
-      );
+      issues.push(`Invalid TERMINATOR_APP: ${terminalApp}. Valid apps: ${validApps.join(", ")}`);
     }
   }
 

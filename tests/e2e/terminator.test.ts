@@ -3,10 +3,7 @@ import { execa } from "execa";
 import path from "path";
 import { fileURLToPath } from "url";
 import { runTerminator } from "./test-helpers.js";
-import {
-  expectSuccessOrAppleScriptError,
-  expectFailureWithMessage,
-} from "./test-utils.js";
+import { expectSuccessOrAppleScriptError } from "./test-utils.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,44 +15,27 @@ describe("Terminator E2E Tests", () => {
     // Check if Swift CLI exists
     try {
       await execa(SWIFT_CLI_PATH, ["--version"], { timeout: 5000 });
-    } catch (error) {
-      throw new Error(
-        `Swift CLI not found at ${SWIFT_CLI_PATH}. Run 'npm run build:swift' first.`,
-      );
+    } catch {
+      throw new Error(`Swift CLI not found at ${SWIFT_CLI_PATH}. Run 'npm run build:swift' first.`);
     }
   });
 
   describe("Sessions Command", () => {
     it("should handle empty terminal sessions gracefully", async () => {
-      const result = await runTerminator([
-        "sessions",
-        "--terminal-app",
-        "terminal",
-      ]);
+      const result = await runTerminator(["sessions", "--terminal-app", "terminal"]);
       expectSuccessOrAppleScriptError(result);
       expect(result.stdout).toContain("No active sessions found");
     });
 
     it("should handle sessions command with iTerm when no windows exist", async () => {
-      const result = await runTerminator([
-        "sessions",
-        "--terminal-app",
-        "iterm",
-      ]);
+      const result = await runTerminator(["sessions", "--terminal-app", "iterm"]);
       expectSuccessOrAppleScriptError(result);
       // Should either show no sessions or handle gracefully
-      expect(result.all).toMatch(
-        /No active sessions found|Successfully parsed 0 iTerm sessions/,
-      );
+      expect(result.all).toMatch(/No active sessions found|Successfully parsed 0 iTerm sessions/);
     });
 
     it("should list sessions in JSON format", async () => {
-      const result = await runTerminator([
-        "sessions",
-        "--terminal-app",
-        "terminal",
-        "--json",
-      ]);
+      const result = await runTerminator(["sessions", "--terminal-app", "terminal", "--json"]);
       expectSuccessOrAppleScriptError(result);
 
       // Output might be "null" or empty array when no sessions
@@ -69,11 +49,7 @@ describe("Terminator E2E Tests", () => {
     });
 
     it("should handle invalid terminal app gracefully", async () => {
-      const result = await runTerminator([
-        "sessions",
-        "--terminal-app",
-        "invalid-app",
-      ]);
+      const result = await runTerminator(["sessions", "--terminal-app", "invalid-app"]);
       // Sessions command returns success even with invalid terminal app
       expect(result.exitCode).toBe(0);
       // But it should show a warning in stderr
@@ -117,8 +93,7 @@ describe("Terminator E2E Tests", () => {
 
     it("should handle special characters in commands", async () => {
       const tag = `test-special-${Date.now()}`;
-      const specialCommand =
-        "echo \"Hello $USER\" && echo 'Single quotes' && echo `date`";
+      const specialCommand = "echo \"Hello $USER\" && echo 'Single quotes' && echo `date`";
       const result = await runTerminator([
         "execute",
         tag,
@@ -148,8 +123,7 @@ describe("Terminator E2E Tests", () => {
 
     it("should handle commands with newlines", async () => {
       const tag = `test-multiline-${Date.now()}`;
-      const multilineCommand =
-        'echo "Line 1" &&\necho "Line 2" &&\necho "Line 3"';
+      const multilineCommand = 'echo "Line 1" &&\necho "Line 2" &&\necho "Line 3"';
       const result = await runTerminator([
         "execute",
         tag,
@@ -191,9 +165,7 @@ describe("Terminator E2E Tests", () => {
 
       // Should fail because --tag is required
       expect(result.exitCode).not.toBe(0);
-      expect(result.stderr.toLowerCase()).toContain(
-        "missing expected argument",
-      );
+      expect(result.stderr.toLowerCase()).toContain("missing expected argument");
     });
   });
 
@@ -217,9 +189,7 @@ describe("Terminator E2E Tests", () => {
 
       expect(result.exitCode).not.toBe(0);
       // The error comes from the kill command itself, not argument parsing
-      expect(result.stderr.toLowerCase()).toContain(
-        "unknown terminal application",
-      );
+      expect(result.stderr.toLowerCase()).toContain("unknown terminal application");
     });
 
     it("should handle permission errors gracefully", async () => {
@@ -311,10 +281,7 @@ describe("Terminator E2E Tests", () => {
         "--json",
       ]);
 
-      if (
-        listResult.stdout.trim() !== "null" &&
-        listResult.stdout.trim() !== ""
-      ) {
+      if (listResult.stdout.trim() !== "null" && listResult.stdout.trim() !== "") {
         const sessions = JSON.parse(listResult.stdout);
         if (sessions.length > 0) {
           expect(sessions[0].tag).toBe(tag);
@@ -334,11 +301,7 @@ describe("Terminator E2E Tests", () => {
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Now try to list sessions
-      const result = await runTerminator([
-        "sessions",
-        "--terminal-app",
-        "terminal",
-      ]);
+      const result = await runTerminator(["sessions", "--terminal-app", "terminal"]);
 
       // Should either start Terminal or handle gracefully
       expectSuccessOrAppleScriptError(result);

@@ -66,18 +66,13 @@ describe("logger integration tests", () => {
         "terminator-mcp",
         "terminator.log",
       );
-      const tempLogPath = path.join(
-        os.tmpdir(),
-        "terminator-mcp",
-        "terminator.log",
-      );
+      const tempLogPath = path.join(os.tmpdir(), "terminator-mcp", "terminator.log");
 
       // Check that it didn't create the invalid path
       expect(fs.existsSync(invalidPath)).toBe(false);
 
       // Should have created log in either default or temp location
-      const logExists =
-        fs.existsSync(defaultLogPath) || fs.existsSync(tempLogPath);
+      const logExists = fs.existsSync(defaultLogPath) || fs.existsSync(tempLogPath);
       expect(logExists).toBe(true);
     });
 
@@ -96,11 +91,7 @@ describe("logger integration tests", () => {
             `);
 
       // Should have fallen back to temp directory
-      const tempLogPath = path.join(
-        os.tmpdir(),
-        "terminator-mcp",
-        "terminator.log",
-      );
+      const tempLogPath = path.join(os.tmpdir(), "terminator-mcp", "terminator.log");
       const defaultLogPath = path.join(
         os.homedir(),
         "Library",
@@ -113,8 +104,7 @@ describe("logger integration tests", () => {
       expect(fs.existsSync(unwritablePath)).toBe(false);
 
       // Should have created log in either default or temp location
-      const logExists =
-        fs.existsSync(defaultLogPath) || fs.existsSync(tempLogPath);
+      const logExists = fs.existsSync(defaultLogPath) || fs.existsSync(tempLogPath);
       expect(logExists).toBe(true);
 
       // Clean up logs
@@ -141,9 +131,7 @@ describe("logger integration tests", () => {
 
       const config = JSON.parse(output);
       expect(config.configurationIssues).toHaveLength(2);
-      expect(config.configurationIssues[0]).toContain(
-        "Cannot write to log file path",
-      );
+      expect(config.configurationIssues[0]).toContain("Cannot write to log file path");
       expect(config.configurationIssues[1]).toContain("Invalid log level");
     });
 

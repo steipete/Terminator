@@ -46,7 +46,7 @@ function_parameter_count:
 large_tuple:
   warning: 3
   error: 4
-  
+
 cyclomatic_complexity:
   warning: 15
   error: 25
@@ -64,4 +64,4 @@ identifier_name:
     - GlobalAPIKey
     - os # allow 'os' for ProcessInfo.processInfo.operatingSystemVersionString
 
-reporter: "xcode" # reporter type (xcode, json, csv, checkstyle, codeclimate, junit, html, emoji, sonarqube, markdown, github-actions-logging) 
+reporter: "xcode" # reporter type (xcode, json, csv, checkstyle, codeclimate, junit, html, emoji, sonarqube, markdown, github-actions-logging)

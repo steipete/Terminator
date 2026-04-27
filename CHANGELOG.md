@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0-beta.7] - 2025-06-10
 
 ### Added
+
 - **Comprehensive Test Suite**: Added extensive test coverage for recent features
   - Process responsibility tests with C wrapper validation
   - Accessibility permission tests with status checking
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improved error handling for environments without automation permissions
 
 ### Changed
+
 - **Log Output Filtering**: Swift logs are now filtered from stderr to prevent internal logs from polluting client output
   - Logs are still parsed and forwarded to pino logger for debugging
   - Client only sees clean command output without internal debug information
@@ -33,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed CLI argument format expectations (e.g., `--tag` instead of `--session-id`)
 
 ### Fixed
+
 - **Process Responsibility in Tests**: Fixed issue where parent process exits with code 0 when child is spawned
   - Added environment variable check to skip responsibility disclaiming in tests
   - Tests now properly capture exit codes and error messages
@@ -45,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0-beta.6] - 2025-01-10
 
 ### Added
+
 - **Accessibility Permission Handling**: Proactive check for accessibility permissions
   - Checks for accessibility permissions before attempting System Events operations
   - Automatically prompts user to grant permissions if not already granted
@@ -52,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Custom message explains that accessibility is needed for controlling terminals via AppleScript
 
 ### Changed
+
 - **Logging Output**: Fixed log pollution in command output
   - All logs now go to stderr instead of stdout
   - Command output is clean and only contains actual command results
@@ -60,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0-beta.5] - 2025-01-10
 
 ### Changed
+
 - **Process Responsibility Handling**: Enhanced implementation with better documentation and error handling
   - Added comprehensive documentation explaining the "responsible process" concept
   - Defined `POSIX_SPAWN_SETDISCLAIM` constant instead of using magic number
@@ -71,6 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0-beta.4] - 2025-01-10
 
 ### Changed
+
 - **Permission Dialog Handling**: Moved osascript permission hack from Swift to TypeScript layer
   - Now runs before Swift CLI invocation for better reliability
   - Works regardless of how the Swift CLI is called
@@ -80,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0-beta.3] - 2025-01-10
 
 ### Fixed
+
 - **Apple Events Permission Dialog**: Resolved permission dialog not appearing
   - Implemented AEDeterminePermissionToAutomateTarget with askUserIfNeeded flag
   - Fixed thread-safe access to permission check state using DispatchQueue
@@ -89,6 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added entitlements for com.apple.security.automation.apple-events
 
 ### Changed
+
 - **Path Resolution**: Enhanced path handling for better compatibility
   - Added tilde expansion support for paths like ~/Desktop
   - Fixed symlink handling by using statSync instead of lstatSync
@@ -96,6 +105,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added comprehensive E2E tests for path resolution
 
 ### Updated
+
 - **Dependencies**: Updated all dependencies to latest versions
   - Updated vitest from 1.6.0 to 3.2.3 (fixed security vulnerability)
   - Fixed Mock type compatibility issues with updated vitest
@@ -103,12 +113,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0-beta.2] - 2025-01-09
 
 ### Changed
+
 - **Swift CLI Alignment**: Renamed 'list' command to 'sessions' for consistency
 - **Documentation**: Added log file location details to README
 
 ## [1.0.0-beta.1] - 2025-01-06
 
 ### Changed
+
 - **MCP Best Practices Compliance**: Full alignment with MCP best practices
   - Removed all console output to prevent MCP client disruption
   - Added temp directory fallback for logger when default paths are not writable
@@ -116,6 +128,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improved error reporting without stdio output
 
 ### Added
+
 - **Enhanced Release Process**: prepare-release.js now includes:
   - E2E test execution
   - Swift analyzer checks
@@ -123,12 +136,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - More comprehensive validation
 
 ### Fixed
+
 - **Logger Configuration**: Fixed potential stdio output during logger initialization
 - **MCP Compliance**: Ensured zero console output during all operations
 
 ## [1.0.0-alpha.12] - 2025-05-26
 
 ### Changed
+
 - **iTerm Implementation**: Major refactoring to improve process management
   - Simplified process ID handling to work directly with session IDs
   - Removed unnecessary ProcessUtilities code and getProcessInfo functionality
@@ -136,22 +151,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improved error handling and reduced AppleScript usage
 
 ### Fixed
+
 - **Process Management**: Fixed issues with iTerm process tracking and session management
 - **Code Cleanup**: Removed 130+ lines of unused code, improving maintainability
 
 ### Added
+
 - **Enhanced Testing**: Added comprehensive test coverage and improved test infrastructure
 - **Better Error Messages**: More descriptive error handling throughout iTerm implementation
 
 ## [1.0.0-alpha.11] - 2025-05-26
 
 ### Fixed
+
 - **Empty Command Handling**: Fixed issue where empty command strings were incorrectly passed as `--command ""` to Swift CLI
   - Empty commands now properly omit the `--command` flag entirely
   - This allows "prepare session" functionality to work correctly (clear terminal, focus window)
   - Both empty string (`""`) and undefined commands are handled correctly
 
 ### Added
+
 - **Test Coverage Planning**: Created comprehensive E2E and unit test templates for future testing
   - Covers edge cases like empty commands, special characters, invalid parameters
   - Tests for all actions (exec, read, list, info, focus, kill)
@@ -160,26 +179,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0-alpha.10] - 2025-05-26
 
 ### Fixed
+
 - **Execa Compatibility**: Fixed `signal` option renamed to `cancelSignal` in newer execa versions
 - **Debug Logging**: Added version number to all debug log entries (e.g., `[TerminatorMCP v1.0.0-alpha.10 NodeJS DEBUG]`)
 
 ### Changed
+
 - **Version Management**: Centralized version reading in config module to avoid duplication
 - **Error Messages**: Swift CLI errors are now properly captured and passed to the client
 
 ## [1.0.0-alpha.9] - 2025-05-26
 
 ### Added
+
 - **Enhanced Error Logging**: Added detailed error logging for Swift CLI execution failures
   - Logs error code, exit code, signal, stdout/stderr snippets, and execution details
   - Helps diagnose issues when Swift CLI crashes or fails to execute
 
 ### Known Issues
+
 - Swift CLI crashing with Range bounds error on command execution (investigating)
 
 ## [1.0.0-alpha.8] - 2025-05-26
 
 ### Changed
+
 - **Refactored Swift CLI invocation**: Replaced manual spawn handling with `execa` library
   - Cleaner, more maintainable code with better error handling
   - Automatic error code mapping using `errno` for friendly error messages
@@ -187,23 +211,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Better TypeScript types and error handling
 
 ### Added
+
 - **Dependencies**: Added `execa` and `errno` for improved process management
 - **Type definitions**: Added custom TypeScript definitions for errno module
 
 ## [1.0.0-alpha.7] - 2025-05-26
 
 ### Added
+
 - **CLI Parameter Error Handling**: Added proper handling for exit code 64 (command line usage errors)
   - Invalid parameters now show clear error messages with usage information
   - Extracts and displays correct usage syntax when available
 
 ### Fixed
+
 - **Info Command**: Fixed issue where `--project-path` was incorrectly passed to info command
 - **Error Message Clarity**: CLI parameter errors are now properly captured and displayed to users
 
 ## [1.0.0-alpha.6] - 2025-05-26
 
 ### Added
+
 - **Enhanced Error Diagnostics**: Comprehensive error messages when Swift CLI terminates unexpectedly
   - Specific handling for spawn errors (ENOENT, EACCES, EPERM)
   - Detection of common issues like missing permissions or binary corruption
@@ -212,22 +240,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Helpful guidance for automation permission issues
 
 ### Changed
+
 - **Error Handling**: Improved error handling in both tool.ts and swift-cli.ts for better user experience
   - Process spawn errors now provide specific, actionable error messages
   - Null exit codes are handled with detailed diagnostics instead of generic errors
 
 ### Known Issues
+
 - Swift tests failing with Range bounds error on macOS 14.0 (investigating)
 
 ## [1.0.0-alpha.5] - 2025-01-26
 
 ### Fixed
+
 - **Dynamic Version Display**: Tool description now shows the correct version from package.json (including alpha/beta versions)
 - **Version Import**: Fixed version reading to dynamically load from package.json instead of hardcoded value
 
 ## [1.0.0-alpha.4] - 2025-01-26
 
 ### Fixed
+
 - **Error Handling**: Improved handling of null exit codes from Swift CLI (typically permission issues)
 - **Error Messages**: Added helpful guidance for automation permission issues
 - **Documentation**: Enhanced troubleshooting section with common "Swift CLI Code null" error solutions
@@ -236,28 +268,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0-alpha.3] - 2025-01-26
 
 ### Fixed
+
 - **AppleScript Error Handling**: Fixed "Can't get index of every tab of window id" error when Terminal windows are closed
 - **Session Listing**: Made session listing more robust by handling inaccessible windows/tabs gracefully
 
 ## [1.0.0-alpha.2] - 2025-01-26
 
 ### Fixed
+
 - **MCP Server Startup**: Added missing `terminator-mcp` binary entry point in package.json
 - **Executable Permission**: Added shebang to index.ts for proper executable generation
 
 ## [1.0.0-alpha.1] - 2025-01-26
 
 ### Added
+
 - **Comprehensive Release Process**: Complete npm release preparation script from Peekaboo project
 - **AppleScript Test Integration**: AppleScript tests are now part of the release process
 - **AppleScript Consistency Verification**: New script to ensure AppleScript code consistency between test files and source code
 - **Universal Binary Support**: Enhanced build process for creating optimized universal binaries
 
 ### Changed
+
 - **Major Version Bump**: Moving to 1.0.0-alpha.1 to indicate significant maturity and stability
 - **Test Infrastructure**: Improved AppleScript test runner with better output handling and pattern matching
 
 ### Fixed
+
 - **Swift Tests**: Fixed all 47 failing Swift tests
   - Fixed Swift 5.9 if-let expression syntax compatibility issues
   - Fixed AnyCodable value access by adding property getters
@@ -268,6 +305,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.2] - 2025-01-25
 
 ### Added
+
 - **Release Preparation**: Added comprehensive release preparation script with Git, TypeScript, Swift, and package verification checks
 - **Universal Binary Build**: Added build script to create optimized universal binaries (arm64 + x86_64) with size reduction
 - **SwiftFormat Configuration**: Added .swiftformat configuration for consistent code style
@@ -275,6 +313,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Package Metadata**: Added repository, keywords, bugs, homepage, and engine requirements to package.json
 
 ### Changed
+
 - **Code Quality**: Eliminated all 56 SwiftLint violations through comprehensive refactoring:
   - Split monolithic test file (1438 lines) into 9 focused test files
   - Extracted helper methods to fix function_body_length violations
@@ -295,28 +334,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Internal**: Updated TypeScript MCP server source (`src/types.ts`, `src/tool.ts`, `src/index.ts`, `src/config.ts`) and documentation (`docs/spec.md`) to reflect these parameter changes.
 
 ### Fixed
+
 - Ensured `docs/spec.md` is consistent with the updated MCP tool parameters and descriptions.
 
 ## [0.5.1] - 2025-01-22
 
 ### Added
+
 - **Enhanced Project Path Detection**: Reliable detection of project paths as the first argument when they start with "/" and don't contain command flags
 - **Automatic Directory Change**: When a project path is provided, the script automatically prepends `cd <path> &&` to commands
 - **Improved Text Processing**: Enhanced logic to better distinguish meaningful terminal output from shell prompts and script messages
 - **Comprehensive Test Coverage**: Updated test suite with 10 tests including specific validation for v0.5.1 features
 
 ### Changed
+
 - **Argument Parsing Logic**: Complete rewrite of v0.5.0 argument parsing with more robust project path detection using `isValidPath()` heuristics
 - **Enhanced Error Messages**: More descriptive error messages with better context about project paths and session creation
 - **Script Version**: Updated to v0.5.1 "T-800" with improved reliability
 - **Test Suite**: Updated to properly validate output capture and avoid false positives from error messages
 
 ### Fixed
+
 - **Multi-line Text Processing**: Fixed misuse of `lineIsEffectivelyEmptyAS()` function on multi-line terminal buffers
 - **Project Path Integration**: Improved integration between project path detection and command execution
 - **Session Title Generation**: Enhanced title generation with proper project name extraction
 
 ### Technical Notes
+
 - Maintains full backward compatibility with existing usage patterns
 - Output capture reliability remains a known limitation inherited from previous versions
 - All core functionality (session management, project grouping, automatic cd) works reliably
@@ -325,6 +369,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.7] - 2025-01-22
 
 ### Added
+
 - **Project Path Support**: Added optional project path as first argument for better organization
 - **Fuzzy Target Grouping**: New sessions can automatically group into existing project windows
 - **Enhanced Title Generation**: Titles now include both project and task identifiers
@@ -333,6 +378,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Logo Support**: Added placeholder for project logo in README
 
 ### Changed
+
 - **Argument Parsing**: Completely redesigned to support project paths as optional first argument
 - **Session Management**: Enhanced `ensureTabAndWindow()` to support project grouping and fuzzy matching
 - **Tab Creation**: Now supports creating tabs in existing project windows vs. always new windows
@@ -341,17 +387,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **README**: Transformed from basic description to comprehensive Terminator-themed documentation
 
 ### Enhanced
+
 - **Process Termination**: Improved process interruption with better handling for existing vs. new tabs
 - **Session State Tracking**: Enhanced tracking of newly created vs. existing sessions
 - **Configuration**: Added new properties for project and task identifiers in titles
 - **MCP Integration**: Added promotion for compatible MCP servers (macOS Automator MCP and Claude Code MCP)
 
 ### Fixed
+
 - **tabTitlePrefix Reference**: Fixed ReferenceError in usage text generation
 - **Session Creation Logic**: Improved logic for when to allow session creation
 - **Tab Title Setting**: Better handling of custom titles for new tabs
 
 ### Technical Improvements
+
 - **Code Organization**: Better separation of concerns with dedicated helper functions
 - **Error Handling**: More robust error handling throughout the script
 - **Documentation**: Comprehensive inline documentation and usage examples
@@ -360,6 +409,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.4] - Initial Release
 
 ### Added
+
 - **Basic Terminal Session Management**: Create and manage tagged terminal sessions
 - **Command Execution**: Execute shell commands in dedicated terminal tabs
 - **Process Interruption**: Ability to interrupt busy processes before new commands
@@ -370,6 +420,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Usage Documentation**: Basic usage instructions and examples
 
 ### Features
+
 - Simple tag-based session identification
 - Command execution with timeout protection
 - History reading with configurable line counts

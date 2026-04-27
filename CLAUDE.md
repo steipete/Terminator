@@ -14,6 +14,7 @@ The project isolates long-running or potentially hanging commands to protect AI 
 ## Common Development Commands
 
 ### Building
+
 ```bash
 # Build everything (TypeScript + Swift)
 npm run build
@@ -29,6 +30,7 @@ npm run clean
 ```
 
 ### Testing
+
 ```bash
 # Run E2E tests
 npm test
@@ -50,6 +52,7 @@ npm run test:coverage
 ```
 
 ### Development
+
 ```bash
 # Start development server with auto-rebuild
 npm run dev
@@ -65,6 +68,7 @@ npm run inspector
 ```
 
 ### Release Preparation
+
 ```bash
 # Prepare release (updates version, creates changelog)
 npm run prepare-release
@@ -75,6 +79,7 @@ npm run prepare-release
 ## High-Level Architecture
 
 ### Component Communication Flow
+
 ```
 AI Agent (Claude) <--MCP Protocol--> Node.js Wrapper <--Process Spawn--> Swift CLI <--AppleScript/System APIs--> Terminal Apps
 ```
@@ -111,6 +116,7 @@ AI Agent (Claude) <--MCP Protocol--> Node.js Wrapper <--Process Spawn--> Swift C
 ### Swift CLI Architecture
 
 The Swift CLI follows a command pattern with these subcommands:
+
 - `exec` (execute) - Run commands in terminal sessions
 - `read` - Read session output/scrollback
 - `list` - List active sessions
@@ -119,6 +125,7 @@ The Swift CLI follows a command pattern with these subcommands:
 - `kill` - Terminate session processes
 
 Each command is implemented in `cli/Sources/TerminatorCLI/Commands/` with shared logic in:
+
 - `TerminalControlling.swift` - Protocol defining terminal operations
 - `Implementations/` - Terminal-specific implementations (AppleTerminal, iTerm, Ghosty)
 - `Models/` - Data structures and configuration
@@ -127,6 +134,7 @@ Each command is implemented in `cli/Sources/TerminatorCLI/Commands/` with shared
 ### Environment Variables
 
 The system respects these `TERMINATOR_*` environment variables (see docs/spec.md for full details):
+
 - `TERMINATOR_APP` - Terminal application (Terminal/iTerm/Ghosty)
 - `TERMINATOR_LOG_LEVEL` - Logging verbosity
 - `TERMINATOR_LOG_DIR` - Log file location
@@ -143,6 +151,7 @@ The system respects these `TERMINATOR_*` environment variables (see docs/spec.md
 3. **AppleScript Tests** (`cli/Tests/AppleScriptTests/`) - Verify AppleScript interactions
 
 When adding features:
+
 - Add E2E tests for the full flow
 - Add Swift unit tests for new Swift functionality
 - If modifying AppleScript, update consistency tests
@@ -168,7 +177,9 @@ When adding features:
 ## Development Philosophy
 
 ### No Backward Compatibility
+
 This project does NOT maintain backward compatibility. We prioritize:
+
 - Clean, modern code over legacy support
 - Rapid iteration and improvement
 - Breaking changes are acceptable and expected
@@ -176,6 +187,7 @@ This project does NOT maintain backward compatibility. We prioritize:
 - Old versions are not supported
 
 When making changes:
+
 - Feel free to break existing APIs if it improves the design
 - Remove deprecated code immediately
 - Don't add compatibility layers or migration paths

@@ -3,11 +3,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { terminatorTool } from "../tool.js";
 import type { TerminatorExecuteParams } from "../types.js";
 import { DEFAULT_LINES } from "../config.js";
-import {
-  mockedInvokeSwiftCLI,
-  createMockContext,
-  mockResponses,
-} from "./e2e-test-setup.js";
+import { mockedInvokeSwiftCLI, createMockContext, mockResponses } from "./e2e-test-setup.js";
 import type { SdkCallContext } from "../types.js";
 
 describe("Terminator MCP Tool - Execute Action E2E Tests", () => {
@@ -25,10 +21,7 @@ describe("Terminator MCP Tool - Execute Action E2E Tests", () => {
       command: "echo test",
     };
 
-    const result = await terminatorTool.handler(
-      params as TerminatorExecuteParams,
-      mockContext,
-    );
+    const result = await terminatorTool.handler(params as TerminatorExecuteParams, mockContext);
 
     expect(result.success).toBe(true);
     expect(result.message).toContain("OK_COMPLETED_FG Mocked CLI output");
@@ -60,10 +53,7 @@ describe("Terminator MCP Tool - Execute Action E2E Tests", () => {
       focus: "yes" as any,
     };
 
-    await terminatorTool.handler(
-      params as TerminatorExecuteParams,
-      mockContext,
-    );
+    await terminatorTool.handler(params as TerminatorExecuteParams, mockContext);
 
     expect(mockedInvokeSwiftCLI).toHaveBeenCalled();
     const calledArgs = mockedInvokeSwiftCLI.mock.calls[0][0];
@@ -81,10 +71,7 @@ describe("Terminator MCP Tool - Execute Action E2E Tests", () => {
       focus: "no" as any,
     };
 
-    await terminatorTool.handler(
-      params as TerminatorExecuteParams,
-      mockContext,
-    );
+    await terminatorTool.handler(params as TerminatorExecuteParams, mockContext);
 
     expect(mockedInvokeSwiftCLI).toHaveBeenCalled();
     const calledArgs = mockedInvokeSwiftCLI.mock.calls[0][0];
@@ -100,10 +87,7 @@ describe("Terminator MCP Tool - Execute Action E2E Tests", () => {
       command: "echo test",
     };
 
-    await terminatorTool.handler(
-      params as TerminatorExecuteParams,
-      mockContext,
-    );
+    await terminatorTool.handler(params as TerminatorExecuteParams, mockContext);
 
     expect(mockedInvokeSwiftCLI).toHaveBeenCalled();
     const calledArgs = mockedInvokeSwiftCLI.mock.calls[0][0];
@@ -123,10 +107,7 @@ describe("Terminator MCP Tool - Execute Action E2E Tests", () => {
       command: "",
     };
 
-    await terminatorTool.handler(
-      params as TerminatorExecuteParams,
-      mockContext,
-    );
+    await terminatorTool.handler(params as TerminatorExecuteParams, mockContext);
 
     expect(mockedInvokeSwiftCLI).toHaveBeenCalled();
     const calledArgs = mockedInvokeSwiftCLI.mock.calls[0][0];
@@ -141,10 +122,7 @@ describe("Terminator MCP Tool - Execute Action E2E Tests", () => {
       tag: "my-custom-tag",
     };
 
-    await terminatorTool.handler(
-      params as TerminatorExecuteParams,
-      mockContext,
-    );
+    await terminatorTool.handler(params as TerminatorExecuteParams, mockContext);
 
     expect(mockedInvokeSwiftCLI).toHaveBeenCalled();
     const calledArgs = mockedInvokeSwiftCLI.mock.calls[0][0];
@@ -160,10 +138,7 @@ describe("Terminator MCP Tool - Execute Action E2E Tests", () => {
       timeout: 30,
     };
 
-    await terminatorTool.handler(
-      params as TerminatorExecuteParams,
-      mockContext,
-    );
+    await terminatorTool.handler(params as TerminatorExecuteParams, mockContext);
 
     expect(mockedInvokeSwiftCLI).toHaveBeenCalled();
     const calledArgs = mockedInvokeSwiftCLI.mock.calls[0][0];
@@ -179,10 +154,7 @@ describe("Terminator MCP Tool - Execute Action E2E Tests", () => {
       timeout: "45" as any,
     };
 
-    await terminatorTool.handler(
-      params as TerminatorExecuteParams,
-      mockContext,
-    );
+    await terminatorTool.handler(params as TerminatorExecuteParams, mockContext);
 
     expect(mockedInvokeSwiftCLI).toHaveBeenCalled();
     const calledArgs = mockedInvokeSwiftCLI.mock.calls[0][0];
@@ -198,10 +170,7 @@ describe("Terminator MCP Tool - Execute Action E2E Tests", () => {
       background: "false" as any,
     };
 
-    await terminatorTool.handler(
-      params as TerminatorExecuteParams,
-      mockContext,
-    );
+    await terminatorTool.handler(params as TerminatorExecuteParams, mockContext);
 
     const calledArgs = mockedInvokeSwiftCLI.mock.calls[0][0];
     expect(calledArgs).not.toContain("--background");
@@ -215,10 +184,7 @@ describe("Terminator MCP Tool - Execute Action E2E Tests", () => {
       focus: "no" as any,
     };
 
-    await terminatorTool.handler(
-      params as TerminatorExecuteParams,
-      mockContext,
-    );
+    await terminatorTool.handler(params as TerminatorExecuteParams, mockContext);
 
     const calledArgs = mockedInvokeSwiftCLI.mock.calls[0][0];
     expect(calledArgs).toContain("--focus-mode");
@@ -232,10 +198,7 @@ describe("Terminator MCP Tool - Execute Action E2E Tests", () => {
       command: "echo test",
     };
 
-    const result = await terminatorTool.handler(
-      params as TerminatorExecuteParams,
-      mockContext,
-    );
+    const result = await terminatorTool.handler(params as TerminatorExecuteParams, mockContext);
 
     expect(result.success).toBe(false);
     expect(result.message).toContain("Invalid project path");
@@ -251,10 +214,7 @@ describe("Terminator MCP Tool - Execute Action E2E Tests", () => {
       timeout: 120,
     };
 
-    await terminatorTool.handler(
-      params as TerminatorExecuteParams,
-      mockContext,
-    );
+    await terminatorTool.handler(params as TerminatorExecuteParams, mockContext);
 
     expect(mockedInvokeSwiftCLI).toHaveBeenCalled();
     const calledArgs = mockedInvokeSwiftCLI.mock.calls[0][0];
@@ -270,10 +230,7 @@ describe("Terminator MCP Tool - Execute Action E2E Tests", () => {
       command: 'echo "valid command"',
     };
 
-    const result = await terminatorTool.handler(
-      params as TerminatorExecuteParams,
-      mockContext,
-    );
+    const result = await terminatorTool.handler(params as TerminatorExecuteParams, mockContext);
 
     expect(result.success).toBe(false);
     expect(result.message).toContain("Invalid project path");
@@ -288,18 +245,11 @@ describe("Terminator MCP Tool - Execute Action E2E Tests", () => {
       background: true,
     };
 
-    mockedInvokeSwiftCLI.mockResolvedValue(
-      mockResponses.successfulBackgroundExecution,
-    );
+    mockedInvokeSwiftCLI.mockResolvedValue(mockResponses.successfulBackgroundExecution);
 
-    const result = await terminatorTool.handler(
-      params as TerminatorExecuteParams,
-      mockContext,
-    );
+    const result = await terminatorTool.handler(params as TerminatorExecuteParams, mockContext);
 
     expect(result.success).toBe(true);
-    expect(result.message).toContain(
-      "OK_STARTED_BG Command started in background",
-    );
+    expect(result.message).toContain("OK_STARTED_BG Command started in background");
   });
 });

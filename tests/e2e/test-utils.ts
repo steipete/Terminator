@@ -11,9 +11,7 @@ export function expectSuccessOrAppleScriptError(result: {
 
   if (result.exitCode === 3) {
     // AppleScript error - automation not available
-    expect(result.stderr.toLowerCase()).toMatch(
-      /applescript|automation|permission/,
-    );
+    expect(result.stderr.toLowerCase()).toMatch(/applescript|automation|permission/);
     return;
   }
 

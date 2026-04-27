@@ -17,17 +17,13 @@ export async function isTerminalAutomationAvailable(): Promise<boolean> {
 
   try {
     // Try a simple sessions command to see if AppleScript works
-    const result = await execa(
-      SWIFT_CLI_PATH,
-      ["sessions", "--terminal-app", "terminal"],
-      {
-        reject: false,
-        env: {
-          ...process.env,
-          TERMINATOR_SKIP_RESPONSIBILITY: "1",
-        },
+    const result = await execa(SWIFT_CLI_PATH, ["sessions", "--terminal-app", "terminal"], {
+      reject: false,
+      env: {
+        ...process.env,
+        TERMINATOR_SKIP_RESPONSIBILITY: "1",
       },
-    );
+    });
 
     // If we get exit code 0, automation works
     // If we get exit code 3 (AppleScript error), it doesn't

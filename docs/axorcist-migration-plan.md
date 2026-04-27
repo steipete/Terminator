@@ -9,12 +9,15 @@ This plan outlines a phased migration from AppleScript to AXorcist accessibility
 ### Phase 0: Preparation and Setup (Week 1-2)
 
 #### Objectives
+
 - Set up development environment
 - Establish testing baseline
 - Create migration infrastructure
 
 #### Tasks
+
 1. **Add AXorcist Dependency**
+
    ```swift
    // In Package.swift
    .package(url: "https://github.com/steipete/AXorcist.git", from: "1.0.0")
@@ -40,6 +43,7 @@ This plan outlines a phased migration from AppleScript to AXorcist accessibility
    ```
 
 #### Deliverables
+
 - [ ] AXorcist integrated into build
 - [ ] Performance baseline documented
 - [ ] Permission handling updated
@@ -48,6 +52,7 @@ This plan outlines a phased migration from AppleScript to AXorcist accessibility
 ### Phase 1: Window and Tab Enumeration (Week 3-4)
 
 #### Objectives
+
 - Replace AppleScript window/tab listing with AXorcist
 - Maintain exact same output format
 - Improve performance by 5-10x
@@ -55,6 +60,7 @@ This plan outlines a phased migration from AppleScript to AXorcist accessibility
 #### Implementation
 
 1. **Create AX Window Enumerator**
+
    ```swift
    class AXWindowEnumerator {
        func listWindows(for bundleID: String) async throws -> [WindowInfo] {
@@ -90,12 +96,14 @@ This plan outlines a phased migration from AppleScript to AXorcist accessibility
    ```
 
 #### Testing
+
 - [ ] Unit tests for AX enumerator
 - [ ] Integration tests with all terminal apps
 - [ ] Performance comparison tests
 - [ ] Fallback mechanism tests
 
 #### Success Metrics
+
 - Window enumeration < 50ms (from ~200ms)
 - 100% feature parity
 - Zero regression in reliability
@@ -103,6 +111,7 @@ This plan outlines a phased migration from AppleScript to AXorcist accessibility
 ### Phase 2: Focus and Activation Operations (Week 5-6)
 
 #### Objectives
+
 - Migrate focus operations to AXorcist
 - Improve responsiveness of session switching
 - Reduce terminal app disruption
@@ -110,17 +119,18 @@ This plan outlines a phased migration from AppleScript to AXorcist accessibility
 #### Implementation
 
 1. **AX Focus Manager**
+
    ```swift
    class AXFocusManager {
        func focusWindow(_ windowID: String) async throws {
            // Find window element
            let window = try await findWindow(id: windowID)
-           
+
            // Perform focus actions
            try await performAction(window, action: kAXRaiseAction)
            try await setFrontmost(window)
        }
-       
+
        func focusTab(_ tabID: String, in windowID: String) async throws {
            // Implementation
        }
@@ -138,12 +148,14 @@ This plan outlines a phased migration from AppleScript to AXorcist accessibility
    - Add performance logging
 
 #### Testing
+
 - [ ] Focus accuracy tests
 - [ ] Multi-monitor support
 - [ ] Minimized window handling
 - [ ] User disruption measurements
 
 #### Success Metrics
+
 - Focus operations < 20ms
 - Reduced app activation by 50%
 - No focus-stealing complaints
@@ -151,6 +163,7 @@ This plan outlines a phased migration from AppleScript to AXorcist accessibility
 ### Phase 3: State Monitoring (Week 7)
 
 #### Objectives
+
 - Use AX for busy state checking
 - Implement efficient polling mechanisms
 - Reduce AppleScript overhead
@@ -158,6 +171,7 @@ This plan outlines a phased migration from AppleScript to AXorcist accessibility
 #### Implementation
 
 1. **Busy State Monitor**
+
    ```swift
    class AXBusyStateMonitor {
        func isTabBusy(_ tab: AXUIElement) async throws -> Bool {
@@ -177,6 +191,7 @@ This plan outlines a phased migration from AppleScript to AXorcist accessibility
    - Cache state for short periods
 
 #### Testing
+
 - [ ] Busy detection accuracy
 - [ ] Performance under load
 - [ ] Observer reliability
@@ -184,6 +199,7 @@ This plan outlines a phased migration from AppleScript to AXorcist accessibility
 ### Phase 4: Hybrid Controller Implementation (Week 8-9)
 
 #### Objectives
+
 - Create unified hybrid controllers
 - Seamless integration of AX and AppleScript
 - Maintain backwards compatibility
@@ -191,16 +207,17 @@ This plan outlines a phased migration from AppleScript to AXorcist accessibility
 #### Implementation
 
 1. **Base Hybrid Controller**
+
    ```swift
    class HybridTerminalControlBase: TerminalControlling {
        let axProvider: AXorcistProvider
        let scriptBridge: AppleScriptBridge
-       
+
        // Override specific methods to use AX
        func listSessions(filterByTag: String?) async throws -> [TerminalSessionInfo] {
            // AX implementation
        }
-       
+
        // Keep AppleScript for these
        func executeCommand(params: ExecuteCommandParams) throws -> ExecuteCommandResult {
            // AppleScript implementation
@@ -224,6 +241,7 @@ This plan outlines a phased migration from AppleScript to AXorcist accessibility
    ```
 
 #### Testing
+
 - [ ] Full regression test suite
 - [ ] Performance benchmarks
 - [ ] Memory usage analysis
@@ -232,6 +250,7 @@ This plan outlines a phased migration from AppleScript to AXorcist accessibility
 ### Phase 5: Optimization and Polish (Week 10)
 
 #### Objectives
+
 - Performance tuning
 - Documentation updates
 - Production readiness
@@ -280,6 +299,7 @@ This plan outlines a phased migration from AppleScript to AXorcist accessibility
 ### Rollback Plan
 
 If critical issues arise:
+
 1. Immediate: Disable via feature flag
 2. Hot fix: Revert to AppleScript-only
 3. Communication: Alert users of known issues
@@ -287,19 +307,22 @@ If critical issues arise:
 ## Success Metrics
 
 ### Performance Targets
-| Operation | Current (AppleScript) | Target (AXorcist) | Improvement |
-|-----------|----------------------|-------------------|-------------|
-| List Windows | 200ms | 20ms | 10x |
-| Focus Session | 150ms | 15ms | 10x |
-| Check Busy | 100ms | 10ms | 10x |
-| Activate App | 300ms | 30ms | 10x |
+
+| Operation     | Current (AppleScript) | Target (AXorcist) | Improvement |
+| ------------- | --------------------- | ----------------- | ----------- |
+| List Windows  | 200ms                 | 20ms              | 10x         |
+| Focus Session | 150ms                 | 15ms              | 10x         |
+| Check Busy    | 100ms                 | 10ms              | 10x         |
+| Activate App  | 300ms                 | 30ms              | 10x         |
 
 ### Quality Metrics
+
 - Error rate < 0.1% (same as current)
 - No regression in functionality
 - User satisfaction maintained/improved
 
 ### Technical Metrics
+
 - Code coverage > 90%
 - Memory usage stable
 - CPU usage reduced by 50%
@@ -309,42 +332,40 @@ If critical issues arise:
 ### Technical Risks
 
 1. **AX API Limitations**
-   - *Risk*: Some operations may not be possible
-   - *Mitigation*: Maintain AppleScript fallback
-   - *Impact*: Low - hybrid approach ensures functionality
+   - _Risk_: Some operations may not be possible
+   - _Mitigation_: Maintain AppleScript fallback
+   - _Impact_: Low - hybrid approach ensures functionality
 
 2. **Permission Complexity**
-   - *Risk*: Users confused by dual permissions
-   - *Mitigation*: Clear documentation, unified flow
-   - *Impact*: Medium - one-time setup issue
+   - _Risk_: Users confused by dual permissions
+   - _Mitigation_: Clear documentation, unified flow
+   - _Impact_: Medium - one-time setup issue
 
 3. **Terminal App Updates**
-   - *Risk*: AX structure changes break integration
-   - *Mitigation*: Version detection, graceful degradation
-   - *Impact*: Low - affects only new versions
+   - _Risk_: AX structure changes break integration
+   - _Mitigation_: Version detection, graceful degradation
+   - _Impact_: Low - affects only new versions
 
 ### Schedule Risks
 
 1. **AXorcist API Learning Curve**
-   - *Buffer*: Added 1 week to Phase 1
-   - *Mitigation*: Early prototyping
+   - _Buffer_: Added 1 week to Phase 1
+   - _Mitigation_: Early prototyping
 
 2. **Testing Complexity**
-   - *Buffer*: Dedicated testing phases
-   - *Mitigation*: Automated test suite
+   - _Buffer_: Dedicated testing phases
+   - _Mitigation_: Automated test suite
 
 ## Long-term Vision
 
 ### Future Enhancements
 
-1. **Year 1**: 
+1. **Year 1**:
    - Complete hybrid implementation
    - 80% operations via AX
-   
 2. **Year 2**:
    - Explore replacing more AppleScript operations
    - Investigate direct Terminal.app API access
-   
 3. **Year 3**:
    - Potentially eliminate AppleScript entirely
    - Native performance throughout
