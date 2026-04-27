@@ -360,21 +360,21 @@ final class ITermControl: TerminalControlBase, @unchecked Sendable {
     
     private func runAsyncBlocking<T: Sendable>(_ operation: @escaping @Sendable () async throws -> T) throws -> T {
         let semaphore = DispatchSemaphore(value: 0)
-        var result: Result<T, Error>?
+        let resultBox = AsyncResultBox<T>()
         
         Task.detached {
             do {
                 let value = try await operation()
-                result = .success(value)
+                resultBox.store(.success(value))
             } catch {
-                result = .failure(error)
+                resultBox.store(.failure(error))
             }
             semaphore.signal()
         }
         
         semaphore.wait()
         
-        switch result {
+        switch resultBox.load() {
         case .success(let value):
             return value
         case .failure(let error):

@@ -18,6 +18,38 @@ protocol TerminalControlling {
     func killProcessInSession(params: KillSessionParams) throws -> KillSessionResult
 }
 
+struct UnsupportedTerminalControl: TerminalControlling {
+    let config: AppConfig
+    let appName: String
+
+    init(config: AppConfig, appName: String) {
+        self.config = config
+        self.appName = appName
+        Logger.log(level: .warn, "Unsupported terminal application: \(appName)")
+    }
+
+    func listSessions(filterByTag _: String?) throws -> [TerminalSessionInfo] {
+        Logger.log(level: .warn, "Cannot list sessions for unsupported terminal application: \(appName)")
+        throw TerminalControllerError.unsupportedTerminalApp(appName: appName)
+    }
+
+    func executeCommand(params _: ExecuteCommandParams) throws -> ExecuteCommandResult {
+        throw TerminalControllerError.unsupportedTerminalApp(appName: appName)
+    }
+
+    func readSessionOutput(params _: ReadSessionParams) throws -> ReadSessionResult {
+        throw TerminalControllerError.unsupportedTerminalApp(appName: appName)
+    }
+
+    func focusSession(params _: FocusSessionParams) throws -> FocusSessionResult {
+        throw TerminalControllerError.unsupportedTerminalApp(appName: appName)
+    }
+
+    func killProcessInSession(params _: KillSessionParams) throws -> KillSessionResult {
+        throw TerminalControllerError.unsupportedTerminalApp(appName: appName)
+    }
+}
+
 struct TerminalAppController {
     let appName: String // Resolved application name (e.g., "Terminal", "iTerm")
     let config: AppConfig
@@ -69,15 +101,7 @@ struct TerminalAppController {
         // case "ghosty", "ghosty.app":
         //     self.specificController = GhostyControl(config: config, appName: self.appName)
         default:
-            let errorMsg =
-                "TerminalAppController: No specific controller available for unsupported terminal application: \(appName). This should have been caught by AppConfig validation."
-            Logger.log(level: .fatal, errorMsg) // Log as fatal as this is a critical setup error.
-            // To allow compilation and testing up to this point, but clearly indicate a failure:
-            // Throwing from init is complex with non-optional `specificController`.
-            // A fatalError is clear during development if this state is reached.
-            // In a production build, this path might be guarded by earlier validation in AppConfig ensuring appName is
-            // always supported.
-            fatalError(errorMsg)
+            specificController = UnsupportedTerminalControl(config: config, appName: appName)
         }
         
         Logger.log(

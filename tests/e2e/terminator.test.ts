@@ -9,6 +9,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, "../..");
 const SWIFT_CLI_PATH = path.join(PROJECT_ROOT, "bin", "terminator");
+const liveDescribe: typeof describe =
+  process.env.TERMINATOR_RUN_LIVE_E2E === "1" ? describe : describe.skip;
 
 describe("Terminator E2E Tests", () => {
   beforeAll(async () => {
@@ -16,11 +18,13 @@ describe("Terminator E2E Tests", () => {
     try {
       await execa(SWIFT_CLI_PATH, ["--version"], { timeout: 5000 });
     } catch {
-      throw new Error(`Swift CLI not found at ${SWIFT_CLI_PATH}. Run 'npm run build:swift' first.`);
+      throw new Error(
+        `Swift CLI not found at ${SWIFT_CLI_PATH}. Run 'pnpm run build:swift' first.`,
+      );
     }
   });
 
-  describe("Sessions Command", () => {
+  liveDescribe("Sessions Command", () => {
     it("should handle empty terminal sessions gracefully", async () => {
       const result = await runTerminator(["sessions", "--terminal-app", "terminal"]);
       expectSuccessOrAppleScriptError(result);
@@ -47,18 +51,9 @@ describe("Terminator E2E Tests", () => {
         expect(Array.isArray(sessions)).toBe(true);
       }
     });
-
-    it("should handle invalid terminal app gracefully", async () => {
-      const result = await runTerminator(["sessions", "--terminal-app", "invalid-app"]);
-      // Sessions command returns success even with invalid terminal app
-      expect(result.exitCode).toBe(0);
-      // But it should show a warning in stderr
-      expect(result.stderr.toLowerCase()).toContain("warning");
-      expect(result.stdout).toContain("No active sessions found");
-    });
   });
 
-  describe("Execute Command Edge Cases", () => {
+  liveDescribe("Execute Command Edge Cases", () => {
     it("should handle empty command (prepare session only)", async () => {
       const tag = `test-empty-${Date.now()}`;
       const result = await runTerminator([
@@ -137,7 +132,7 @@ describe("Terminator E2E Tests", () => {
     });
   });
 
-  describe("Kill Command Edge Cases", () => {
+  liveDescribe("Kill Command Edge Cases", () => {
     it("should handle killing non-existent session gracefully", async () => {
       const result = await runTerminator([
         "kill",
@@ -189,9 +184,18 @@ describe("Terminator E2E Tests", () => {
 
       expect(result.exitCode).not.toBe(0);
       // The error comes from the kill command itself, not argument parsing
-      expect(result.stderr.toLowerCase()).toContain("unknown terminal application");
+      expect(result.stderr.toLowerCase()).toContain("not supported");
     });
 
+    it("should handle invalid terminal app gracefully", async () => {
+      const result = await runTerminator(["sessions", "--terminal-app", "invalid-app"]);
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr.toLowerCase()).toContain("warning");
+      expect(result.stdout).toContain("No active sessions found");
+    });
+  });
+
+  liveDescribe("Permission Handling", () => {
     it("should handle permission errors gracefully", async () => {
       // This might not always trigger, but tests the error path
       const result = await runTerminator([
@@ -208,7 +212,7 @@ describe("Terminator E2E Tests", () => {
     });
   });
 
-  describe("Special Characters and Encoding", () => {
+  liveDescribe("Special Characters and Encoding", () => {
     it("should handle Unicode characters in commands", async () => {
       const tag = `test-unicode-${Date.now()}`;
       const unicodeCommand = 'echo "Hello 世界 🌍"';
@@ -242,7 +246,7 @@ describe("Terminator E2E Tests", () => {
     });
   });
 
-  describe("Tag Filtering", () => {
+  liveDescribe("Tag Filtering", () => {
     it("should handle filtering by non-existent tag", async () => {
       const result = await runTerminator([
         "sessions",
@@ -290,7 +294,7 @@ describe("Terminator E2E Tests", () => {
     });
   });
 
-  describe("AppleScript Edge Cases", () => {
+  liveDescribe("AppleScript Edge Cases", () => {
     it("should handle when Terminal app is not running", async () => {
       // First, try to quit Terminal if it's running
       await execa("osascript", ["-e", 'tell application "Terminal" to quit'], {

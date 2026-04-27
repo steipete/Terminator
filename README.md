@@ -117,10 +117,10 @@ git clone https://github.com/steipete/terminator.git
 cd terminator
 
 # Install dependencies
-npm install
+pnpm install
 
 # Build TypeScript
-npm run build
+pnpm run build
 
 # Build Swift CLI
 cd cli
@@ -131,7 +131,7 @@ cd ..
 cp cli/.build/release/terminator bin/
 
 # Optional: Link globally
-npm link
+pnpm link --global
 ```
 
 For local development configuration:

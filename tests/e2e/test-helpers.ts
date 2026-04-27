@@ -6,6 +6,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, "../..");
 const SWIFT_CLI_PATH = path.join(PROJECT_ROOT, "bin", "terminator");
+const COMMAND_TIMEOUT_MS = Number.parseInt(
+  process.env.TERMINATOR_E2E_COMMAND_TIMEOUT_MS ?? "15000",
+  10,
+);
 
 // Check if we can actually automate Terminal
 let terminalAutomationAvailable: boolean | null = null;
@@ -19,6 +23,7 @@ export async function isTerminalAutomationAvailable(): Promise<boolean> {
     // Try a simple sessions command to see if AppleScript works
     const result = await execa(SWIFT_CLI_PATH, ["sessions", "--terminal-app", "terminal"], {
       reject: false,
+      timeout: COMMAND_TIMEOUT_MS,
       env: {
         ...process.env,
         TERMINATOR_SKIP_RESPONSIBILITY: "1",
@@ -40,6 +45,7 @@ export async function runTerminator(args: string[]) {
   const result = await execa(SWIFT_CLI_PATH, args, {
     reject: false,
     all: true,
+    timeout: COMMAND_TIMEOUT_MS,
     env: {
       ...process.env,
       TERMINATOR_SKIP_RESPONSIBILITY: "1",

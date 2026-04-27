@@ -1,6 +1,23 @@
 import Foundation
 @preconcurrency import ApplicationServices
 
+final class AsyncResultBox<T: Sendable>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var result: Result<T, Error>?
+
+    func store(_ value: Result<T, Error>) {
+        lock.withLock {
+            result = value
+        }
+    }
+
+    func load() -> Result<T, Error>? {
+        lock.withLock {
+            result
+        }
+    }
+}
+
 /// Base class for terminal controllers that use Accessibility APIs where possible and AppleScript where necessary
 class TerminalControlBase: TerminalControlling, @unchecked Sendable {
     let config: AppConfig
@@ -215,22 +232,21 @@ class TerminalControlBase: TerminalControlling, @unchecked Sendable {
     private func runAsyncBlocking<T: Sendable>(_ operation: @escaping @Sendable () async throws -> T) throws -> T {
         let group = DispatchGroup()
         group.enter()
-        
-        var result: Result<T, Error>?
+        let resultBox = AsyncResultBox<T>()
         
         Task.detached {
             do {
                 let value = try await operation()
-                result = .success(value)
+                resultBox.store(.success(value))
             } catch {
-                result = .failure(error)
+                resultBox.store(.failure(error))
             }
             group.leave()
         }
         
         group.wait()
         
-        switch result {
+        switch resultBox.load() {
         case .success(let value):
             return value
         case .failure(let error):

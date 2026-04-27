@@ -42,12 +42,12 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build:swift": "./scripts/build-swift-universal.sh",
-    "build:ts": "tsc",
+    "build:ts": "tsgo",
     "typecheck": "tsgo --noEmit",
-    "build": "npm run build:ts && npm run build:swift",
-    "prepublishOnly": "npm run clean && npm run build",
+    "build": "pnpm run build:ts && pnpm run build:swift",
+    "prepublishOnly": "pnpm run clean && pnpm run build",
     "start": "node dist/index.js",
-    "dev": "tsc-watch --onSuccess \"npm start\"",
+    "dev": "tsc-watch --onSuccess \"pnpm start\"",
     "clean": "rm -rf dist bin",
     "postinstall": "chmod +x bin/terminator 2>/dev/null || true",
     "prepare-release": "node ./scripts/prepare-release.js",
@@ -55,15 +55,15 @@
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "lint:swift": "cd cli && swiftlint",
-    "lint": "npm run format:check && oxlint --deny-warnings src tests scripts",
+    "lint": "pnpm run format:check && oxlint --deny-warnings src tests scripts",
     "test:swift": "cd cli && swift test",
     "test:applescript": "cd cli/Tests/AppleScriptTests && bash bin/run_apple_terminal_tests.sh",
     "verify:applescript": "node ./scripts/verify-applescript-consistency.js",
-    "test:e2e": "vitest run tests/e2e",
-    "test": "npm run test:e2e",
+    "test:e2e": "vitest run tests/e2e --no-file-parallelism",
+    "test": "pnpm run test:e2e",
     "test:watch": "vitest tests/e2e",
     "test:coverage": "vitest run --coverage",
-    "inspector": "npx @modelcontextprotocol/inspector node dist/index.js"
+    "inspector": "pnpm dlx @modelcontextprotocol/inspector node dist/index.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
@@ -83,7 +83,7 @@
     "vitest": "^4.1.5"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=24.0.0"
   },
-  "packageManager": "pnpm@9.12.1"
+  "packageManager": "pnpm@10.33.2"
 }

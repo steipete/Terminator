@@ -131,20 +131,20 @@ function checkDependencies() {
   // Check if node_modules exists
   if (!existsSync(join(projectRoot, "node_modules"))) {
     log("Installing dependencies...", colors.yellow);
-    if (!execWithOutput("npm install", "npm install")) {
+    if (!execWithOutput("pnpm install", "pnpm install")) {
       logError("Failed to install dependencies");
       return false;
     }
   }
 
   // Check for outdated dependencies
-  const outdated = exec("npm outdated --json", { allowFailure: true });
+  const outdated = exec("pnpm outdated --format json", { allowFailure: true });
   if (outdated) {
     try {
       const outdatedPkgs = JSON.parse(outdated);
       const count = Object.keys(outdatedPkgs).length;
       if (count > 0) {
-        logWarning(`${count} outdated dependencies found (run 'npm outdated' for details)`);
+        logWarning(`${count} outdated dependencies found (run 'pnpm outdated' for details)`);
       }
     } catch {
       // Ignore parse errors
@@ -167,7 +167,7 @@ function checkTypeScript() {
   rmSync(join(projectRoot, "node_modules/.cache"), { recursive: true, force: true });
 
   // Type check
-  if (!execWithOutput("npm run build:ts", "TypeScript compilation")) {
+  if (!execWithOutput("pnpm run build:ts", "TypeScript compilation")) {
     logError("TypeScript compilation failed");
     return false;
   }
@@ -309,7 +309,7 @@ function checkSwift() {
   log("Testing Swift CLI commands...", colors.cyan);
 
   // Build the CLI first
-  if (!execWithOutput("npm run build:swift", "Swift CLI build")) {
+  if (!execWithOutput("pnpm run build:swift", "Swift CLI build")) {
     logError("Swift CLI build failed");
     return false;
   }
@@ -430,9 +430,9 @@ function checkChangelog() {
 function checkSecurityAudit() {
   logStep("Security Audit");
 
-  log("Running npm audit...", colors.cyan);
+  log("Running pnpm audit...", colors.cyan);
 
-  const auditResult = exec("npm audit --json", { allowFailure: true });
+  const auditResult = exec("pnpm audit --json", { allowFailure: true });
 
   if (auditResult) {
     try {
@@ -471,7 +471,7 @@ function checkPackageSize() {
 
   // Create a temporary package to get accurate size
   log("Calculating package size...", colors.cyan);
-  const packOutput = exec("npm pack --dry-run 2>&1");
+  const packOutput = exec("pnpm pack --dry-run 2>&1");
 
   // Extract size information
   const unpackedMatch = packOutput.match(/unpacked size: ([^\n]+)/);
@@ -543,7 +543,7 @@ function checkE2ETests() {
   logStep("E2E Tests");
 
   // Run E2E tests
-  if (!execWithOutput("npm run test:e2e", "E2E tests")) {
+  if (!execWithOutput("pnpm run test:e2e", "E2E tests")) {
     logError("E2E tests failed");
     return false;
   }
@@ -726,7 +726,7 @@ function checkVersionConsistency() {
     logError(
       `Version mismatch: package.json has ${packageVersion}, package-lock.json has ${lockVersion}`,
     );
-    logError('Run "npm install" to update package-lock.json');
+    logError('Run "pnpm install" to update pnpm-lock.yaml');
     return false;
   }
 
@@ -789,7 +789,7 @@ function buildAndVerifyPackage() {
   logStep("Build and Package Verification");
 
   // Build everything
-  if (!execWithOutput("npm run build", "Full build (TypeScript + Swift)")) {
+  if (!execWithOutput("pnpm run build", "Full build (TypeScript + Swift)")) {
     logError("Build failed");
     return false;
   }
@@ -797,7 +797,7 @@ function buildAndVerifyPackage() {
 
   // Create package
   log("Creating npm package...", colors.cyan);
-  const packOutput = exec("npm pack --dry-run 2>&1");
+  const packOutput = exec("pnpm pack --dry-run 2>&1");
 
   // Parse package details
   const sizeMatch = packOutput.match(/package size: ([^\n]+)/);
