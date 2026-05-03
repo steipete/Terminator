@@ -20,7 +20,7 @@ jobs:
 
           # Check main terminator script
           echo "📋 Checking terminator.scpt..."
-          osacompile -o /tmp/terminator_syntax_check.scpt terminator.scpt
+          osacompile -o /tmp/terminator_syntax_check.scpt scripts/terminator.scpt
           if [ $? -eq 0 ]; then
             echo "✅ terminator.scpt syntax OK"
             rm -f /tmp/terminator_syntax_check.scpt
@@ -31,7 +31,7 @@ jobs:
 
           # Check test script
           echo "📋 Checking test_terminator.scpt..."
-          osacompile -o /tmp/test_syntax_check.scpt test_terminator.scpt
+          osacompile -o /tmp/test_syntax_check.scpt scripts/test_terminator.scpt
           if [ $? -eq 0 ]; then
             echo "✅ test_terminator.scpt syntax OK"
             rm -f /tmp/test_syntax_check.scpt
@@ -42,7 +42,7 @@ jobs:
 
           # Check cleanup script
           echo "📋 Checking cleanup_terminator_tests.scpt..."
-          osacompile -o /tmp/cleanup_syntax_check.scpt cleanup_terminator_tests.scpt
+          osacompile -o /tmp/cleanup_syntax_check.scpt scripts/cleanup_terminator_tests.scpt
           if [ $? -eq 0 ]; then
             echo "✅ cleanup_terminator_tests.scpt syntax OK"
             rm -f /tmp/cleanup_syntax_check.scpt
@@ -59,7 +59,7 @@ jobs:
 
           # Compile main script to verify it's complete and valid
           echo "📋 Compiling terminator.scpt..."
-          osacompile -o terminator.scptd terminator.scpt
+          osacompile -o terminator.scptd scripts/terminator.scpt
           if [ $? -eq 0 ]; then
             echo "✅ terminator.scpt compiled successfully"
           else
@@ -69,7 +69,7 @@ jobs:
 
           # Compile test script
           echo "📋 Compiling test_terminator.scpt..."
-          osacompile -o test_terminator.scptd test_terminator.scpt
+          osacompile -o test_terminator.scptd scripts/test_terminator.scpt
           if [ $? -eq 0 ]; then
             echo "✅ test_terminator.scpt compiled successfully"
           else
@@ -79,7 +79,7 @@ jobs:
 
           # Compile cleanup script
           echo "📋 Compiling cleanup_terminator_tests.scpt..."
-          osacompile -o cleanup_terminator_tests.scptd cleanup_terminator_tests.scpt
+          osacompile -o cleanup_terminator_tests.scptd scripts/cleanup_terminator_tests.scpt
           if [ $? -eq 0 ]; then
             echo "✅ cleanup_terminator_tests.scpt compiled successfully"
           else
@@ -94,21 +94,21 @@ jobs:
           echo "🔍 Checking for common AppleScript issues..."
 
           # Check for proper error handling
-          if grep -q "on error" *.scpt; then
+          if grep -q "on error" scripts/*.scpt; then
             echo "✅ Error handling found in scripts"
           else
             echo "⚠️  No error handling found - consider adding try/catch blocks"
           fi
 
           # Check for proper quoting
-          if grep -q "quoted form" *.scpt; then
+          if grep -q "quoted form" scripts/*.scpt; then
             echo "✅ Proper shell quoting found"
           else
             echo "⚠️  No shell quoting found - ensure shell commands are properly quoted"
           fi
 
           # Check for hardcoded paths (should use variables)
-          if grep -q "/tmp/" *.scpt; then
+          if grep -q "/tmp/" scripts/*.scpt; then
             echo "ℹ️  Temporary paths found - ensure they're appropriate"
           fi
 
